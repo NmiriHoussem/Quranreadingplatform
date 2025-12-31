@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Moon, Sun, LogIn, AlertTriangle, Download, Trash2, Globe } from 'lucide-react';
+import { ArrowLeft, Moon, Sun, LogIn, AlertTriangle, Download, Trash2, Globe, HardDrive } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
@@ -8,6 +8,7 @@ import { Switch } from './ui/switch';
 import { Input } from './ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './ui/dialog';
 import ProfileMenu from './ProfileMenu';
+import OfflineDownloadManager from './OfflineDownloadManager';
 import { useDarkMode } from '../utils/useDarkMode';
 import { 
   resetAllProgress, 
@@ -230,6 +231,22 @@ export default function Settings({ isAuthenticated, onSignOut }: SettingsProps) 
             </Link>
           </Card>
         )}
+
+        {/* Offline Download Manager */}
+        <Card className="p-6 mb-6 border-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/50">
+          <div className="flex items-center gap-2 mb-4">
+            <HardDrive className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            <h2 className="text-xl text-emerald-900 dark:text-emerald-100">
+              {t.offlineReading || 'Offline Reading'}
+            </h2>
+          </div>
+          
+          <p className="text-sm text-emerald-600 dark:text-emerald-400 mb-4">
+            {t.offlineReadingDescription || 'Download surahs to read them offline anytime, anywhere. Perfect for travel, mosques, or areas with limited internet.'}
+          </p>
+
+          <OfflineDownloadManager />
+        </Card>
 
         {/* Data Management */}
         <Card className="p-6 mb-6 border-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/50">
