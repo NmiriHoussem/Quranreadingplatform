@@ -108,10 +108,33 @@ export const saveUserData = (data: UserData): void => {
 // Mark a page as read
 export const markPageAsRead = (pageNumber: number): void => {
   const data = getUserData();
+  
+  // Mark the current page as read
   data.readingProgress[pageNumber.toString()] = {
     completed: true,
     timestamp: new Date().toISOString()
   };
+  
+  // In the context of Khatmah reading, if marking a page as read,
+  // all previous pages should also be marked as read (sequential reading)
+  // Mark all pages from 1 to (pageNumber - 1) as read if not already marked
+  let autoMarkedCount = 0;
+  for (let page = 1; page < pageNumber; page++) {
+    if (!data.readingProgress[page.toString()]?.completed) {
+      data.readingProgress[page.toString()] = {
+        completed: true,
+        timestamp: new Date().toISOString()
+      };
+      autoMarkedCount++;
+    }
+  }
+  
+  if (autoMarkedCount > 0) {
+    console.log(`✅ Marked page ${pageNumber} as read + auto-marked ${autoMarkedCount} previous pages (1-${pageNumber - 1})`);
+  } else {
+    console.log(`✅ Marked page ${pageNumber} as read`);
+  }
+  
   saveUserData(data);
 };
 
@@ -464,10 +487,23 @@ export const markKhatmahPageAsRead = (groupId: string, pageNumber: number): void
     data.khatmahProgress[groupId] = {};
   }
   
+  // Mark the current page as read
   data.khatmahProgress[groupId][pageNumber.toString()] = {
     completed: true,
     timestamp: new Date().toISOString()
   };
+  
+  // In the context of Khatmah reading, if marking a page as read,
+  // all previous pages should also be marked as read (sequential reading)
+  // Mark all pages from 1 to (pageNumber - 1) as read if not already marked
+  for (let page = 1; page < pageNumber; page++) {
+    if (!data.khatmahProgress[groupId][page.toString()]?.completed) {
+      data.khatmahProgress[groupId][page.toString()] = {
+        completed: true,
+        timestamp: new Date().toISOString()
+      };
+    }
+  }
   
   saveUserData(data);
 };
