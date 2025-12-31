@@ -19,6 +19,7 @@ import {
 } from '../../services/offlineService';
 import { SURAHS, getSurahName } from '../utils/surahs';
 import { getTranslations, getStoredLanguage, type Language } from '../utils/translations';
+import { debugCacheContents, testCacheLookup } from '../../services/cacheDebug';
 
 export default function OfflineDownloadManager() {
   const [language, setLanguage] = useState<Language>(getStoredLanguage());
@@ -36,6 +37,9 @@ export default function OfflineDownloadManager() {
   useEffect(() => {
     loadStorageInfo();
     setDownloadedSurahs(getDownloadedSurahs());
+    
+    // Debug: Log cache contents on mount
+    debugCacheContents();
   }, []);
 
   const loadStorageInfo = async () => {

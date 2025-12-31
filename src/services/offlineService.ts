@@ -54,30 +54,38 @@ export async function downloadSurah(
   try {
     onProgress?.(10);
     
-    // Fetch chapter info
-    const chapterInfo = await getChapter(surahNumber);
+    // Construct URLs
+    const chapterUrl = `https://api.quran.com/api/v4/chapters/${surahNumber}`;
+    const versesUrl = `https://api.quran.com/api/v4/verses/by_chapter/${surahNumber}?language=ar&words=false&translations=131&fields=text_uthmani&per_page=300`;
+    
+    // Fetch chapter info from network (bypass cache)
+    console.log('Downloading chapter:', surahNumber);
+    const chapterResponse = await fetch(chapterUrl);
+    if (!chapterResponse.ok) {
+      throw new Error(`Failed to download chapter ${surahNumber}`);
+    }
     onProgress?.(30);
     
-    // Fetch verses with translation
-    const chapterData = await getVersesByChapter(surahNumber);
+    // Fetch verses from network (bypass cache)
+    console.log('Downloading verses for chapter:', surahNumber);
+    const versesResponse = await fetch(versesUrl);
+    if (!versesResponse.ok) {
+      throw new Error(`Failed to download verses for chapter ${surahNumber}`);
+    }
     onProgress?.(70);
     
-    // Open cache and store the data
+    // Open cache and store the raw responses
     const cache = await caches.open(OFFLINE_CACHE_NAME);
     
-    // Cache the chapter info
-    const chapterUrl = `https://api.quran.com/api/v4/chapters/${surahNumber}`;
-    const chapterResponse = new Response(JSON.stringify({ chapter: chapterInfo }), {
-      headers: { 'Content-Type': 'application/json' }
-    });
-    await cache.put(chapterUrl, chapterResponse);
+    // Cache the chapter info (clone response to read it)
+    const chapterClone = chapterResponse.clone();
+    await cache.put(chapterUrl, chapterClone);
     
-    // Cache the verses
-    const versesUrl = `https://api.quran.com/api/v4/verses/by_chapter/${surahNumber}?language=ar&words=false&translations=131&fields=text_uthmani&per_page=300`;
-    const versesResponse = new Response(JSON.stringify(chapterData), {
-      headers: { 'Content-Type': 'application/json' }
-    });
-    await cache.put(versesUrl, versesResponse);
+    // Cache the verses (clone response to read it)
+    const versesClone = versesResponse.clone();
+    await cache.put(versesUrl, versesClone);
+    
+    console.log(`✅ Cached chapter ${surahNumber} successfully`);
     
     onProgress?.(90);
     

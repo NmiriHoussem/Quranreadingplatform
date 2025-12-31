@@ -1,5 +1,45 @@
 // Quran.com API Service
 const BASE_URL = 'https://api.quran.com/api/v4';
+const OFFLINE_CACHE_NAME = 'quran-offline-v1';
+
+// Helper function to fetch with cache-first strategy
+async function fetchWithCache(url: string): Promise<Response> {
+  try {
+    // Try to get from cache first
+    const cache = await caches.open(OFFLINE_CACHE_NAME);
+    const cachedResponse = await cache.match(url);
+    
+    if (cachedResponse) {
+      console.log('✅ Serving from cache:', url);
+      return cachedResponse;
+    }
+    
+    // If not in cache, fetch from network
+    console.log('📡 Fetching from network:', url);
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    // Clone the response to cache it
+    const responseToCache = response.clone();
+    cache.put(url, responseToCache);
+    
+    return response;
+  } catch (error) {
+    // If network fails, try cache one more time (in case it was added during download)
+    const cache = await caches.open(OFFLINE_CACHE_NAME);
+    const cachedResponse = await cache.match(url);
+    
+    if (cachedResponse) {
+      console.log('✅ Serving from cache after network error:', url);
+      return cachedResponse;
+    }
+    
+    throw error;
+  }
+}
 
 export interface Verse {
   id: number;
@@ -50,12 +90,8 @@ export interface ChapterData {
 // Get all chapters
 export async function getChapters(): Promise<Chapter[]> {
   try {
-    const response = await fetch(`${BASE_URL}/chapters`);
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
+    const url = `${BASE_URL}/chapters`;
+    const response = await fetchWithCache(url);
     const data = await response.json();
     return data.chapters;
   } catch (error) {
@@ -68,14 +104,9 @@ export async function getChapters(): Promise<Chapter[]> {
 export async function getVersesByPage(pageNumber: number, translationId: number = 131): Promise<PageData> {
   try {
     const url = `${BASE_URL}/verses/by_page/${pageNumber}?language=ar&words=false&translations=${translationId}&fields=text_uthmani&per_page=50`;
-    
-    const response = await fetch(url);
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
+    const response = await fetchWithCache(url);
     const data = await response.json();
+    
     return {
       verses: data.verses,
       pagination: data.pagination
@@ -91,21 +122,16 @@ export async function getVersesByChapter(chapterNumber: number, translationId: n
   try {
     console.log('Fetching chapter:', chapterNumber);
     
-    // Get chapter info
-    const chapterResponse = await fetch(`${BASE_URL}/chapters/${chapterNumber}`);
-    if (!chapterResponse.ok) {
-      throw new Error(`HTTP error fetching chapter! status: ${chapterResponse.status}`);
-    }
+    // Get chapter info (check cache first)
+    const chapterUrl = `${BASE_URL}/chapters/${chapterNumber}`;
+    const chapterResponse = await fetchWithCache(chapterUrl);
     const chapterData = await chapterResponse.json();
     
-    // Get verses with translation and Uthmani text
+    // Get verses with translation and Uthmani text (check cache first)
     const versesUrl = `${BASE_URL}/verses/by_chapter/${chapterNumber}?language=ar&words=false&translations=${translationId}&fields=text_uthmani&per_page=300`;
     console.log('Fetching verses from:', versesUrl);
     
-    const versesResponse = await fetch(versesUrl);
-    if (!versesResponse.ok) {
-      throw new Error(`HTTP error fetching verses! status: ${versesResponse.status}`);
-    }
+    const versesResponse = await fetchWithCache(versesUrl);
     const versesData = await versesResponse.json();
     
     return {
@@ -121,12 +147,8 @@ export async function getVersesByChapter(chapterNumber: number, translationId: n
 // Get chapter info
 export async function getChapter(chapterNumber: number): Promise<Chapter> {
   try {
-    const response = await fetch(`${BASE_URL}/chapters/${chapterNumber}`);
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
+    const url = `${BASE_URL}/chapters/${chapterNumber}`;
+    const response = await fetchWithCache(url);
     const data = await response.json();
     return data.chapter;
   } catch (error) {
