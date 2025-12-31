@@ -1,5 +1,5 @@
 // Offline Download Service
-import { getVersesByChapter, getChapter, Chapter } from './quranApi';
+import { getVersesByChapter, getChapter, getVersesByPage, Chapter } from './quranApi';
 
 export interface DownloadProgress {
   surahNumber: number;
@@ -52,9 +52,9 @@ export async function downloadSurah(
   onProgress?: (progress: number) => void
 ): Promise<void> {
   try {
-    onProgress?.(10);
+    onProgress?.(5);
     
-    // Construct URLs
+    // Construct URLs for chapter-based data
     const chapterUrl = `https://api.quran.com/api/v4/chapters/${surahNumber}`;
     const versesUrl = `https://api.quran.com/api/v4/verses/by_chapter/${surahNumber}?language=ar&words=false&translations=131&fields=text_uthmani&per_page=300`;
     
@@ -64,7 +64,12 @@ export async function downloadSurah(
     if (!chapterResponse.ok) {
       throw new Error(`Failed to download chapter ${surahNumber}`);
     }
-    onProgress?.(30);
+    
+    // Get chapter data to find which pages it spans
+    const chapterData = await chapterResponse.clone().json();
+    const chapter: Chapter = chapterData.chapter;
+    
+    onProgress?.(15);
     
     // Fetch verses from network (bypass cache)
     console.log('Downloading verses for chapter:', surahNumber);
@@ -72,7 +77,7 @@ export async function downloadSurah(
     if (!versesResponse.ok) {
       throw new Error(`Failed to download verses for chapter ${surahNumber}`);
     }
-    onProgress?.(70);
+    onProgress?.(40);
     
     // Open cache and store the raw responses
     const cache = await caches.open(OFFLINE_CACHE_NAME);
@@ -85,9 +90,38 @@ export async function downloadSurah(
     const versesClone = versesResponse.clone();
     await cache.put(versesUrl, versesClone);
     
-    console.log(`✅ Cached chapter ${surahNumber} successfully`);
+    onProgress?.(60);
     
-    onProgress?.(90);
+    // IMPORTANT: Also cache page-based data for Reading Mode
+    // Download all pages that this surah appears on
+    if (chapter.pages && chapter.pages.length > 0) {
+      console.log(`Downloading ${chapter.pages.length} pages for chapter ${surahNumber}...`);
+      
+      const totalPages = chapter.pages.length;
+      for (let i = 0; i < totalPages; i++) {
+        const pageNum = chapter.pages[i];
+        const pageUrl = `https://api.quran.com/api/v4/verses/by_page/${pageNum}?language=ar&words=false&translations=131&fields=text_uthmani&per_page=50`;
+        
+        try {
+          const pageResponse = await fetch(pageUrl);
+          if (pageResponse.ok) {
+            await cache.put(pageUrl, pageResponse.clone());
+            console.log(`  ✅ Cached page ${pageNum}`);
+          }
+        } catch (pageError) {
+          console.warn(`  ⚠️ Failed to cache page ${pageNum}:`, pageError);
+          // Continue with other pages even if one fails
+        }
+        
+        // Update progress: 60% to 90% for page downloads
+        const pageProgress = 60 + (30 * (i + 1) / totalPages);
+        onProgress?.(Math.round(pageProgress));
+      }
+    }
+    
+    console.log(`✅ Cached chapter ${surahNumber} successfully (chapter + pages)`);
+    
+    onProgress?.(95);
     
     // Mark as downloaded
     const downloaded = getDownloadedSurahs();
@@ -155,8 +189,24 @@ export async function deleteSurah(surahNumber: number): Promise<void> {
   try {
     const cache = await caches.open(OFFLINE_CACHE_NAME);
     
-    // Delete chapter info
+    // Get chapter info to find which pages to delete
     const chapterUrl = `https://api.quran.com/api/v4/chapters/${surahNumber}`;
+    const cachedChapter = await cache.match(chapterUrl);
+    
+    if (cachedChapter) {
+      const chapterData = await cachedChapter.json();
+      const chapter: Chapter = chapterData.chapter;
+      
+      // Delete all pages associated with this surah
+      if (chapter.pages && chapter.pages.length > 0) {
+        for (const pageNum of chapter.pages) {
+          const pageUrl = `https://api.quran.com/api/v4/verses/by_page/${pageNum}?language=ar&words=false&translations=131&fields=text_uthmani&per_page=50`;
+          await cache.delete(pageUrl);
+        }
+      }
+    }
+    
+    // Delete chapter info
     await cache.delete(chapterUrl);
     
     // Delete verses
