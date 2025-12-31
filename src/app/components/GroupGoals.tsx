@@ -1,0 +1,381 @@
+import { useState, useEffect } from 'react';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
+import { Book, Home, Plus, Search, Users, Target, Calendar, AlertCircle, LogIn, CheckCircle2 } from 'lucide-react';
+import { Button } from './ui/button';
+import { Card } from './ui/card';
+import { Input } from './ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from './ui/dialog';
+import { Label } from './ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Alert, AlertDescription } from './ui/alert';
+import { 
+  getJoinedGroups, 
+  getCurrentKhatmah, 
+  joinGroup as joinGroupLS, 
+  switchKhatmahGroup,
+  isMemberOfGroup,
+  getSurahMemorizationStats // Added for progress tracking
+} from '../utils/localStorage';
+import AppHeader from './AppHeader';
+import { getTranslations, getStoredLanguage } from '../utils/translations';
+import { SURAHS, getSurahName } from '../utils/surahs';
+
+// Khatmah reading groups
+const KHATMAH_GROUPS = [
+  { id: 'khatmah-7', days: 7, members: 234, progress: 92 },
+  { id: 'khatmah-10', days: 10, members: 456, progress: 85 },
+  { id: 'khatmah-15', days: 15, members: 678, progress: 88 },
+  { id: 'khatmah-30', days: 30, members: 891, progress: 82 },
+  { id: 'khatmah-60', days: 60, members: 543, progress: 76 },
+  { id: 'khatmah-90', days: 90, members: 321, progress: 71 }
+];
+
+interface GroupGoalsProps {
+  isAuthenticated: boolean;
+  onSignOut: () => void;
+  onToggleDarkMode?: () => void;
+}
+
+export default function GroupGoals({ isAuthenticated, onSignOut, onToggleDarkMode }: GroupGoalsProps) {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  // Check if filter param exists in URL
+  const urlFilter = searchParams.get('filter');
+  const initialFilter = urlFilter === 'reading' ? 'reading' : urlFilter === 'memorization' ? 'memorization' : 'all';
+  
+  // Check if tab param exists in URL (for switching between my-groups and discover)
+  const urlTab = searchParams.get('tab');
+  const initialTab = urlTab === 'discover' ? 'discover' : 'my-groups';
+  
+  const [filterType, setFilterType] = useState<'all' | 'memorization' | 'reading'>(initialFilter);
+  const [showKhatmahWarning, setShowKhatmahWarning] = useState(false);
+  const [pendingKhatmahGroup, setPendingKhatmahGroup] = useState<string | null>(null);
+  const [showSignInPrompt, setShowSignInPrompt] = useState(false);
+  
+  // Mock: User's joined groups (IDs)
+  const [joinedGroups, setJoinedGroups] = useState<string[]>(['surah-2', 'khatmah-30']);
+  const currentKhatmah = joinedGroups.find(id => id.startsWith('khatmah-'));
+
+  const translations = getTranslations(getStoredLanguage());
+  const language = getStoredLanguage();
+
+  // Generate memorization groups from SURAHS
+  const memorizationGroups = SURAHS.map(surah => {
+    const stats = getSurahMemorizationStats(surah.number, surah.verses);
+    const isFullyMemorized = stats.percentComplete === 100;
+    const surahName = getSurahName(surah.number, language);
+    const surahMeaning = translations.surahMeanings[surah.number - 1];
+    
+    return {
+      id: `surah-${surah.number}`,
+      title: language === 'ar' ? `حفظ سورة ${surahName}` : `Memorize Surah ${surah.name}`,
+      description: language === 'ar' ? `${surah.verses} آية` : `${surahMeaning} - ${surah.verses} verses`,
+      members: Math.floor(Math.random() * 500) + 50, // Mock members
+      progress: stats.percentComplete, // Use real progress instead of mock
+      type: 'memorization' as const,
+      surahNumber: surah.number,
+      isFullyMemorized // Add this flag
+    };
+  });
+
+  // Generate reading groups from KHATMAH_GROUPS
+  const readingGroups = KHATMAH_GROUPS.map(khatmah => ({
+    id: khatmah.id,
+    title: `Complete Khatmah in ${khatmah.days} Days`,
+    description: `Read the entire Quran in ${khatmah.days} days together`,
+    members: khatmah.members,
+    progress: khatmah.progress,
+    type: 'reading' as const,
+    days: khatmah.days
+  }));
+
+  // All available groups
+  const allGroups = [...memorizationGroups, ...readingGroups];
+
+  // Filter groups for Discover tab
+  const filteredGroups = allGroups.filter(group => {
+    // Filter by type
+    if (filterType !== 'all' && group.type !== filterType) return false;
+    
+    // Filter by search query (search in title and description)
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      const matchesTitle = group.title.toLowerCase().includes(query);
+      const matchesDescription = group.description.toLowerCase().includes(query);
+      if (!matchesTitle && !matchesDescription) {
+        return false;
+      }
+    }
+    
+    return true; // Show all groups including joined ones
+  });
+
+  // Get user's joined groups with full details and apply search filter
+  const myGroupsData = allGroups.filter(g => {
+    // Must be a joined group
+    if (!joinedGroups.includes(g.id)) return false;
+    
+    // Apply search query filter (search in title and description)
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      const matchesTitle = g.title.toLowerCase().includes(query);
+      const matchesDescription = g.description.toLowerCase().includes(query);
+      if (!matchesTitle && !matchesDescription) {
+        return false;
+      }
+    }
+    
+    return true;
+  });
+
+  // Handle joining a group
+  const handleJoinGroup = (groupId: string) => {
+    // Check if user is authenticated before joining
+    if (!isAuthenticated) {
+      navigate(`/auth?redirect=/groups/${groupId}`);
+      return;
+    }
+    
+    const isKhatmahGroup = groupId.startsWith('khatmah-');
+    
+    if (isKhatmahGroup && currentKhatmah && currentKhatmah !== groupId) {
+      // User is trying to join a second khatmah group
+      setPendingKhatmahGroup(groupId);
+      setShowKhatmahWarning(true);
+    } else {
+      // Join the group
+      setJoinedGroups([...joinedGroups, groupId]);
+      joinGroupLS(groupId);
+    }
+  };
+
+  // Confirm switching khatmah groups
+  const confirmSwitchKhatmah = () => {
+    if (pendingKhatmahGroup && currentKhatmah) {
+      // Remove old khatmah, add new one
+      setJoinedGroups(joinedGroups.filter(id => id !== currentKhatmah).concat(pendingKhatmahGroup));
+      switchKhatmahGroup(pendingKhatmahGroup);
+    }
+    setShowKhatmahWarning(false);
+    setPendingKhatmahGroup(null);
+  };
+
+  useEffect(() => {
+    const storedGroups = getJoinedGroups();
+    const storedKhatmah = getCurrentKhatmah();
+    if (storedGroups) {
+      setJoinedGroups(storedGroups);
+    }
+    if (storedKhatmah) {
+      setPendingKhatmahGroup(storedKhatmah);
+    }
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-emerald-50 to-white dark:from-emerald-950 dark:to-emerald-900">
+      {/* Header */}
+      <AppHeader isAuthenticated={isAuthenticated} onSignOut={onSignOut} onToggleDarkMode={onToggleDarkMode} />
+
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
+        {/* Search */}
+        <div className="mb-8">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-emerald-600" />
+            <Input
+              type="text"
+              placeholder={`Search ${translations.circles.toLowerCase()}...`}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 border-emerald-200"
+            />
+          </div>
+        </div>
+
+        <Tabs defaultValue={initialTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="my-groups">{translations.myCircles} ({myGroupsData.length})</TabsTrigger>
+            <TabsTrigger value="discover">Discover</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="my-groups" className="space-y-4">
+            {myGroupsData.map((group) => {
+              // Check if surah is fully memorized
+              const isMemorized = group.type === 'memorization' && 'isFullyMemorized' in group && group.isFullyMemorized;
+              
+              return (
+                <Link key={group.id} to={`/groups/${group.id}`}>
+                  <Card className="p-6 border-emerald-100 hover:shadow-lg transition-shadow cursor-pointer">
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3 className="text-xl text-emerald-900">{group.title}</h3>
+                          <span className={`px-2 py-1 rounded-full text-xs ${
+                            group.type === 'memorization' 
+                              ? 'bg-amber-100 text-amber-700' 
+                              : 'bg-emerald-100 text-emerald-700'
+                          }`}>
+                            {group.type}
+                          </span>
+                          {isMemorized && (
+                            <span className="px-3 py-1 rounded-full text-xs bg-amber-600 text-white font-medium flex items-center gap-1">
+                              <CheckCircle2 className="w-3 h-3" />
+                              Memorized
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-emerald-600 mb-3">{group.description}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-4 text-sm text-emerald-600">
+                      <span className="flex items-center gap-1">
+                        <Users className="w-4 h-4" />
+                        {group.members} members
+                      </span>
+                    </div>
+                  </Card>
+                </Link>
+              );
+            })}
+          </TabsContent>
+
+          <TabsContent value="discover" className="space-y-4">
+            {/* Filter Buttons */}
+            <div className="flex gap-2 mb-6">
+              <Button
+                variant={filterType === 'all' ? 'default' : 'outline'}
+                onClick={() => setFilterType('all')}
+                className={filterType === 'all' ? 'bg-emerald-600 hover:bg-emerald-700' : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50'}
+              >
+                All ({allGroups.length})
+              </Button>
+              <Button
+                variant={filterType === 'memorization' ? 'default' : 'outline'}
+                onClick={() => setFilterType('memorization')}
+                className={filterType === 'memorization' ? 'bg-emerald-600 hover:bg-emerald-700' : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50'}
+              >
+                Memorization ({memorizationGroups.length})
+              </Button>
+              <Button
+                variant={filterType === 'reading' ? 'default' : 'outline'}
+                onClick={() => setFilterType('reading')}
+                className={filterType === 'reading' ? 'bg-emerald-600 hover:bg-emerald-700' : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50'}
+              >
+                Reading ({readingGroups.length})
+              </Button>
+            </div>
+
+            {filteredGroups.map((group) => {
+              const isJoined = joinedGroups.includes(group.id);
+              // Check if surah is fully memorized
+              const isMemorized = group.type === 'memorization' && 'isFullyMemorized' in group && group.isFullyMemorized;
+              
+              return (
+                <Link key={group.id} to={`/groups/${group.id}`}>
+                  <Card className={`p-6 border-emerald-100 dark:border-emerald-800 transition-shadow hover:shadow-lg cursor-pointer`}>
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3 className="text-xl text-emerald-900 dark:text-emerald-100">{group.title}</h3>
+                          <span className={`px-2 py-1 rounded-full text-xs ${
+                            group.type === 'memorization' 
+                              ? 'bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300' 
+                              : group.type === 'study'
+                              ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
+                              : 'bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300'
+                          }`}>
+                            {group.type}
+                          </span>
+                          {isJoined && (
+                            <span className="px-3 py-1 rounded-full text-xs bg-emerald-600 dark:bg-emerald-700 text-white font-medium">
+                              Joined
+                            </span>
+                          )}
+                          {isMemorized && (
+                            <span className="px-3 py-1 rounded-full text-xs bg-amber-600 dark:bg-amber-700 text-white font-medium flex items-center gap-1">
+                              <CheckCircle2 className="w-3 h-3" />
+                              Memorized
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-emerald-600 dark:text-emerald-400 mb-3">{group.description}</p>
+                      </div>
+                      {!isJoined && (
+                        <Button 
+                          className="bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600" 
+                          onClick={(e) => {
+                            e.preventDefault(); // Prevent Link navigation
+                            handleJoinGroup(group.id);
+                          }}
+                        >
+                          Join Goal
+                        </Button>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-4 text-sm text-emerald-600 dark:text-emerald-400">
+                      <span className="flex items-center gap-1">
+                        <Users className="w-4 h-4" />
+                        {group.members} members
+                      </span>
+                    </div>
+                  </Card>
+                </Link>
+              );
+            })}
+          </TabsContent>
+        </Tabs>
+
+        {/* Info Card */}
+        <Card className="p-6 mt-8 border-emerald-100 bg-emerald-50">
+          <h3 className="text-lg text-emerald-900 mb-2">About Group Goals</h3>
+          <p className="text-emerald-600 mb-4">
+            Group goals are anonymous and focus-driven. Members work together toward shared objectives
+            without social features like comments or messaging. Your identity remains private while you
+            contribute to collective progress.
+          </p>
+          <ul className="space-y-2 text-sm text-emerald-600">
+            <li className="flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+              No usernames or profiles visible to others
+            </li>
+            <li className="flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+              Progress tracked collectively and individually
+            </li>
+            <li className="flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+              No chat, comments, or social interactions
+            </li>
+          </ul>
+        </Card>
+      </div>
+
+      {/* Khatmah Warning Dialog */}
+      <Dialog open={showKhatmahWarning} onOpenChange={setShowKhatmahWarning}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-orange-600" />
+              Already in a Khatmah Group
+            </DialogTitle>
+            <DialogDescription>
+              You can only be in one Khatmah reading group at a time. Joining this new group will automatically remove you from your current Khatmah group.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex gap-2">
+            <Button variant="outline" onClick={() => setShowKhatmahWarning(false)}>
+              Cancel
+            </Button>
+            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={confirmSwitchKhatmah}>
+              Switch Groups
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
