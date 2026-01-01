@@ -324,8 +324,8 @@ export default function Dashboard({ isAuthenticated, onSignOut, onToggleDarkMode
                   </Link>
                 ))}
                 
-                {/* Mobile: Show latest 5 or all based on state */}
-                {(showAllSurahs ? memorizationStats.surahs : memorizationStats.surahs.slice(-5)).map((surah: any) => (
+                {/* Mobile: Show first 5 or all based on state */}
+                {(showAllSurahs ? memorizationStats.surahs : memorizationStats.surahs.slice(0, 5)).map((surah: any) => (
                   <Link 
                     key={surah.groupId} 
                     to={`/reader?mode=memorization&surah=${surah.surahNumber}`}

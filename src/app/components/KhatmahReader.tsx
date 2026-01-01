@@ -573,7 +573,7 @@ export default function KhatmahReader({ isAuthenticated, onSignOut, onToggleDark
                     <img 
                       src={getMushafPageImageUrl(currentPage, false)} 
                       alt={`Page ${currentPage}`}
-                      className="w-full h-auto block"
+                      className="w-full h-auto block dark:invert"
                       loading="lazy"
                       onLoad={() => setImageLoading(false)}
                     />
