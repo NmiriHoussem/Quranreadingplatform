@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { User, Settings, HelpCircle, LogOut, LogIn, CheckCircle2, Globe, BookOpen, Type, Feather } from 'lucide-react';
+import { User, Settings, HelpCircle, LogOut, LogIn, CheckCircle2, Globe, BookOpen, Type, Download } from 'lucide-react';
 import { Button } from './ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from './ui/sheet';
 import { Separator } from './ui/separator';
@@ -17,7 +17,6 @@ export default function ProfileMenu({ isAuthenticated, onSignOut }: ProfileMenuP
   const t = getTranslations(language);
   const [userName, setUserName] = useState<string | null>(null);
   const [mushafMode, setMushafMode] = useState<MushafViewMode>('mushaf');
-  const [useTajweed, setUseTajweed] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   
   useEffect(() => {
@@ -38,10 +37,6 @@ export default function ProfileMenu({ isAuthenticated, onSignOut }: ProfileMenuP
     // Load mushaf view mode preference
     const currentMode = getMushafViewMode();
     setMushafMode(currentMode);
-    
-    // Load tajweed preference
-    const savedTajweed = localStorage.getItem('mushafTajweedMode');
-    setUseTajweed(savedTajweed === 'true');
   }, [isAuthenticated]);
   
   // Get first letter of name for avatar
@@ -53,14 +48,6 @@ export default function ProfileMenu({ isAuthenticated, onSignOut }: ProfileMenuP
     
     // Trigger a custom event to notify other components
     window.dispatchEvent(new CustomEvent('mushafModeChanged', { detail: { mode } }));
-  };
-  
-  const handleTajweedChange = (enabled: boolean) => {
-    setUseTajweed(enabled);
-    localStorage.setItem('mushafTajweedMode', enabled.toString());
-    
-    // Trigger a custom event to notify other components
-    window.dispatchEvent(new CustomEvent('tajweedModeChanged', { detail: { enabled } }));
   };
   
   return (
@@ -167,40 +154,16 @@ export default function ProfileMenu({ isAuthenticated, onSignOut }: ProfileMenuP
                 </Button>
               </div>
             </div>
-            
-            {/* Tajweed Toggle - Only active when Mushaf mode is selected */}
-            <div className={`space-y-2 ${mushafMode !== 'mushaf' ? 'opacity-50 pointer-events-none' : ''}`}>
-              <div className="px-2">
-                <p className="text-sm font-medium">{language === 'ar' ? 'التلوين التجويدي' : 'Tajweed Coloring'}</p>
-                <p className="text-xs text-muted-foreground">{language === 'ar' ? 'اختر بين التلوين التجويدي أو بدون تلوين' : 'Choose with or without Tajweed coloring'}</p>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-2 px-2">
-                <Button
-                  variant={useTajweed ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => handleTajweedChange(true)}
-                  disabled={mushafMode !== 'mushaf'}
-                  className={useTajweed ? 'bg-emerald-600 hover:bg-emerald-700' : 'border-emerald-600 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900'}
-                >
-                  <Feather className="w-4 h-4 mr-2" />
-                  {language === 'ar' ? 'مع التجويد' : 'With Tajweed'}
-                </Button>
-                
-                <Button
-                  variant={!useTajweed ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => handleTajweedChange(false)}
-                  disabled={mushafMode !== 'mushaf'}
-                  className={!useTajweed ? 'bg-emerald-600 hover:bg-emerald-700' : 'border-emerald-600 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900'}
-                >
-                  {language === 'ar' ? 'بدون تجويد' : 'Without Tajweed'}
-                </Button>
-              </div>
-            </div>
           </div>
           
           <Separator className="my-4" />
+          
+          <Link to="/download" onClick={() => setIsOpen(false)}>
+            <Button variant="ghost" className="w-full justify-start hover:bg-emerald-50 dark:hover:bg-emerald-900">
+              <Download className="w-5 h-5 mr-3" />
+              {language === 'ar' ? 'تحميل القرآن' : 'Download Quran'}
+            </Button>
+          </Link>
           
           <Link to="/settings" onClick={() => setIsOpen(false)}>
             <Button variant="ghost" className="w-full justify-start hover:bg-emerald-50 dark:hover:bg-emerald-900">

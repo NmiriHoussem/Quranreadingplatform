@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ChevronLeft, ChevronRight, Menu, Loader2, Check, Users, Moon, Sun, BookOpen, Type, Feather } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, Menu, Loader2, Check, Users, Moon, Sun, BookOpen, Type } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Progress } from './ui/progress';
@@ -97,12 +97,9 @@ export default function KhatmahReader({ isAuthenticated, onSignOut, onToggleDark
 
   // Mushaf view mode (image vs text)
   const [viewMode, setViewMode] = useState<MushafViewMode>('mushaf');
-  
-  // Tajweed mode for Mushaf images
-  const [useTajweed, setUseTajweed] = useState(() => {
-    const saved = localStorage.getItem('mushafTajweedMode');
-    return saved === 'true';
-  });
+
+  // Image loading state
+  const [imageLoading, setImageLoading] = useState(true);
 
   // Listen for mushaf mode changes from ProfileMenu
   useEffect(() => {
@@ -110,19 +107,13 @@ export default function KhatmahReader({ isAuthenticated, onSignOut, onToggleDark
       setViewMode(event.detail.mode);
     };
     
-    const handleTajweedModeChange = (event: CustomEvent<{ enabled: boolean }>) => {
-      setUseTajweed(event.detail.enabled);
-    };
-    
     // Load initial mode
     setViewMode(getMushafViewMode());
     
     window.addEventListener('mushafModeChanged', handleMushafModeChange as EventListener);
-    window.addEventListener('tajweedModeChanged', handleTajweedModeChange as EventListener);
     
     return () => {
       window.removeEventListener('mushafModeChanged', handleMushafModeChange as EventListener);
-      window.removeEventListener('tajweedModeChanged', handleTajweedModeChange as EventListener);
     };
   }, []);
 
@@ -153,6 +144,7 @@ export default function KhatmahReader({ isAuthenticated, onSignOut, onToggleDark
   // Fetch verses when page changes
   useEffect(() => {
     fetchPageVerses();
+    setImageLoading(true); // Reset image loading state when page changes
     window.scrollTo({ top: 0, behavior: 'smooth' });
     pageEntryTime.current = Date.now();
   }, [currentPage]);
@@ -168,11 +160,6 @@ export default function KhatmahReader({ isAuthenticated, onSignOut, onToggleDark
   useEffect(() => {
     localStorage.setItem('quranNightMode', nightMode.toString());
   }, [nightMode]);
-  
-  // Save tajweed mode to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem('mushafTajweedMode', useTajweed.toString());
-  }, [useTajweed]);
 
   // Update page read status when current page changes
   useEffect(() => {
@@ -476,23 +463,6 @@ export default function KhatmahReader({ isAuthenticated, onSignOut, onToggleDark
                 )}
               </Button>
               
-              {/* Tajweed Toggle Button - Only shown in Mushaf image mode */}
-              {viewMode === 'mushaf' && (
-                <Button 
-                  variant="outline" 
-                  size="icon"
-                  className={`border-emerald-600 dark:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900 shrink-0 ${
-                    useTajweed 
-                      ? 'bg-emerald-600 dark:bg-emerald-600 text-white dark:text-white hover:bg-emerald-700 dark:hover:bg-emerald-700' 
-                      : 'text-emerald-600 dark:text-emerald-400'
-                  }`}
-                  onClick={() => setUseTajweed(!useTajweed)}
-                  title={useTajweed ? 'Switch to Plain Mushaf' : 'Switch to Tajweed Mushaf'}
-                >
-                  <Feather className="w-4 h-4" />
-                </Button>
-              )}
-              
               {onToggleDarkMode && (
                 <Button 
                   variant="outline" 
@@ -579,19 +549,33 @@ export default function KhatmahReader({ isAuthenticated, onSignOut, onToggleDark
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
           >
-            <Card className="border-2 border-emerald-200 dark:border-emerald-700 bg-white dark:bg-emerald-950/50">
+            <Card className={`${viewMode === 'mushaf' 
+              ? 'overflow-hidden p-0 gap-0 border-0 rounded-none bg-white dark:bg-emerald-950' 
+              : 'border-2 border-emerald-200 dark:border-emerald-700 bg-white dark:bg-emerald-950/50'}`}>
               {/* Decorative top border */}
-              <div className="h-2 bg-gradient-to-r from-emerald-600 via-amber-500 to-emerald-600 dark:from-emerald-500 dark:via-amber-600 dark:to-emerald-500 rounded-t-lg"></div>
+              <div className={`h-2 bg-gradient-to-r from-emerald-600 via-amber-500 to-emerald-600 dark:from-emerald-500 dark:via-amber-600 dark:to-emerald-500 ${viewMode === 'mushaf' ? '' : 'rounded-t-lg'}`}></div>
               
-              <div className="p-4 md:p-6">
+              <div className={viewMode === 'mushaf' ? '' : 'p-4 md:p-6'}>
                 {/* Mushaf Image Mode */}
                 {viewMode === 'mushaf' ? (
-                  <div className="flex justify-center">
+                  <div className="relative min-h-[600px]">
+                    {/* Loading overlay */}
+                    {imageLoading && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-white/90 dark:bg-emerald-950/90 z-10 backdrop-blur-sm">
+                        <div className="flex flex-col items-center gap-4 bg-white dark:bg-emerald-900 rounded-full p-8 shadow-2xl border-4 border-emerald-500 dark:border-emerald-400">
+                          <Loader2 className="w-16 h-16 text-emerald-600 dark:text-emerald-400 animate-spin" />
+                          <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300 whitespace-nowrap">
+                            {language === 'ar' ? 'جاري التحميل...' : 'Loading...'}
+                          </p>
+                        </div>
+                      </div>
+                    )}
                     <img 
-                      src={getMushafPageImageUrl(currentPage, useTajweed)} 
+                      src={getMushafPageImageUrl(currentPage, false)} 
                       alt={`Page ${currentPage}`}
-                      className="w-full max-w-2xl h-auto rounded-lg shadow-lg"
+                      className="w-full h-auto block"
                       loading="lazy"
+                      onLoad={() => setImageLoading(false)}
                     />
                   </div>
                 ) : (
@@ -634,16 +618,18 @@ export default function KhatmahReader({ isAuthenticated, onSignOut, onToggleDark
                   </>
                 )}
 
-                {/* Page Footer - Surah name */}
-                <div className="mt-4 md:mt-6 pt-2 md:pt-3 border-t-2 border-emerald-200 dark:border-emerald-700 text-center">
-                  <div className="text-sm md:text-base text-emerald-600 dark:text-emerald-400">
-                    {language === 'ar' ? chapterInfo?.name_arabic : chapterInfo?.name_simple}
+                {/* Page Footer - Surah name - Only show in text mode */}
+                {viewMode !== 'mushaf' && (
+                  <div className="mt-4 md:mt-6 pt-2 md:pt-3 border-t-2 border-emerald-200 dark:border-emerald-700 text-center">
+                    <div className="text-sm md:text-base text-emerald-600 dark:text-emerald-400">
+                      {language === 'ar' ? chapterInfo?.name_arabic : chapterInfo?.name_simple}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
               {/* Decorative bottom border */}
-              <div className="h-2 bg-gradient-to-r from-emerald-600 via-amber-500 to-emerald-600 dark:from-emerald-500 dark:via-amber-600 dark:to-emerald-500 rounded-b-lg"></div>
+              <div className={`h-2 bg-gradient-to-r from-emerald-600 via-amber-500 to-emerald-600 dark:from-emerald-500 dark:via-amber-600 dark:to-emerald-500 ${viewMode === 'mushaf' ? '' : 'rounded-b-lg'}`}></div>
             </Card>
 
             {/* Page Navigation - Moved Below Card */}

@@ -204,22 +204,29 @@ export function getVerseAudioUrl(verseKey: string, reciterId: number): string {
 }
 
 // Get Mushaf page image URL
-// Using publicly accessible Mushaf page images from QuranHub GitHub repository
+// Using publicly accessible Mushaf page images from salahamassi/Quran-svg-mobile (optimized for mobile with better centering)
+// and QuranHub (PNG with tajweed colors)
 export function getMushafPageImageUrl(pageNumber: number, useTajweed: boolean = false): string {
   if (pageNumber < 1 || pageNumber > 604) {
     console.error(`Invalid page number: ${pageNumber}`);
     return '';
   }
   
-  // Using images from QuranHub GitHub repository
-  // https://github.com/QuranHub/quran-pages-images
-  // Two versions available:
-  // - ayat/hafs: Clean Madani Mushaf pages (no color coding)
-  // - ayat/tajweed: Madani Mushaf pages with tajweed color coding
-  // Format: https://raw.githubusercontent.com/QuranHub/quran-pages-images/main/ayat/{version}/{pageNumber}.png
-  const version = useTajweed ? 'tajweed' : 'hafs';
-  const url = `https://raw.githubusercontent.com/QuranHub/quran-pages-images/main/ayat/${version}/${pageNumber}.png`;
-  
-  console.log(`Generated Mushaf page image URL for page ${pageNumber} (${version}):`, url);
-  return url;
+  if (useTajweed) {
+    // Using images from QuranHub GitHub repository with tajweed color coding
+    // https://github.com/QuranHub/quran-pages-images
+    // Format: https://raw.githubusercontent.com/QuranHub/quran-pages-images/main/ayat/tajweed/{pageNumber}.png
+    const url = `https://raw.githubusercontent.com/QuranHub/quran-pages-images/main/ayat/tajweed/${pageNumber}.png`;
+    console.log(`Generated Mushaf page image URL for page ${pageNumber} (tajweed):`, url);
+    return url;
+  } else {
+    // Using SVG images from salahamassi/Quran-svg-mobile repository (optimized for mobile, better centered)
+    // https://github.com/salahamassi/Quran-svg-mobile
+    // Format: https://raw.githubusercontent.com/salahamassi/Quran-svg-mobile/main/output/{pageNumber}.svg
+    // Page numbers are zero-padded to 3 digits (001-604)
+    const paddedPageNumber = String(pageNumber).padStart(3, '0');
+    const url = `https://raw.githubusercontent.com/salahamassi/Quran-svg-mobile/main/output/${paddedPageNumber}.svg`;
+    console.log(`Generated Mushaf page image URL for page ${pageNumber} (mobile-optimized SVG):`, url);
+    return url;
+  }
 }

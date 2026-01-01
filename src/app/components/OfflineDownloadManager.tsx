@@ -32,6 +32,7 @@ export default function OfflineDownloadManager() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [showSurahList, setShowSurahList] = useState(false);
   const [downloadedSurahs, setDownloadedSurahs] = useState<number[]>([]);
+  const [selectedJuz, setSelectedJuz] = useState<number | null>(null);
 
   // Load storage info and downloaded surahs
   useEffect(() => {
@@ -74,6 +75,7 @@ export default function OfflineDownloadManager() {
   const handleSelectJuz = (juzNumber: number) => {
     const juzSurahs = getJuzSurahs(juzNumber);
     setSelectedSurahs(new Set(juzSurahs));
+    setSelectedJuz(juzNumber);
   };
 
   const handleDownload = async () => {
@@ -217,7 +219,11 @@ export default function OfflineDownloadManager() {
                 variant="outline"
                 size="sm"
                 onClick={() => handleSelectJuz(juz)}
-                className="text-xs border-emerald-300 dark:border-emerald-700 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900 h-8"
+                className={`text-xs h-8 transition-all ${
+                  selectedJuz === juz 
+                    ? 'bg-emerald-500 dark:bg-emerald-600 text-white border-emerald-600 dark:border-emerald-500 font-bold shadow-md' 
+                    : 'border-emerald-300 dark:border-emerald-700 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900'
+                }`}
               >
                 {juz}
               </Button>

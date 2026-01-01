@@ -9,6 +9,7 @@ import GroupGoals from './components/GroupGoals';
 import GroupGoalDetail from './components/GroupGoalDetail';
 import Settings from './components/Settings';
 import HelpPage from './components/HelpPage';
+import DownloadQuran from './pages/DownloadQuran';
 import { useDarkMode } from './utils/useDarkMode';
 import { getCurrentSession, signOut as authSignOut } from '../services/authService';
 import { loadProgressFromServer, autoSyncProgress } from '../services/syncService';
@@ -160,6 +161,10 @@ function App() {
         <Route 
           path="/help" 
           element={<HelpPage isAuthenticated={isAuthenticated} onSignOut={handleSignOut} />} 
+        />
+        <Route 
+          path="/download" 
+          element={<DownloadQuran isAuthenticated={isAuthenticated} onSignOut={handleSignOut} />} 
         />
       </Routes>
     </Router>
