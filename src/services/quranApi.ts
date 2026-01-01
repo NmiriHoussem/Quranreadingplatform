@@ -93,7 +93,12 @@ export async function getChapters(): Promise<Chapter[]> {
     const url = `${BASE_URL}/chapters`;
     const response = await fetchWithCache(url);
     const data = await response.json();
-    return data.chapters;
+    console.log('Raw chapters from API:', data.chapters.slice(0, 2)); // Log first 2 for debugging
+    // Ensure chapter_number is set (map id to chapter_number if needed)
+    return data.chapters.map((ch: any) => ({
+      ...ch,
+      chapter_number: ch.chapter_number || ch.id
+    }));
   } catch (error) {
     console.error('Error fetching chapters:', error);
     throw error;
@@ -195,5 +200,26 @@ export function getVerseAudioUrl(verseKey: string, reciterId: number): string {
   
   const url = `https://www.versebyversequran.com/data/${reciter.relative_path}/${paddedChapter}${paddedVerse}.mp3`;
   console.log(`Generated audio URL for ${verseKey}:`, url);
+  return url;
+}
+
+// Get Mushaf page image URL
+// Using publicly accessible Mushaf page images from QuranHub GitHub repository
+export function getMushafPageImageUrl(pageNumber: number, useTajweed: boolean = false): string {
+  if (pageNumber < 1 || pageNumber > 604) {
+    console.error(`Invalid page number: ${pageNumber}`);
+    return '';
+  }
+  
+  // Using images from QuranHub GitHub repository
+  // https://github.com/QuranHub/quran-pages-images
+  // Two versions available:
+  // - ayat/hafs: Clean Madani Mushaf pages (no color coding)
+  // - ayat/tajweed: Madani Mushaf pages with tajweed color coding
+  // Format: https://raw.githubusercontent.com/QuranHub/quran-pages-images/main/ayat/{version}/{pageNumber}.png
+  const version = useTajweed ? 'tajweed' : 'hafs';
+  const url = `https://raw.githubusercontent.com/QuranHub/quran-pages-images/main/ayat/${version}/${pageNumber}.png`;
+  
+  console.log(`Generated Mushaf page image URL for page ${pageNumber} (${version}):`, url);
   return url;
 }

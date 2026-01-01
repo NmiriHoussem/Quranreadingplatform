@@ -1,21 +1,23 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ChevronLeft, ChevronRight, Menu, Loader2, Check, Users, Moon, Sun } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, Menu, Loader2, Check, Users, Moon, Sun, BookOpen, Type, Feather } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Progress } from './ui/progress';
-import { getVersesByPage, getChapter, getChapters, Verse, Chapter } from '../../services/quranApi';
+import { getVersesByPage, getChapter, getChapters, getMushafPageImageUrl, Verse, Chapter } from '../../services/quranApi';
 import { motion } from 'motion/react';
 import { 
   isMemberOfGroup, 
   calculateKhatmahMilestonesForGroup, 
   isKhatmahPageRead, 
-  markKhatmahPageAsRead 
+  markKhatmahPageAsRead,
+  getKhatmahReadingStats
 } from '../utils/localStorage';
 import { updatePresence, getActiveReaders } from '../../services/presenceService';
 import { getOrCreateSessionId } from '../utils/sessionId';
 import { projectId, publicAnonKey } from '../../../utils/supabase/info';
 import { getTranslations, getStoredLanguage } from '../utils/translations';
+import { getMushafViewMode, setMushafViewMode, type MushafViewMode } from '../../services/preferenceService';
 
 interface KhatmahReaderProps {
   isAuthenticated: boolean;
@@ -93,6 +95,37 @@ export default function KhatmahReader({ isAuthenticated, onSignOut, onToggleDark
   const [activeReaders, setActiveReaders] = useState(0);
   const [showPresenceAnimation, setShowPresenceAnimation] = useState(false);
 
+  // Mushaf view mode (image vs text)
+  const [viewMode, setViewMode] = useState<MushafViewMode>('mushaf');
+  
+  // Tajweed mode for Mushaf images
+  const [useTajweed, setUseTajweed] = useState(() => {
+    const saved = localStorage.getItem('mushafTajweedMode');
+    return saved === 'true';
+  });
+
+  // Listen for mushaf mode changes from ProfileMenu
+  useEffect(() => {
+    const handleMushafModeChange = (event: CustomEvent<{ mode: MushafViewMode }>) => {
+      setViewMode(event.detail.mode);
+    };
+    
+    const handleTajweedModeChange = (event: CustomEvent<{ enabled: boolean }>) => {
+      setUseTajweed(event.detail.enabled);
+    };
+    
+    // Load initial mode
+    setViewMode(getMushafViewMode());
+    
+    window.addEventListener('mushafModeChanged', handleMushafModeChange as EventListener);
+    window.addEventListener('tajweedModeChanged', handleTajweedModeChange as EventListener);
+    
+    return () => {
+      window.removeEventListener('mushafModeChanged', handleMushafModeChange as EventListener);
+      window.removeEventListener('tajweedModeChanged', handleTajweedModeChange as EventListener);
+    };
+  }, []);
+
   // Check authentication and membership
   useEffect(() => {
     // Check if user has joined this khatmah group
@@ -135,6 +168,11 @@ export default function KhatmahReader({ isAuthenticated, onSignOut, onToggleDark
   useEffect(() => {
     localStorage.setItem('quranNightMode', nightMode.toString());
   }, [nightMode]);
+  
+  // Save tajweed mode to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('mushafTajweedMode', useTajweed.toString());
+  }, [useTajweed]);
 
   // Update page read status when current page changes
   useEffect(() => {
@@ -200,6 +238,17 @@ export default function KhatmahReader({ isAuthenticated, onSignOut, onToggleDark
     if (groupId) {
       markKhatmahPageAsRead(groupId, currentPage);
       setPageReadStatus(true);
+      
+      // Recalculate milestones to update progress
+      if (groupId.startsWith('khatmah-')) {
+        const days = parseInt(groupId.split('-')[1]);
+        const calculatedMilestones = calculateKhatmahMilestonesForGroup(groupId, days);
+        setMilestones(calculatedMilestones);
+        
+        // Update current day based on new progress
+        const completedDays = calculatedMilestones.filter(m => m.completed).length;
+        setCurrentDay(Math.min(completedDays + 1, days));
+      }
     }
   };
 
@@ -348,11 +397,18 @@ export default function KhatmahReader({ isAuthenticated, onSignOut, onToggleDark
     };
   }, [groupId]);
 
-  // Calculate overall progress
+  // Calculate overall progress based on pages read
   const calculateProgress = () => {
-    if (milestones.length === 0) return 0;
-    const completedDays = milestones.filter(m => m.completed).length;
-    return Math.round((completedDays / milestones.length) * 100);
+    if (!groupId) return 0;
+    const stats = getKhatmahReadingStats(groupId);
+    return stats.percentComplete;
+  };
+
+  // Get pages read count
+  const getPagesReadCount = () => {
+    if (!groupId) return 0;
+    const stats = getKhatmahReadingStats(groupId);
+    return stats.pagesRead;
   };
 
   // Get today's milestone
@@ -400,6 +456,43 @@ export default function KhatmahReader({ isAuthenticated, onSignOut, onToggleDark
                   </div>
                 )}
               </div>
+              
+              {/* Mushaf View Toggle Button */}
+              <Button 
+                variant="outline" 
+                size="icon"
+                className="border-emerald-600 dark:border-emerald-500 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900 shrink-0"
+                onClick={async () => {
+                  const newMode = viewMode === 'mushaf' ? 'text' : 'mushaf';
+                  setViewMode(newMode);
+                  await setMushafViewMode(newMode);
+                }}
+                title={viewMode === 'mushaf' ? 'Switch to Text Mode' : 'Switch to Image Mode'}
+              >
+                {viewMode === 'mushaf' ? (
+                  <Type className="w-4 h-4" />
+                ) : (
+                  <BookOpen className="w-4 h-4" />
+                )}
+              </Button>
+              
+              {/* Tajweed Toggle Button - Only shown in Mushaf image mode */}
+              {viewMode === 'mushaf' && (
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  className={`border-emerald-600 dark:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900 shrink-0 ${
+                    useTajweed 
+                      ? 'bg-emerald-600 dark:bg-emerald-600 text-white dark:text-white hover:bg-emerald-700 dark:hover:bg-emerald-700' 
+                      : 'text-emerald-600 dark:text-emerald-400'
+                  }`}
+                  onClick={() => setUseTajweed(!useTajweed)}
+                  title={useTajweed ? 'Switch to Plain Mushaf' : 'Switch to Tajweed Mushaf'}
+                >
+                  <Feather className="w-4 h-4" />
+                </Button>
+              )}
+              
               {onToggleDarkMode && (
                 <Button 
                   variant="outline" 
@@ -491,40 +584,55 @@ export default function KhatmahReader({ isAuthenticated, onSignOut, onToggleDark
               <div className="h-2 bg-gradient-to-r from-emerald-600 via-amber-500 to-emerald-600 dark:from-emerald-500 dark:via-amber-600 dark:to-emerald-500 rounded-t-lg"></div>
               
               <div className="p-4 md:p-6">
-                {/* Surah Header - show if page starts with a new surah */}
-                {verses.length > 0 && verses[0].verse_number === 1 && (
-                  <div className="text-center mb-3 md:mb-4 pb-2 md:pb-3 border-b-2 border-emerald-200 dark:border-emerald-700">
-                    <div className="text-3xl md:text-4xl lg:text-5xl text-emerald-900 dark:text-emerald-100 mb-1 md:mb-2">{chapterInfo?.name_arabic}</div>
-                    <div className="text-xs md:text-sm text-emerald-600 dark:text-emerald-400">
-                      {chapterInfo?.revelation_place === 'makkah' ? 'مَكِّيَّةٌ' : 'مَدَنِيَّةٌ'}
-                    </div>
+                {/* Mushaf Image Mode */}
+                {viewMode === 'mushaf' ? (
+                  <div className="flex justify-center">
+                    <img 
+                      src={getMushafPageImageUrl(currentPage, useTajweed)} 
+                      alt={`Page ${currentPage}`}
+                      className="w-full max-w-2xl h-auto rounded-lg shadow-lg"
+                      loading="lazy"
+                    />
                   </div>
-                )}
+                ) : (
+                  /* Text Mode */
+                  <>
+                    {/* Surah Header - show if page starts with a new surah */}
+                    {verses.length > 0 && verses[0].verse_number === 1 && (
+                      <div className="text-center mb-3 md:mb-4 pb-2 md:pb-3 border-b-2 border-emerald-200 dark:border-emerald-700">
+                        <div className="text-3xl md:text-4xl lg:text-5xl text-emerald-900 dark:text-emerald-100 mb-1 md:mb-2">{chapterInfo?.name_arabic}</div>
+                        <div className="text-xs md:text-sm text-emerald-600 dark:text-emerald-400">
+                          {chapterInfo?.revelation_place === 'makkah' ? 'مَكِّيَّةٌ' : 'مَدَنِيَّةٌ'}
+                        </div>
+                      </div>
+                    )}
 
-                {/* Bismillah - show for new surah (except Surah 9) */}
-                {verses.length > 0 && verses[0].verse_number === 1 && parseInt(verses[0].verse_key.split(':')[0]) !== 9 && parseInt(verses[0].verse_key.split(':')[0]) !== 1 && (
-                  <div className="text-center mb-3 md:mb-4">
-                    <div className="text-2xl md:text-3xl lg:text-4xl text-emerald-800 dark:text-emerald-300 leading-loose">
-                      بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
+                    {/* Bismillah - show for new surah (except Surah 9) */}
+                    {verses.length > 0 && verses[0].verse_number === 1 && parseInt(verses[0].verse_key.split(':')[0]) !== 9 && parseInt(verses[0].verse_key.split(':')[0]) !== 1 && (
+                      <div className="text-center mb-3 md:mb-4">
+                        <div className="text-2xl md:text-3xl lg:text-4xl text-emerald-800 dark:text-emerald-300 leading-loose">
+                          بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Continuous Ayahs (Mushaf style) */}
+                    <div className="text-right leading-loose">
+                      <p className="text-xl md:text-2xl lg:text-3xl text-gray-900 dark:text-gray-100" style={{ lineHeight: '2.2' }}>
+                        {verses.map((verse) => (
+                          <span key={verse.id} className="inline">
+                            {verse.text_uthmani}
+                            {' '}
+                            <span className="inline-flex items-center justify-center w-7 h-7 md:w-8 md:h-8 rounded-full border-2 border-emerald-600 dark:border-emerald-400 text-emerald-700 dark:text-emerald-300 text-xs md:text-sm mx-1">
+                              {verse.verse_number}
+                            </span>
+                            {' '}
+                          </span>
+                        ))}
+                      </p>
                     </div>
-                  </div>
+                  </>
                 )}
-
-                {/* Continuous Ayahs (Mushaf style) */}
-                <div className="text-right leading-loose">
-                  <p className="text-xl md:text-2xl lg:text-3xl text-gray-900 dark:text-gray-100" style={{ lineHeight: '2.2' }}>
-                    {verses.map((verse) => (
-                      <span key={verse.id} className="inline">
-                        {verse.text_uthmani}
-                        {' '}
-                        <span className="inline-flex items-center justify-center w-7 h-7 md:w-8 md:h-8 rounded-full border-2 border-emerald-600 dark:border-emerald-400 text-emerald-700 dark:text-emerald-300 text-xs md:text-sm mx-1">
-                          {verse.verse_number}
-                        </span>
-                        {' '}
-                      </span>
-                    ))}
-                  </p>
-                </div>
 
                 {/* Page Footer - Surah name */}
                 <div className="mt-4 md:mt-6 pt-2 md:pt-3 border-t-2 border-emerald-200 dark:border-emerald-700 text-center">
@@ -615,25 +723,6 @@ export default function KhatmahReader({ isAuthenticated, onSignOut, onToggleDark
                 <Button variant="ghost" size="icon" onClick={() => setDrawerOpen(false)}>
                   <ChevronLeft className="w-5 h-5" />
                 </Button>
-              </div>
-              
-              {/* Night Mode Toggle */}
-              <div className="mb-6 p-4 bg-emerald-50 dark:bg-emerald-900/30 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <span className="text-emerald-900 dark:text-emerald-100">Night Mode</span>
-                  <button
-                    onClick={() => setNightMode(!nightMode)}
-                    className={`relative w-12 h-6 rounded-full transition-colors ${
-                      nightMode ? 'bg-emerald-600' : 'bg-gray-300 dark:bg-gray-600'
-                    }`}
-                  >
-                    <span
-                      className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform ${
-                        nightMode ? 'translate-x-6' : 'translate-x-0'
-                      }`}
-                    />
-                  </button>
-                </div>
               </div>
               
               {chaptersLoading ? (

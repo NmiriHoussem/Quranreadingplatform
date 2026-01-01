@@ -109,6 +109,15 @@ export interface Translations {
   recitationStyle: string;
   resetProgress: string;
   signOut: string;
+  mushafVersion: string;
+  mushafVersionDescription: string;
+  mushafImageMode: string;
+  mushafTextMode: string;
+  readingPreferences: string;
+  tajweed: string;
+  tajweedDescription: string;
+  enableTajweed: string;
+  disableTajweed: string;
   
   // Auth
   email: string;
@@ -318,6 +327,15 @@ export const translations: Record<Language, Translations> = {
     recitationStyle: 'Recitation Style',
     resetProgress: 'Reset Progress',
     signOut: 'Sign Out',
+    mushafVersion: 'Mushaf Version',
+    mushafVersionDescription: 'Choose between authentic Mushaf images or selectable text',
+    mushafImageMode: 'Image',
+    mushafTextMode: 'Text',
+    readingPreferences: 'Reading Preferences',
+    tajweed: 'Tajweed',
+    tajweedDescription: 'Enhance your recitation with Tajweed rules',
+    enableTajweed: 'Enable Tajweed',
+    disableTajweed: 'Disable Tajweed',
     
     // Auth
     email: 'Email',
@@ -550,6 +568,15 @@ export const translations: Record<Language, Translations> = {
     recitationStyle: 'أسلوب التلاوة',
     resetProgress: 'إعادة تعيين التقدم',
     signOut: 'تسجيل الخروج',
+    mushafVersion: 'نسخة المصحف',
+    mushafVersionDescription: 'اختر بين صور المصحف الأصيلة أو النص القابل للتحديد',
+    mushafImageMode: 'صورة',
+    mushafTextMode: 'نص',
+    readingPreferences: 'تفضيلات القراءة',
+    tajweed: 'التجويد',
+    tajweedDescription: 'تحسين تلاوتك باستخدام قواعد التجويد',
+    enableTajweed: 'تمكين التجويد',
+    disableTajweed: 'تعطيل التجويد',
     
     // Auth
     email: 'البريد الإلكتروني',

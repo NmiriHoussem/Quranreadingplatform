@@ -475,6 +475,61 @@ app.get("/make-server-bf07b5b1/groups/:groupId/presence", async (c) => {
 
 // ===== ANONYMOUS KHATMAH ACTIVITY TRACKING =====
 
+// ===== USER PREFERENCES ROUTES =====
+
+// Get user preferences
+app.get("/make-server-bf07b5b1/preferences", async (c) => {
+  try {
+    const authHeader = c.req.header('Authorization');
+    const { userId, error: authError } = await getUserIdFromToken(authHeader);
+    
+    if (authError || !userId) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+    
+    const key = `user:${userId}:preferences`;
+    const preferences = await kv.get(key) || {};
+    
+    console.log('✅ [PREFERENCES] Retrieved for user:', userId);
+    return c.json(preferences);
+  } catch (error) {
+    console.error('Get preferences error:', error);
+    return c.json({ error: 'Failed to get preferences' }, 500);
+  }
+});
+
+// Save user preferences
+app.post("/make-server-bf07b5b1/preferences", async (c) => {
+  try {
+    const authHeader = c.req.header('Authorization');
+    const { userId, error: authError } = await getUserIdFromToken(authHeader);
+    
+    if (authError || !userId) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+    
+    const newPrefs = await c.req.json();
+    const key = `user:${userId}:preferences`;
+    
+    // Get existing preferences
+    const existing = await kv.get(key) || {};
+    
+    // Merge with new preferences
+    const updated = { ...existing, ...newPrefs };
+    
+    // Save to KV store
+    await kv.set(key, updated);
+    
+    console.log('✅ [PREFERENCES] Saved for user:', userId, updated);
+    return c.json({ success: true });
+  } catch (error) {
+    console.error('Save preferences error:', error);
+    return c.json({ error: 'Failed to save preferences' }, 500);
+  }
+});
+
+// ===== ANONYMOUS KHATMAH ACTIVITY TRACKING =====
+
 // Anonymous heartbeat for "reading with you now" feature
 // NO AUTH REQUIRED - uses anonymous session IDs
 app.post("/make-server-bf07b5b1/khatmah/heartbeat", async (c) => {

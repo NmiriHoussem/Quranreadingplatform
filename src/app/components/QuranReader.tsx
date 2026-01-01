@@ -1,12 +1,12 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Book, ChevronLeft, ChevronRight, Home, Menu, BookOpen, Brain, Loader2, Play, Pause, RotateCcw, X, Check, Moon, Sun } from 'lucide-react';
+import { Book, ChevronLeft, ChevronRight, Home, Menu, BookOpen, Brain, Loader2, Play, Pause, RotateCcw, X, Moon, Sun } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Checkbox } from './ui/checkbox';
 import { getVersesByPage, getVersesByChapter, getChapter, getChapters, Verse, Chapter, RECITERS, getVerseAudioUrl } from '../../services/quranApi';
 import { motion, AnimatePresence } from 'motion/react';
-import { markPageAsRead, isPageRead, markAyahAsMemorized, unmarkAyahAsMemorized, isAyahMemorized, getLastMemorizedAyah } from '../utils/localStorage';
+import { markAyahAsMemorized, unmarkAyahAsMemorized, isAyahMemorized, getLastMemorizedAyah } from '../utils/localStorage';
 import { getStoredLanguage, getTranslations, type Language } from '../utils/translations';
 
 interface QuranReaderProps {
@@ -20,7 +20,6 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
   const [language, setLanguage] = useState<Language>(getStoredLanguage());
   const t = getTranslations(language);
   
-  const [readAyahs, setReadAyahs] = useState<Set<number>>(new Set());
   const [memorizedAyahs, setMemorizedAyahs] = useState<Set<number>>(new Set());
   const [mode, setMode] = useState<'reading' | 'memorization'>(() => {
     // Check URL params first, then fall back to localStorage
@@ -139,13 +138,6 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
   const [allChapters, setAllChapters] = useState<Chapter[]>([]);
   const [chaptersLoading, setChaptersLoading] = useState(false);
 
-  // Track if current page is marked as read
-  const [pageReadStatus, setPageReadStatus] = useState(false);
-
-  // Track time spent on page for auto-marking (15 second threshold)
-  const pageEntryTime = useRef<number>(Date.now());
-  const MIN_READ_TIME = 15000; // 15 seconds in milliseconds
-
   // Track ayah to scroll to for memorization resume
   const [scrollToAyah, setScrollToAyah] = useState<number | null>(null);
 
@@ -220,6 +212,60 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
     localStorage.setItem('memorizationSubMode', memorizationMode);
   }, [memorizationMode]);
 
+  // Define fetch functions with useCallback
+  const fetchPageVerses = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await getVersesByPage(currentPage);
+      setVerses(data.verses);
+      
+      // Get chapter info for the first verse on the page
+      if (data.verses.length > 0) {
+        const chapterNumber = parseInt(data.verses[0].verse_key.split(':')[0]);
+        const chapter = await getChapter(chapterNumber);
+        setChapterInfo(chapter);
+        // Keep currentChapter in sync so switching to memorization mode works smoothly
+        setCurrentChapter(chapterNumber);
+      }
+      
+      console.log('Fetched verses:', data.verses);
+      console.log('First verse:', data.verses[0]);
+    } catch (err) {
+      setError('Failed to load Quran data. Please try again.');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentPage]);
+
+  const fetchChapterVerses = useCallback(async () => {
+    console.log('fetchChapterVerses called with currentChapter:', currentChapter);
+    
+    // Validate chapter number before fetching
+    if (!currentChapter || isNaN(currentChapter) || currentChapter < 1 || currentChapter > 114) {
+      console.error('Invalid chapter number:', currentChapter);
+      // Set to default if invalid
+      setCurrentChapter(1);
+      return;
+    }
+    
+    console.log('Fetching chapter:', currentChapter);
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await getVersesByChapter(currentChapter);
+      console.log('Fetched chapter data:', data);
+      setVerses(data.verses);
+      setChapterInfo(data.chapter);
+    } catch (err) {
+      setError('Failed to load Quran data. Please try again.');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentChapter]);
+
   // Fetch verses when page changes (Reading mode)
   useEffect(() => {
     if (mode === 'reading') {
@@ -227,24 +273,26 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
       // Scroll to top when page changes
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-  }, [currentPage, mode]);
+  }, [currentPage, mode, fetchPageVerses]);
 
   // Fetch verses when chapter changes (Memorization mode)
   useEffect(() => {
+    console.log('Memorization useEffect triggered. mode:', mode, 'currentChapter:', currentChapter);
     if (mode === 'memorization') {
       // Only fetch if currentChapter is valid
       if (currentChapter && !isNaN(currentChapter) && currentChapter >= 1 && currentChapter <= 114) {
+        console.log('Calling fetchChapterVerses for chapter:', currentChapter);
         fetchChapterVerses();
+      } else {
+        console.log('Chapter validation failed:', { currentChapter, isNaN: isNaN(currentChapter) });
       }
     }
-  }, [currentChapter, mode]);
+  }, [currentChapter, mode, fetchChapterVerses]);
 
   // Save current page to localStorage whenever it changes
   useEffect(() => {
     if (currentPage !== undefined && currentPage !== null) {
       localStorage.setItem('quranCurrentPage', currentPage.toString());
-      // Reset page entry time when page changes
-      pageEntryTime.current = Date.now();
     }
   }, [currentPage]);
 
@@ -264,13 +312,6 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
   useEffect(() => {
     localStorage.setItem('quranNightMode', nightMode.toString());
   }, [nightMode]);
-
-  // Update page read status when current page changes
-  useEffect(() => {
-    if (mode === 'reading') {
-      setPageReadStatus(isPageRead(currentPage));
-    }
-  }, [currentPage, mode]);
 
   // Load memorized ayahs from localStorage when in memorization mode
   useEffect(() => {
@@ -297,55 +338,6 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
     }
   }, [mode, currentChapter, verses, scrollToAyah]);
 
-  const fetchPageVerses = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await getVersesByPage(currentPage);
-      setVerses(data.verses);
-      
-      // Get chapter info for the first verse on the page
-      if (data.verses.length > 0) {
-        const chapterNumber = parseInt(data.verses[0].verse_key.split(':')[0]);
-        const chapter = await getChapter(chapterNumber);
-        setChapterInfo(chapter);
-        // Keep currentChapter in sync so switching to memorization mode works smoothly
-        setCurrentChapter(chapterNumber);
-      }
-      
-      console.log('Fetched verses:', data.verses);
-      console.log('First verse:', data.verses[0]);
-    } catch (err) {
-      setError('Failed to load Quran data. Please try again.');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchChapterVerses = async () => {
-    // Validate chapter number before fetching
-    if (!currentChapter || isNaN(currentChapter) || currentChapter < 1 || currentChapter > 114) {
-      console.error('Invalid chapter number:', currentChapter);
-      // Set to default if invalid
-      setCurrentChapter(1);
-      return;
-    }
-    
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await getVersesByChapter(currentChapter);
-      setVerses(data.verses);
-      setChapterInfo(data.chapter);
-    } catch (err) {
-      setError('Failed to load Quran data. Please try again.');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const openDrawer = async () => {
     setDrawerOpen(true);
     if (allChapters.length === 0) {
@@ -362,31 +354,26 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
   };
 
   const selectChapter = (chapter: Chapter) => {
+    console.log('selectChapter called with:', chapter, 'current mode:', mode);
     setDrawerOpen(false);
     
     // Navigate based on current mode
     if (mode === 'reading') {
       // In reading mode: navigate to the first page of the surah
       if (chapter.pages && chapter.pages.length > 0) {
+        console.log('Reading mode: setting page to', chapter.pages[0]);
         setCurrentPage(chapter.pages[0]);
       }
     } else {
       // In memorization mode: load the entire surah
-      setCurrentChapter(chapter.chapter_number);
+      // Use chapter_number if available, fallback to id
+      const chapterNum = chapter.chapter_number || chapter.id;
+      console.log('Memorization mode: setting chapter to', chapterNum);
+      setCurrentChapter(chapterNum);
     }
     
     // Scroll to top when selecting new chapter
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const toggleRead = (ayahNumber: number) => {
-    const newSet = new Set(readAyahs);
-    if (newSet.has(ayahNumber)) {
-      newSet.delete(ayahNumber);
-    } else {
-      newSet.add(ayahNumber);
-    }
-    setReadAyahs(newSet);
   };
 
   const toggleMemorized = (ayahNumber: number) => {
@@ -401,20 +388,6 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
       markAyahAsMemorized(currentChapter, ayahNumber);
     }
     setMemorizedAyahs(newSet);
-  };
-
-  const handleMarkPageAsRead = () => {
-    markPageAsRead(currentPage);
-    setPageReadStatus(true);
-  };
-
-  // Auto-mark page as read if user spent 30+ seconds on it
-  const autoMarkPageIfTimeSpent = (pageNumber: number) => {
-    const timeSpent = Date.now() - pageEntryTime.current;
-    if (timeSpent >= MIN_READ_TIME && !isPageRead(pageNumber)) {
-      markPageAsRead(pageNumber);
-      console.log(`Auto-marked page ${pageNumber} as read (spent ${Math.round(timeSpent / 1000)}s)`);
-    }
   };
 
   const playVerse = (verseKey: string) => {
@@ -686,7 +659,6 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
 
     // Swipe right (drag to right) = next page
     if (swipeDistance > minSwipeDistance && currentPage < 604) {
-      autoMarkPageIfTimeSpent(currentPage); // Auto-mark before navigating FORWARD
       setCurrentPage(prev => prev + 1);
       setSlideDirection('right');
       setShowSwipeIndicator(true);
@@ -991,34 +963,10 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
 
                 {/* Page Navigation */}
                 <div className="flex flex-col gap-4 mt-8">
-                  {/* Mark as Read Button */}
-                  <div className="flex justify-center">
-                    <Button 
-                      onClick={handleMarkPageAsRead}
-                      disabled={pageReadStatus}
-                      className={pageReadStatus 
-                        ? "bg-green-600 hover:bg-green-600 cursor-default" 
-                        : "bg-emerald-600 hover:bg-emerald-700"
-                      }
-                    >
-                      {pageReadStatus ? (
-                        <>
-                          <Check className="w-4 h-4 mr-2" />
-                          {t.pageCompleted}
-                        </>
-                      ) : (
-                        <>
-                          Mark Page as Read
-                        </>
-                      )}
-                    </Button>
-                  </div>
-
                   <div className="flex justify-between items-center">
                     <Button 
                       className="bg-emerald-600 hover:bg-emerald-700"
                       onClick={() => {
-                        autoMarkPageIfTimeSpent(currentPage); // Auto-mark before navigating FORWARD
                         setCurrentPage(Math.min(604, currentPage + 1));
                         setSlideDirection('right');
                       }}
@@ -1275,8 +1223,6 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
                       key={verse.id}
                       id={`ayah-${verse.verse_number}`}
                       className={`p-4 border-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/50 transition-all ${
-                        readAyahs.has(verse.verse_number) ? 'bg-emerald-50 dark:bg-emerald-900/50' : ''
-                      } ${
                         memorizedAyahs.has(verse.verse_number) ? 'border-amber-400 dark:border-amber-500 border-2' : ''
                       } ${
                         playingVerse === verse.verse_key && isPlayingSequence ? 'ring-2 ring-amber-500 dark:ring-amber-400 bg-amber-50 dark:bg-amber-900/30' : ''
@@ -1348,15 +1294,6 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
 
                            {/* Progress Actions */}
                            <div className="flex gap-4">
-                             {mode === 'reading' && (
-                               <label className="flex items-center gap-2 cursor-pointer">
-                                 <Checkbox
-                                   checked={readAyahs.has(verse.verse_number)}
-                                   onCheckedChange={() => toggleRead(verse.verse_number)}
-                                 />
-                                 <span className="text-sm text-emerald-600">{t.markAsRead}</span>
-                               </label>
-                             )}
                              <label className="flex items-center gap-2 cursor-pointer">
                                <Checkbox
                                  checked={memorizedAyahs.has(verse.verse_number)}
@@ -1373,21 +1310,29 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
 
                 {/* Navigation */}
                 <div className="flex justify-between mt-4">
+                  {/* Next Surah - on LEFT (Arabic RTL reading direction) */}
+                  <Button 
+                    className="bg-emerald-600 hover:bg-emerald-700"
+                    onClick={() => {
+                      console.log('Next button clicked. Current chapter:', currentChapter);
+                      setCurrentChapter(Math.min(114, currentChapter + 1));
+                    }}
+                    disabled={currentChapter === 114}
+                  >
+                    <ChevronLeft className="w-4 h-4 mr-2" />
+                    Next Surah
+                  </Button>
+                  {/* Previous Surah - on RIGHT (Arabic RTL reading direction) */}
                   <Button 
                     variant="outline" 
                     className="border-emerald-600 text-emerald-600 hover:bg-emerald-50"
-                    onClick={() => setCurrentChapter(Math.max(1, currentChapter - 1))}
+                    onClick={() => {
+                      console.log('Previous button clicked. Current chapter:', currentChapter);
+                      setCurrentChapter(Math.max(1, currentChapter - 1));
+                    }}
                     disabled={currentChapter === 1}
                   >
-                    <ChevronLeft className="w-4 h-4 mr-2" />
                     Previous Surah
-                  </Button>
-                  <Button 
-                    className="bg-emerald-600 hover:bg-emerald-700"
-                    onClick={() => setCurrentChapter(Math.min(114, currentChapter + 1))}
-                    disabled={currentChapter === 114}
-                  >
-                    Next Surah
                     <ChevronRight className="w-4 h-4 ml-2" />
                   </Button>
                 </div>
