@@ -141,7 +141,7 @@ export default function GroupGoalDetail({ isAuthenticated, onSignOut, onToggleDa
           <Link to="/groups">
             <Button variant="ghost" className="text-emerald-600 dark:text-emerald-400">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Groups
+              {translations.backToGroups}
             </Button>
           </Link>
           <div className="flex gap-2 items-center">
@@ -165,14 +165,14 @@ export default function GroupGoalDetail({ isAuthenticated, onSignOut, onToggleDa
                 className="border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900"
                 onClick={handleJoinLeave}
               >
-                Leave Goal
+                {translations.leaveGoal}
               </Button>
             ) : (
               <Button 
                 className="bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600"
                 onClick={handleJoinLeave}
               >
-                Join Goal
+                {translations.joinGoal}
               </Button>
             )}
           </div>
@@ -186,7 +186,7 @@ export default function GroupGoalDetail({ isAuthenticated, onSignOut, onToggleDa
             <div className="flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5" />
               <div className="flex-1">
-                <h3 className="text-lg text-red-900 dark:text-red-100 mb-1">Cannot Join Khatmah</h3>
+                <h3 className="text-lg text-red-900 dark:text-red-100 mb-1">{translations.cannotJoinKhatmah}</h3>
                 <p className="text-red-700 dark:text-red-300 mb-4">
                   {joinError}
                 </p>
@@ -195,7 +195,7 @@ export default function GroupGoalDetail({ isAuthenticated, onSignOut, onToggleDa
                     variant="outline" 
                     className="border-red-600 dark:border-red-500 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900"
                   >
-                    View Your Current Khatmah
+                    {translations.viewYourCurrentKhatmah}
                   </Button>
                 </Link>
               </div>
@@ -209,9 +209,9 @@ export default function GroupGoalDetail({ isAuthenticated, onSignOut, onToggleDa
             <div className="flex items-start gap-3">
               <Lock className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5" />
               <div>
-                <h3 className="text-lg text-amber-900 dark:text-amber-100 mb-1">Preview Mode</h3>
+                <h3 className="text-lg text-amber-900 dark:text-amber-100 mb-1">{translations.previewMode}</h3>
                 <p className="text-amber-700 dark:text-amber-300">
-                  You're viewing this group as a guest. Join to track your progress with this community.
+                  {translations.viewingAsGuest}. {translations.joinToContribute}.
                 </p>
               </div>
             </div>
@@ -234,7 +234,7 @@ export default function GroupGoalDetail({ isAuthenticated, onSignOut, onToggleDa
 
           <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 mb-6">
             <Users className="w-5 h-5" />
-            <span className="text-lg">{goal.members} members</span>
+            <span className="text-lg">{goal.members} {translations.members.toLowerCase()}</span>
           </div>
 
           {isMember && (
@@ -244,7 +244,7 @@ export default function GroupGoalDetail({ isAuthenticated, onSignOut, onToggleDa
                 : `/reader?mode=memorization&surah=${surahNumber || 1}`
             }>
               <Button className="w-full bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600">
-                {isKhatmahGroup ? 'Open Khatmah Reader' : 'Continue Memorizing'}
+                {isKhatmahGroup ? translations.openKhatmahReader : translations.continueMemorizing}
               </Button>
             </Link>
           )}
@@ -254,16 +254,18 @@ export default function GroupGoalDetail({ isAuthenticated, onSignOut, onToggleDa
         {isKhatmahGroup && (
           <Card className="p-6 mb-8 border-emerald-100 dark:border-emerald-800">
             <h2 className="text-xl text-emerald-900 dark:text-emerald-100 mb-4 flex items-center justify-between">
-              <span>{isMember ? 'Your Progress' : 'Reading Plan'}</span>
+              <span>{isMember ? translations.yourProgress : translations.readingPlan}</span>
               <span className="text-sm text-emerald-600 dark:text-emerald-400">
-                {isMember && `${completedCount} of ${khatmahMilestones.length} days completed`}
-                {!isMember && `${khatmahMilestones.length} day schedule`}
+                {isMember && language === 'ar' && `${completedCount} ${translations.of} ${khatmahMilestones.length} ${translations.daysCompleted}`}
+                {isMember && language === 'en' && `${completedCount} ${translations.of} ${khatmahMilestones.length} ${translations.daysCompleted.toLowerCase()}`}
+                {!isMember && language === 'ar' && `${khatmahMilestones.length} ${translations.daySchedule}`}
+                {!isMember && language === 'en' && `${khatmahMilestones.length} ${translations.day} ${translations.daySchedule.toLowerCase()}`}
               </span>
             </h2>
             
             {!isMember && (
               <p className="text-sm text-emerald-600 dark:text-emerald-400 mb-4 pb-4 border-b border-emerald-100 dark:border-emerald-800">
-                Preview of the daily reading schedule. Join this group to track your progress automatically.
+                {translations.previewScheduleDesc}
               </p>
             )}
             
@@ -321,8 +323,8 @@ export default function GroupGoalDetail({ isAuthenticated, onSignOut, onToggleDa
             
             <p className="text-sm text-emerald-600 dark:text-emerald-400 mt-4 text-center">
               {isMember 
-                ? 'Milestones are automatically marked as you read pages in the Reader'
-                : 'Pages will be automatically tracked when you join and use the Reader'
+                ? translations.milestonesAutoMarked
+                : translations.pagesAutoTracked
               }
             </p>
           </Card>
@@ -332,27 +334,27 @@ export default function GroupGoalDetail({ isAuthenticated, onSignOut, onToggleDa
         {!isKhatmahGroup && isMember && memorizationStats && (
           <Card className="p-6 mb-8 border-emerald-100 dark:border-emerald-800">
             <h2 className="text-xl text-emerald-900 dark:text-emerald-100 mb-4 flex items-center justify-between">
-              <span>Your Memorization Progress</span>
+              <span>{translations.yourMemorizationProgress}</span>
               <span className="text-sm text-emerald-600 dark:text-emerald-400">
-                {memorizationStats.percentComplete}% Complete
+                {memorizationStats.percentComplete}{translations.percentComplete}
               </span>
             </h2>
             
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-emerald-50 rounded-lg">
+              <div className="flex items-center justify-between p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
                 <div>
-                  <div className="text-2xl text-emerald-900">{memorizationStats.ayahsMemorized}</div>
-                  <div className="text-sm text-emerald-600">Ayahs Memorized</div>
+                  <div className="text-2xl text-emerald-900 dark:text-emerald-100">{memorizationStats.ayahsMemorized}</div>
+                  <div className="text-sm text-emerald-600 dark:text-emerald-400">{translations.ayahsMemorized}</div>
                 </div>
                 <div>
-                  <div className="text-2xl text-emerald-900">{memorizationStats.totalAyahs}</div>
-                  <div className="text-sm text-emerald-600">Total Ayahs</div>
+                  <div className="text-2xl text-emerald-900 dark:text-emerald-100">{memorizationStats.totalAyahs}</div>
+                  <div className="text-sm text-emerald-600 dark:text-emerald-400">{translations.totalAyahs}</div>
                 </div>
               </div>
               
               {memorizationStats.lastMemorizedAyah && (
                 <div className="text-sm text-emerald-600 dark:text-emerald-400 text-center">
-                  Last memorized: Ayah {memorizationStats.lastMemorizedAyah}
+                  {translations.lastMemorized}: {translations.ayah} {memorizationStats.lastMemorizedAyah}
                 </div>
               )}
               
@@ -364,20 +366,20 @@ export default function GroupGoalDetail({ isAuthenticated, onSignOut, onToggleDa
                   className="w-full border-emerald-600 dark:border-emerald-500 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900"
                 >
                   <CheckCircle2 className="w-4 h-4 mr-2" />
-                  Mark Entire Surah as Memorized
+                  {translations.markEntireSurahMemorized}
                 </Button>
               )}
               
               {isSurahComplete && (
                 <div className="flex items-center justify-center gap-2 p-4 bg-emerald-100 dark:bg-emerald-900/50 rounded-lg text-emerald-900 dark:text-emerald-100">
                   <CheckCircle2 className="w-5 h-5" />
-                  <span>Surah Completed!</span>
+                  <span>{translations.surahCompleted}</span>
                 </div>
               )}
             </div>
             
             <p className="text-sm text-emerald-600 dark:text-emerald-400 mt-4 text-center">
-              Progress updates automatically as you mark ayahs in Memorization Mode
+              {translations.progressUpdatesAuto}
             </p>
           </Card>
         )}
@@ -386,12 +388,12 @@ export default function GroupGoalDetail({ isAuthenticated, onSignOut, onToggleDa
         {(!isMember || !isKhatmahGroup) && (
           <Card className="p-6 border-emerald-100 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20">
             <h3 className="text-lg text-emerald-900 dark:text-emerald-100 mb-2">
-              {!isMember ? 'Join to Track Progress' : 'About This Group'}
+              {!isMember ? translations.joinToTrackProgress : translations.aboutThisGroup}
             </h3>
             <p className="text-emerald-600 dark:text-emerald-400">
               {!isMember 
-                ? 'Join this group to track your personal progress and be motivated by reading alongside others in the community.'
-                : 'Work on your memorization goals alongside others in the community. Your progress is tracked personally and privately.'
+                ? translations.joinGroupDesc
+                : translations.memorizationGroupDesc
               }
             </p>
           </Card>
@@ -408,6 +410,7 @@ export default function GroupGoalDetail({ isAuthenticated, onSignOut, onToggleDa
             window.location.reload();
           }}
           surahName={surahData.name}
+          surahNameArabic={surahData.nameArabic}
           surahTransliteration={surahData.transliteration}
           surahNumber={surahData.number}
           totalAyahs={surahData.verses}

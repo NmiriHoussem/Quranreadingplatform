@@ -973,16 +973,16 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
                       disabled={currentPage === 604}
                     >
                       <ChevronLeft className="w-4 h-4 mr-2" />
-                      Next Page
+                      {t.next} {t.page}
                     </Button>
                     
-                    <div className="text-emerald-600">
-                      Page {currentPage} of 604
+                    <div className="text-emerald-600 dark:text-emerald-400">
+                      {language === 'ar' ? `صفحة ${currentPage} من 604` : `${t.page} ${currentPage} ${t.of} 604`}
                     </div>
 
                     <Button 
                       variant="outline" 
-                      className="border-emerald-600 text-emerald-600 hover:bg-emerald-50"
+                      className="border-emerald-600 dark:border-emerald-600 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900"
                       onClick={() => {
                         // Don't auto-mark when going backward - user might be reviewing
                         setCurrentPage(Math.max(1, currentPage - 1));
@@ -990,7 +990,7 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
                       }}
                       disabled={currentPage === 1}
                     >
-                      Previous Page
+                      {t.previous} {t.page}
                       <ChevronRight className="w-4 h-4 ml-2" />
                     </Button>
                   </div>
@@ -1312,7 +1312,7 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
                 <div className="flex justify-between mt-4">
                   {/* Next Surah - on LEFT (Arabic RTL reading direction) */}
                   <Button 
-                    className="bg-emerald-600 hover:bg-emerald-700"
+                    className="bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600"
                     onClick={() => {
                       console.log('Next button clicked. Current chapter:', currentChapter);
                       setCurrentChapter(Math.min(114, currentChapter + 1));
@@ -1320,19 +1320,19 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
                     disabled={currentChapter === 114}
                   >
                     <ChevronLeft className="w-4 h-4 mr-2" />
-                    Next Surah
+                    {t.nextSurah}
                   </Button>
                   {/* Previous Surah - on RIGHT (Arabic RTL reading direction) */}
                   <Button 
                     variant="outline" 
-                    className="border-emerald-600 text-emerald-600 hover:bg-emerald-50"
+                    className="border-emerald-600 dark:border-emerald-600 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900"
                     onClick={() => {
                       console.log('Previous button clicked. Current chapter:', currentChapter);
                       setCurrentChapter(Math.max(1, currentChapter - 1));
                     }}
                     disabled={currentChapter === 1}
                   >
-                    Previous Surah
+                    {t.previousSurah}
                     <ChevronRight className="w-4 h-4 ml-2" />
                   </Button>
                 </div>

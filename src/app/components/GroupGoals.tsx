@@ -84,8 +84,12 @@ export default function GroupGoals({ isAuthenticated, onSignOut, onToggleDarkMod
   // Generate reading groups from KHATMAH_GROUPS
   const readingGroups = KHATMAH_GROUPS.map(khatmah => ({
     id: khatmah.id,
-    title: `Complete Khatmah in ${khatmah.days} Days`,
-    description: `Read the entire Quran in ${khatmah.days} days together`,
+    title: language === 'ar' 
+      ? `${translations.completeKhatmahIn} ${khatmah.days} ${khatmah.days === 1 ? translations.day : translations.days}`
+      : `${translations.completeKhatmahIn} ${khatmah.days} ${translations.days}`,
+    description: language === 'ar'
+      ? `${translations.readEntireQuranIn} ${khatmah.days} ${translations.daysWithCommunity}`
+      : `${translations.readEntireQuranIn} ${khatmah.days} ${translations.daysWithCommunity}`,
     members: khatmah.members,
     progress: khatmah.progress,
     type: 'reading' as const,
@@ -197,7 +201,7 @@ export default function GroupGoals({ isAuthenticated, onSignOut, onToggleDarkMod
         <Tabs defaultValue={initialTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-6">
             <TabsTrigger value="my-groups">{translations.myCircles} ({myGroupsData.length})</TabsTrigger>
-            <TabsTrigger value="discover">Discover</TabsTrigger>
+            <TabsTrigger value="discover">{translations.discover}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="my-groups" className="space-y-4">
@@ -233,7 +237,7 @@ export default function GroupGoals({ isAuthenticated, onSignOut, onToggleDarkMod
                     <div className="flex items-center gap-4 text-sm text-emerald-600">
                       <span className="flex items-center gap-1">
                         <Users className="w-4 h-4" />
-                        {group.members} members
+                        {group.members} {translations.members.toLowerCase()}
                       </span>
                     </div>
                   </Card>
@@ -248,23 +252,23 @@ export default function GroupGoals({ isAuthenticated, onSignOut, onToggleDarkMod
               <Button
                 variant={filterType === 'all' ? 'default' : 'outline'}
                 onClick={() => setFilterType('all')}
-                className={filterType === 'all' ? 'bg-emerald-600 hover:bg-emerald-700' : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50'}
+                className={filterType === 'all' ? 'bg-emerald-600 hover:bg-emerald-700' : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-700 dark:text-emerald-300'}
               >
-                All ({allGroups.length})
+                {translations.all} ({allGroups.length})
               </Button>
               <Button
                 variant={filterType === 'memorization' ? 'default' : 'outline'}
                 onClick={() => setFilterType('memorization')}
-                className={filterType === 'memorization' ? 'bg-emerald-600 hover:bg-emerald-700' : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50'}
+                className={filterType === 'memorization' ? 'bg-emerald-600 hover:bg-emerald-700' : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-700 dark:text-emerald-300'}
               >
-                Memorization ({memorizationGroups.length})
+                {translations.memorization} ({memorizationGroups.length})
               </Button>
               <Button
                 variant={filterType === 'reading' ? 'default' : 'outline'}
                 onClick={() => setFilterType('reading')}
-                className={filterType === 'reading' ? 'bg-emerald-600 hover:bg-emerald-700' : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50'}
+                className={filterType === 'reading' ? 'bg-emerald-600 hover:bg-emerald-700' : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-700 dark:text-emerald-300'}
               >
-                Reading ({readingGroups.length})
+                {translations.khatmah} ({readingGroups.length})
               </Button>
             </div>
 
@@ -280,24 +284,22 @@ export default function GroupGoals({ isAuthenticated, onSignOut, onToggleDarkMod
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
                           <h3 className="text-xl text-emerald-900 dark:text-emerald-100">{group.title}</h3>
-                          <span className={`px-2 py-1 rounded-full text-xs ${
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                             group.type === 'memorization' 
-                              ? 'bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300' 
-                              : group.type === 'study'
-                              ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
-                              : 'bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300'
+                              ? 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300' 
+                              : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300'
                           }`}>
-                            {group.type}
+                            {group.type === 'memorization' ? translations.memorization : translations.khatmah}
                           </span>
                           {isJoined && (
                             <span className="px-3 py-1 rounded-full text-xs bg-emerald-600 dark:bg-emerald-700 text-white font-medium">
-                              Joined
+                              {translations.joined}
                             </span>
                           )}
                           {isMemorized && (
                             <span className="px-3 py-1 rounded-full text-xs bg-amber-600 dark:bg-amber-700 text-white font-medium flex items-center gap-1">
                               <CheckCircle2 className="w-3 h-3" />
-                              Memorized
+                              {translations.memorized}
                             </span>
                           )}
                         </div>
@@ -319,7 +321,7 @@ export default function GroupGoals({ isAuthenticated, onSignOut, onToggleDarkMod
                     <div className="flex items-center gap-4 text-sm text-emerald-600 dark:text-emerald-400">
                       <span className="flex items-center gap-1">
                         <Users className="w-4 h-4" />
-                        {group.members} members
+                        {group.members} {translations.members.toLowerCase()}
                       </span>
                     </div>
                   </Card>
@@ -330,25 +332,23 @@ export default function GroupGoals({ isAuthenticated, onSignOut, onToggleDarkMod
         </Tabs>
 
         {/* Info Card */}
-        <Card className="p-6 mt-8 border-emerald-100 bg-emerald-50">
-          <h3 className="text-lg text-emerald-900 mb-2">About Group Goals</h3>
-          <p className="text-emerald-600 mb-4">
-            Group goals are anonymous and focus-driven. Members work together toward shared objectives
-            without social features like comments or messaging. Your identity remains private while you
-            contribute to collective progress.
+        <Card className="p-6 mt-8 border-emerald-100 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20">
+          <h3 className="text-lg text-emerald-900 dark:text-emerald-100 mb-2">{translations.aboutCircleGoals}</h3>
+          <p className="text-emerald-600 dark:text-emerald-400 mb-4">
+            {translations.aboutCircleGoalsDesc}
           </p>
-          <ul className="space-y-2 text-sm text-emerald-600">
+          <ul className="space-y-2 text-sm text-emerald-600 dark:text-emerald-400">
             <li className="flex items-center gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
-              No usernames or profiles visible to others
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400" />
+              {translations.noUsernamesVisible}
             </li>
             <li className="flex items-center gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
-              Progress tracked collectively and individually
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400" />
+              {translations.progressTrackedCollectively}
             </li>
             <li className="flex items-center gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
-              No chat, comments, or social interactions
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400" />
+              {translations.noChatOrComments}
             </li>
           </ul>
         </Card>

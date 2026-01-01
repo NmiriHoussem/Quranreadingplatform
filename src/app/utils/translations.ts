@@ -53,6 +53,8 @@ export interface Translations {
   circles: string;
   myCircles: string;
   discoverCircles: string;
+  discover: string;
+  all: string;
   joinCircle: string;
   leaveCircle: string;
   circleMembers: string;
@@ -65,11 +67,49 @@ export interface Translations {
   previewCircle: string;
   circleGoals: string;
   aboutCircleGoals: string;
+  aboutCircleGoalsDesc: string;
+  noUsernamesVisible: string;
+  progressTrackedCollectively: string;
+  noChatOrComments: string;
+  members: string;
+  memorized: string;
+  joined: string;
   
   // Circle Types
   khatmah: string;
   memorization: string;
   study: string;
+  
+  // Group Detail Page
+  backToGroups: string;
+  leaveGoal: string;
+  joinGoal: string;
+  cannotJoinKhatmah: string;
+  viewYourCurrentKhatmah: string;
+  previewMode: string;
+  previewModeDesc: string;
+  openKhatmahReader: string;
+  continueMemorizing: string;
+  yourProgress: string;
+  readingPlan: string;
+  of: string;
+  daysCompleted: string;
+  daySchedule: string;
+  previewScheduleDesc: string;
+  milestonesAutoMarked: string;
+  pagesAutoTracked: string;
+  yourMemorizationProgress: string;
+  percentComplete: string;
+  ayahsMemorized: string;
+  totalAyahs: string;
+  lastMemorized: string;
+  ayah: string;
+  markEntireSurahMemorized: string;
+  surahCompleted: string;
+  progressUpdatesAuto: string;
+  aboutThisGroup: string;
+  joinGroupDesc: string;
+  memorizationGroupDesc: string;
   
   // Circle Actions & States
   alreadyInCircle: string;
@@ -171,7 +211,6 @@ export interface Translations {
   completeKhatmahIn: string;
   days: string;
   day: string;
-  of: string;
   pagesLabel: string;
   daysLabel: string;
   readEntireQuranIn: string;
@@ -197,6 +236,8 @@ export interface Translations {
   // Reader Navigation & Actions
   next: string;
   previous: string;
+  nextSurah: string;
+  previousSurah: string;
   pageOf: string;
   completed: string;
   markPageAsComplete: string;
@@ -214,6 +255,13 @@ export interface Translations {
   repeatRange: string;
   repeatEachAyah: string;
   playRange: string;
+  
+  // Surah Completion Modal
+  mashaAllah: string;
+  completedMemorizing: string;
+  quranQuote: string;
+  prophetMuhammad: string;
+  continueJourney: string;
   
   // Surah Meanings (114 surahs)
   surahMeanings: string[];
@@ -271,6 +319,8 @@ export const translations: Record<Language, Translations> = {
     circles: 'Circles',
     myCircles: 'My Circles',
     discoverCircles: 'Discover Circles',
+    discover: 'Discover',
+    all: 'All',
     joinCircle: 'Join Circle',
     leaveCircle: 'Leave Circle',
     circleMembers: 'circle members',
@@ -283,11 +333,49 @@ export const translations: Record<Language, Translations> = {
     previewCircle: 'Preview Circle',
     circleGoals: 'Circle Goals',
     aboutCircleGoals: 'About Circle Goals',
+    aboutCircleGoalsDesc: 'Shared goals and milestones to keep everyone motivated and on track.',
+    noUsernamesVisible: 'No Usernames Visible',
+    progressTrackedCollectively: 'Progress Tracked Collectively',
+    noChatOrComments: 'No Chat or Comments',
+    members: 'Members',
+    memorized: 'Memorized',
+    joined: 'Joined',
     
     // Circle Types
     khatmah: 'Khatmah',
     memorization: 'Memorization',
     study: 'Study',
+    
+    // Group Detail Page
+    backToGroups: 'Back to Groups',
+    leaveGoal: 'Leave Goal',
+    joinGoal: 'Join Goal',
+    cannotJoinKhatmah: 'Cannot Join Khatmah',
+    viewYourCurrentKhatmah: 'View Your Current Khatmah',
+    previewMode: 'Preview Mode',
+    previewModeDesc: 'View your Khatmah reading plan without joining the circle.',
+    openKhatmahReader: 'Open Khatmah Reader',
+    continueMemorizing: 'Continue Memorizing',
+    yourProgress: 'Your Progress',
+    readingPlan: 'Reading Plan',
+    of: 'of',
+    daysCompleted: 'Days Completed',
+    daySchedule: 'Day Schedule',
+    previewScheduleDesc: 'View your daily reading schedule for the Khatmah.',
+    milestonesAutoMarked: 'Milestones are automatically marked as you read pages in the Reader',
+    pagesAutoTracked: 'Pages will be automatically tracked when you join and use the Reader',
+    yourMemorizationProgress: 'Your Memorization Progress',
+    percentComplete: '% Complete',
+    ayahsMemorized: 'Ayahs Memorized',
+    totalAyahs: 'Total Ayahs',
+    lastMemorized: 'Last memorized',
+    ayah: 'Ayah',
+    markEntireSurahMemorized: 'Mark Entire Surah as Memorized',
+    surahCompleted: 'Surah Completed!',
+    progressUpdatesAuto: 'Progress updates automatically as you mark ayahs in Memorization Mode',
+    aboutThisGroup: 'About This Group',
+    joinGroupDesc: 'Join this group to track your personal progress and be motivated by reading alongside others in the community.',
+    memorizationGroupDesc: 'Work on your memorization goals alongside others in the community. Your progress is tracked personally and privately.',
     
     // Circle Actions & States
     alreadyInCircle: 'Already in a Khatmah Circle',
@@ -389,7 +477,6 @@ export const translations: Record<Language, Translations> = {
     completeKhatmahIn: 'Complete Khatmah in',
     days: 'Days',
     day: 'Day',
-    of: 'of',
     pagesLabel: 'Pages',
     daysLabel: 'days',
     readEntireQuranIn: 'Read the entire Quran in',
@@ -415,6 +502,8 @@ export const translations: Record<Language, Translations> = {
     // Reader Navigation & Actions
     next: 'Next',
     previous: 'Previous',
+    nextSurah: 'Next Surah',
+    previousSurah: 'Previous Surah',
     pageOf: 'Page of',
     completed: 'Completed',
     markPageAsComplete: 'Mark Page as Complete',
@@ -432,6 +521,13 @@ export const translations: Record<Language, Translations> = {
     repeatRange: 'Repeat Range',
     repeatEachAyah: 'Repeat Each Ayah',
     playRange: 'Play Range',
+    
+    // Surah Completion Modal
+    mashaAllah: 'Masha\'Allah! 🎉',
+    completedMemorizing: 'You have completed memorizing',
+    quranQuote: '"The best of you are those who learn the Quran and teach it."',
+    prophetMuhammad: '— Prophet Muhammad ﷺ',
+    continueJourney: 'Continue Your Journey',
     
     // Surah Meanings (All 114 Surahs)
     surahMeanings: [
@@ -512,6 +608,8 @@ export const translations: Record<Language, Translations> = {
     circles: 'الحلقات',
     myCircles: 'حلقاتي',
     discoverCircles: 'اكتشف الحلقات',
+    discover: 'اكتشف',
+    all: 'الكل',
     joinCircle: 'انضم للحلقة',
     leaveCircle: 'مغادرة الحلقة',
     circleMembers: 'أعضاء الحلقة',
@@ -524,11 +622,49 @@ export const translations: Record<Language, Translations> = {
     previewCircle: 'معاينة الحلقة',
     circleGoals: 'أهداف الحلقات',
     aboutCircleGoals: 'عن أهداف الحلقات',
+    aboutCircleGoalsDesc: 'أهداف ومعالم مشتركة للحفاظ على تحفيز الجميع وضمان التقدّم وفق المسار الصحيح.',
+    noUsernamesVisible: 'لا أسماء مستخدمين مرئية',
+    progressTrackedCollectively: 'تتبع التقدم مجتمعيًا',
+    noChatOrComments: 'لا شات أو تعليقات',
+    members: 'أعضاء',
+    memorized: 'محفوظ',
+    joined: 'انضم',
     
     // Circle Types
     khatmah: 'ختمة',
     memorization: 'حفظ',
     study: 'دراسة',
+    
+    // Group Detail Page
+    backToGroups: 'العودة إلى المجموعات',
+    leaveGoal: 'ترك الهدف',
+    joinGoal: 'انضمام إلى الهدف',
+    cannotJoinKhatmah: 'لا يمكنك الانضمام إلى الختمة',
+    viewYourCurrentKhatmah: 'عرض ختمتك الحالية',
+    previewMode: 'الوضع المعاين',
+    previewModeDesc: 'عرض خطة قراءتك للختمة دون الانضمام إلى الحلقة.',
+    openKhatmahReader: 'فتح قارئ الختمة',
+    continueMemorizing: 'استمر في الحفظ',
+    yourProgress: 'تقدمك',
+    readingPlan: 'خطة القراءة',
+    of: 'من',
+    daysCompleted: 'الأيام المكتملة',
+    daySchedule: 'جدول اليوم',
+    previewScheduleDesc: 'عرض جدول قراءتك اليومي للختمة.',
+    milestonesAutoMarked: 'النقاط الرئيسية معلمة تلقائيًا',
+    pagesAutoTracked: 'الصفحات متعقبة تلقائيًا',
+    yourMemorizationProgress: 'تقدم حفظك',
+    percentComplete: 'النسبة المئوية المكتملة',
+    ayahsMemorized: 'الآيات المحفوظة',
+    totalAyahs: 'إجمالي الآيات',
+    lastMemorized: 'آخر ما حفظته',
+    ayah: 'آية',
+    markEntireSurahMemorized: 'وضع علامة على سورة كاملة كمحفوظة',
+    surahCompleted: 'السورة مكتملة',
+    progressUpdatesAuto: 'تحديثات التقدم تلقائية',
+    aboutThisGroup: 'عن هذه المجموعة',
+    joinGroupDesc: 'انضم إلى مجموعة لتتبع تقدمك ومشاركة الأهداف مع الآخرين.',
+    memorizationGroupDesc: 'مجموعة مركزة على حفظ القرآن مع أهداف مشتركة ومعالم.',
     
     // Circle Actions & States
     alreadyInCircle: 'أنت بالفعل في حلقة ختمة',
@@ -630,7 +766,6 @@ export const translations: Record<Language, Translations> = {
     completeKhatmahIn: 'إتمام الختمة في',
     days: 'أيام',
     day: 'يوم',
-    of: 'من',
     pagesLabel: 'صفحات',
     daysLabel: 'أيام',
     readEntireQuranIn: 'قراءة القرآن الكريم في',
@@ -656,6 +791,8 @@ export const translations: Record<Language, Translations> = {
     // Reader Navigation & Actions
     next: 'التالي',
     previous: 'السابق',
+    nextSurah: 'السورة التالية',
+    previousSurah: 'السورة السابقة',
     pageOf: 'صفحة من',
     completed: 'مكتمل',
     markPageAsComplete: 'وضع علامة الصفحة كمكتملة',
@@ -673,6 +810,13 @@ export const translations: Record<Language, Translations> = {
     repeatRange: 'تكرار المدى',
     repeatEachAyah: 'تكرار كل آية',
     playRange: 'تشغيل المدى',
+    
+    // Surah Completion Modal
+    mashaAllah: 'مَا شَاءَ اللَّهُ',
+    completedMemorizing: 'لقد أتممت حفظ هذه السورة',
+    quranQuote: '"خَيْرُكُمْ مَنْ تَعَلَّمَ الْقُرْآنَ وَعَلَّمَهُ"',
+    prophetMuhammad: '— النبي محمد ﷺ',
+    continueJourney: 'واصِل رحلتك',
     
     // Surah Meanings (All 114 Surahs) - معاني السور
     surahMeanings: [

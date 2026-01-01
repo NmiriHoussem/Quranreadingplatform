@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Book, Flame, Target, Users, Settings as SettingsIcon, CheckCircle2, CloudOff, Cloud, Moon, Sun } from 'lucide-react';
+import { Book, Flame, Target, Users, Settings as SettingsIcon, CheckCircle2, CloudOff, Cloud, Moon, Sun, Globe } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Progress } from './ui/progress';
@@ -8,7 +8,7 @@ import { Badge } from './ui/badge';
 import { getReadingStats, getJoinedGroups, getMilestoneStats, getCurrentKhatmah, getKhatmahReadingStats, getJoinedMemorizationGroups, getSurahMemorizationStats } from '../utils/localStorage';
 import { SURAHS, getSurahByNumber } from '../utils/surahs';
 import ProfileMenu from './ProfileMenu';
-import { getTranslations, getStoredLanguage } from '../utils/translations';
+import { getTranslations, getStoredLanguage, setStoredLanguage, type Language } from '../utils/translations';
 
 interface DashboardProps {
   isAuthenticated: boolean;
@@ -20,6 +20,13 @@ export default function Dashboard({ isAuthenticated, onSignOut, onToggleDarkMode
   const navigate = useNavigate();
   const language = getStoredLanguage();
   const t = getTranslations(language);
+  
+  const toggleLanguage = () => {
+    const newLanguage: Language = language === 'en' ? 'ar' : 'en';
+    setStoredLanguage(newLanguage);
+    // Force page reload to apply new language
+    window.location.reload();
+  };
   
   // Get real reading stats from localStorage
   const joinedGroups = getJoinedGroups();
@@ -43,7 +50,7 @@ export default function Dashboard({ isAuthenticated, onSignOut, onToggleDarkMode
   const memorizationStats = memorizationGroups.length > 0 ? (() => {
     let totalAyahs = 0;
     let totalMemorized = 0;
-    const surahs = memorizationGroups.map(groupId => {
+    const surahs = memorizationGroups.map((groupId, index) => {
       const surahNumber = parseInt(groupId.split('-')[1]);
       const surahData = getSurahByNumber(surahNumber);
       if (!surahData) return null;
@@ -60,9 +67,20 @@ export default function Dashboard({ isAuthenticated, onSignOut, onToggleDarkMode
         groupId,
         ayahsMemorized: stats.ayahsMemorized,
         totalAyahs: surahData.verses,
-        percentComplete: stats.percentComplete
+        percentComplete: stats.percentComplete,
+        joinIndex: index // Track join order (lower = joined earlier)
       };
     }).filter(Boolean);
+    
+    // Sort: less memorized on top, then newest joined on top for ties
+    surahs.sort((a: any, b: any) => {
+      // First sort by completion percentage (ascending - less complete first)
+      if (a.percentComplete !== b.percentComplete) {
+        return a.percentComplete - b.percentComplete;
+      }
+      // For ties, sort by join date (descending - newer first)
+      return b.joinIndex - a.joinIndex;
+    });
     
     return { totalAyahs, totalMemorized, surahs };
   })() : null;
@@ -97,6 +115,17 @@ export default function Dashboard({ isAuthenticated, onSignOut, onToggleDarkMode
             )}
           </div>
           <div className="flex gap-2 items-center">
+            {/* Language Toggle */}
+            <Button 
+              variant="outline" 
+              size="icon"
+              className="border-emerald-600 dark:border-emerald-500 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900"
+              onClick={toggleLanguage}
+              title={language === 'en' ? 'العربية' : 'English'}
+            >
+              <Globe className="w-4 h-4" />
+            </Button>
+            
             {onToggleDarkMode && (
               <Button 
                 variant="outline" 
@@ -279,13 +308,13 @@ export default function Dashboard({ isAuthenticated, onSignOut, onToggleDarkMode
                     <div className="flex items-center justify-between p-3 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors">
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <span className="text-emerald-900 dark:text-emerald-100">{surah.name}</span>
+                          <span className="text-emerald-900 dark:text-emerald-100">{language === 'ar' ? surah.nameArabic : surah.name}</span>
                           {surah.percentComplete === 100 && (
                             <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                           )}
                         </div>
                         <div className="text-xs text-emerald-600 dark:text-emerald-400">
-                          {surah.transliteration} • {surah.ayahsMemorized}/{surah.totalAyahs} {language === 'ar' ? 'آيات' : 'ayahs'}
+                          {surah.ayahsMemorized}/{surah.totalAyahs} {language === 'ar' ? 'آيات' : 'ayahs'}
                         </div>
                       </div>
                       <div className="text-sm text-emerald-600 dark:text-emerald-400">
@@ -305,13 +334,13 @@ export default function Dashboard({ isAuthenticated, onSignOut, onToggleDarkMode
                     <div className="flex items-center justify-between p-3 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors">
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <span className="text-emerald-900 dark:text-emerald-100">{surah.name}</span>
+                          <span className="text-emerald-900 dark:text-emerald-100">{language === 'ar' ? surah.nameArabic : surah.name}</span>
                           {surah.percentComplete === 100 && (
                             <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                           )}
                         </div>
                         <div className="text-xs text-emerald-600 dark:text-emerald-400">
-                          {surah.transliteration} • {surah.ayahsMemorized}/{surah.totalAyahs} {language === 'ar' ? 'آيات' : 'ayahs'}
+                          {surah.ayahsMemorized}/{surah.totalAyahs} {language === 'ar' ? 'آيات' : 'ayahs'}
                         </div>
                       </div>
                       <div className="text-sm text-emerald-600 dark:text-emerald-400">

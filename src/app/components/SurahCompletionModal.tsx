@@ -1,11 +1,14 @@
 import { motion, AnimatePresence } from 'motion/react';
 import { CheckCircle2, Sparkles, X } from 'lucide-react';
 import { Button } from './ui/button';
+import { getStoredLanguage, getTranslations, type Language } from '../utils/translations';
+import { useState, useEffect } from 'react';
 
 interface SurahCompletionModalProps {
   isOpen: boolean;
   onClose: () => void;
   surahName: string;
+  surahNameArabic: string;
   surahTransliteration: string;
   surahNumber: number;
   totalAyahs: number;
@@ -15,10 +18,29 @@ export default function SurahCompletionModal({
   isOpen,
   onClose,
   surahName,
+  surahNameArabic,
   surahTransliteration,
   surahNumber,
   totalAyahs
 }: SurahCompletionModalProps) {
+  const [language, setLanguage] = useState<Language>(getStoredLanguage());
+  const t = getTranslations(language);
+  
+  // Listen for language changes
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setLanguage(getStoredLanguage());
+    };
+    window.addEventListener('storage', handleStorageChange);
+    // Also check periodically in case the change happens in the same tab
+    const interval = setInterval(handleStorageChange, 100);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, []);
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -86,7 +108,7 @@ export default function SurahCompletionModal({
                   transition={{ delay: 0.3 }}
                   className="text-2xl text-emerald-900 dark:text-emerald-100 mb-2"
                 >
-                  Masha'Allah! 🎉
+                  {t.mashaAllah}
                 </motion.h2>
 
                 {/* Message */}
@@ -96,7 +118,7 @@ export default function SurahCompletionModal({
                   transition={{ delay: 0.4 }}
                   className="text-emerald-600 dark:text-emerald-400 mb-6"
                 >
-                  You have completed memorizing
+                  {t.completedMemorizing}
                 </motion.p>
 
                 {/* Surah Details */}
@@ -107,13 +129,15 @@ export default function SurahCompletionModal({
                   className="bg-gradient-to-br from-emerald-50 to-amber-50 dark:from-emerald-900/30 dark:to-amber-900/30 rounded-xl p-6 mb-6 border border-emerald-200 dark:border-emerald-700"
                 >
                   <div className="text-3xl text-emerald-900 dark:text-emerald-100 mb-2">
-                    {surahName}
+                    {language === 'ar' ? surahNameArabic : surahName}
                   </div>
-                  <div className="text-emerald-600 dark:text-emerald-400 mb-2">
-                    {surahTransliteration}
-                  </div>
+                  {language === 'en' && (
+                    <div className="text-emerald-600 dark:text-emerald-400 mb-2">
+                      {surahTransliteration}
+                    </div>
+                  )}
                   <div className="text-sm text-emerald-600 dark:text-emerald-400">
-                    Surah {surahNumber} • {totalAyahs} ayahs
+                    {language === 'ar' ? `سورة ${surahNumber} • ${totalAyahs} آية` : `${t.surah} ${surahNumber} • ${totalAyahs} ${t.ayahs}`}
                   </div>
                 </motion.div>
 
@@ -124,9 +148,9 @@ export default function SurahCompletionModal({
                   transition={{ delay: 0.6 }}
                   className="text-sm text-emerald-600 dark:text-emerald-400 mb-6 italic"
                 >
-                  "The best of you are those who learn the Quran and teach it."
+                  {t.quranQuote}
                   <br />
-                  <span className="text-xs">— Prophet Muhammad ﷺ</span>
+                  <span className="text-xs">{t.prophetMuhammad}</span>
                 </motion.p>
 
                 {/* Button */}
@@ -139,7 +163,7 @@ export default function SurahCompletionModal({
                     onClick={onClose}
                     className="w-full bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600"
                   >
-                    Continue Your Journey
+                    {t.continueJourney}
                   </Button>
                 </motion.div>
               </div>
