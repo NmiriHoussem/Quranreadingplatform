@@ -77,6 +77,36 @@ export default defineConfig({
                 statuses: [0, 200]
               }
             }
+          },
+          {
+            // Cache Mushaf page images from GitHub (SVG)
+            urlPattern: /^https:\/\/raw\.githubusercontent\.com\/salahamassi\/Quran-svg-mobile\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'mushaf-images-svg-cache',
+              expiration: {
+                maxEntries: 604, // All Quran pages
+                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year (these don't change)
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          {
+            // Cache Mushaf page images from GitHub (PNG with tajweed)
+            urlPattern: /^https:\/\/raw\.githubusercontent\.com\/QuranHub\/quran-pages-images\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'mushaf-images-png-cache',
+              expiration: {
+                maxEntries: 604, // All Quran pages
+                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year (these don't change)
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
           }
         ]
       },

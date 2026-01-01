@@ -106,11 +106,25 @@ export async function downloadSurah(
           const pageResponse = await fetch(pageUrl);
           if (pageResponse.ok) {
             await cache.put(pageUrl, pageResponse.clone());
-            console.log(`  ✅ Cached page ${pageNum}`);
+            console.log(`  ✅ Cached page ${pageNum} text`);
           }
         } catch (pageError) {
           console.warn(`  ⚠️ Failed to cache page ${pageNum}:`, pageError);
           // Continue with other pages even if one fails
+        }
+        
+        // ALSO cache the mushaf image for this page (SVG version)
+        try {
+          const paddedPageNum = String(pageNum).padStart(3, '0');
+          const mushafImageUrl = `https://raw.githubusercontent.com/salahamassi/Quran-svg-mobile/main/output/${paddedPageNum}.svg`;
+          const imageResponse = await fetch(mushafImageUrl);
+          if (imageResponse.ok) {
+            await cache.put(mushafImageUrl, imageResponse.clone());
+            console.log(`  ✅ Cached mushaf image for page ${pageNum}`);
+          }
+        } catch (imageError) {
+          console.warn(`  ⚠️ Failed to cache mushaf image for page ${pageNum}:`, imageError);
+          // Continue even if image fails - text mode will still work
         }
         
         // Update progress: 60% to 90% for page downloads
@@ -119,7 +133,7 @@ export async function downloadSurah(
       }
     }
     
-    console.log(`✅ Cached chapter ${surahNumber} successfully (chapter + pages)`);
+    console.log(`✅ Cached chapter ${surahNumber} successfully (chapter + pages + images)`);
     
     onProgress?.(95);
     
@@ -202,6 +216,11 @@ export async function deleteSurah(surahNumber: number): Promise<void> {
         for (const pageNum of chapter.pages) {
           const pageUrl = `https://api.quran.com/api/v4/verses/by_page/${pageNum}?language=ar&words=false&translations=131&fields=text_uthmani&per_page=50`;
           await cache.delete(pageUrl);
+          
+          // ALSO delete the mushaf image for this page (SVG version)
+          const paddedPageNum = String(pageNum).padStart(3, '0');
+          const mushafImageUrl = `https://raw.githubusercontent.com/salahamassi/Quran-svg-mobile/main/output/${paddedPageNum}.svg`;
+          await cache.delete(mushafImageUrl);
         }
       }
     }
