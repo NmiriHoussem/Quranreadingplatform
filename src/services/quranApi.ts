@@ -28,6 +28,8 @@ async function fetchWithCache(url: string): Promise<Response> {
     
     return response;
   } catch (error) {
+    console.warn('Network fetch failed, checking cache:', error);
+    
     // If network fails, try cache one more time (in case it was added during download)
     const cache = await caches.open(OFFLINE_CACHE_NAME);
     const cachedResponse = await cache.match(url);
@@ -37,7 +39,19 @@ async function fetchWithCache(url: string): Promise<Response> {
       return cachedResponse;
     }
     
-    throw error;
+    // Check workbox caches as well
+    const cacheNames = await caches.keys();
+    for (const cacheName of cacheNames) {
+      const workboxCache = await caches.open(cacheName);
+      const workboxResponse = await workboxCache.match(url);
+      if (workboxResponse) {
+        console.log(`✅ Serving from workbox cache (${cacheName}):`, url);
+        return workboxResponse;
+      }
+    }
+    
+    console.error('❌ Not found in any cache:', url);
+    throw new Error(`Failed to fetch ${url} and no cached version available`);
   }
 }
 

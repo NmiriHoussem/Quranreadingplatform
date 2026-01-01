@@ -101,13 +101,19 @@ export async function testAuth(): Promise<void> {
       console.error('  - ❌ JWT authentication failed:', data.error);
     }
   } catch (error) {
-    console.error('  - 💥 Test exception:', error);
+    console.error('  - �� Test exception:', error);
   }
 }
 
 // Save user progress to server
 export async function saveProgressToServer(): Promise<{ success: boolean; error: string | null }> {
   try {
+    // Check if online before attempting to sync
+    if (!navigator.onLine) {
+      console.log('📵 [SYNC] Offline - skipping server sync');
+      return { success: false, error: 'Offline' };
+    }
+    
     const accessToken = getAccessToken();
     console.log('💾 [SYNC] Saving progress to server...');
     console.log('  - Has access token:', !!accessToken);
