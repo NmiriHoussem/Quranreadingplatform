@@ -3,6 +3,9 @@ import { useState, useEffect } from 'react';
 import LandingPage from './components/LandingPage';
 import Auth from './components/Auth';
 import Dashboard from './components/Dashboard';
+import HomePage from './components/HomePage';
+import ReadingDashboard from './components/ReadingDashboard';
+import MemorizationDashboard from './components/MemorizationDashboard';
 import QuranReader from './components/QuranReader';
 import KhatmahReader from './components/KhatmahReader';
 import GroupGoals from './components/GroupGoals';
@@ -129,15 +132,38 @@ function App() {
   return (
     <Router>
       <Routes>
+        {/* Main landing page for desktop */}
         <Route path="/" element={<LandingPage isAuthenticated={isAuthenticated} onSignOut={handleSignOut} />} />
+        
+        {/* Home page - main dashboard */}
+        <Route 
+          path="/home" 
+          element={<HomePage isAuthenticated={isAuthenticated} onSignOut={handleSignOut} onToggleDarkMode={toggleDarkMode} />} 
+        />
+        
+        {/* Auth */}
         <Route 
           path="/auth" 
           element={<Auth onAuthSuccess={handleAuth} />} 
         />
+        
+        {/* Legacy /dashboard route - redirect to /home */}
         <Route 
           path="/dashboard" 
-          element={<Dashboard isAuthenticated={isAuthenticated} onSignOut={handleSignOut} onToggleDarkMode={toggleDarkMode} />} 
+          element={<Navigate to="/home" replace />} 
         />
+        
+        {/* Reading & Memorization Dashboards */}
+        <Route 
+          path="/reading" 
+          element={<ReadingDashboard isAuthenticated={isAuthenticated} onSignOut={handleSignOut} onToggleDarkMode={toggleDarkMode} />} 
+        />
+        <Route 
+          path="/memorization" 
+          element={<MemorizationDashboard isAuthenticated={isAuthenticated} onSignOut={handleSignOut} onToggleDarkMode={toggleDarkMode} />} 
+        />
+        
+        {/* Readers */}
         <Route 
           path="/reader" 
           element={<QuranReader isAuthenticated={isAuthenticated} onSignOut={handleSignOut} onToggleDarkMode={toggleDarkMode} />} 
@@ -146,6 +172,8 @@ function App() {
           path="/khatmah/:groupId" 
           element={<KhatmahReader isAuthenticated={isAuthenticated} onSignOut={handleSignOut} onToggleDarkMode={toggleDarkMode} />} 
         />
+        
+        {/* Groups */}
         <Route 
           path="/groups" 
           element={<GroupGoals isAuthenticated={isAuthenticated} onSignOut={handleSignOut} onToggleDarkMode={toggleDarkMode} />} 
@@ -154,6 +182,8 @@ function App() {
           path="/groups/:id" 
           element={<GroupGoalDetail isAuthenticated={isAuthenticated} onSignOut={handleSignOut} onToggleDarkMode={toggleDarkMode} />} 
         />
+        
+        {/* Settings & Help */}
         <Route 
           path="/settings" 
           element={<Settings isAuthenticated={isAuthenticated} onSignOut={handleSignOut} />} 

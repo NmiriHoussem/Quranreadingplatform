@@ -17,10 +17,10 @@ export default function LandingPage({ isAuthenticated = false, onSignOut }: Land
   const t = getTranslations(language);
 
   useEffect(() => {
-    // Check if device is mobile/tablet and redirect to dashboard
+    // Check if device is mobile/tablet and redirect to home page
     const isMobileOrTablet = window.innerWidth <= 1024;
     if (isMobileOrTablet) {
-      navigate('/dashboard');
+      navigate('/home');
     }
   }, [navigate]);
 
@@ -62,7 +62,7 @@ export default function LandingPage({ isAuthenticated = false, onSignOut }: Land
               <ProfileMenu isAuthenticated={isAuthenticated} onSignOut={onSignOut || (() => {})} />
             ) : (
               <>
-                <Link to="/dashboard">
+                <Link to="/home">
                   <Button variant="ghost" className="text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900" style={{ fontFamily: bodyFont }}>
                     {t.continueAsGuest}
                   </Button>
@@ -86,7 +86,7 @@ export default function LandingPage({ isAuthenticated = false, onSignOut }: Land
         <p className="text-xl text-emerald-700 dark:text-emerald-300 mb-10 max-w-2xl mx-auto" style={{ fontFamily: bodyFont, lineHeight: isRTL ? '1.8' : 'inherit' }}>
           {t.heroSubtitle}
         </p>
-        <Link to={isAuthenticated ? "/dashboard" : "/auth"}>
+        <Link to={isAuthenticated ? "/home" : "/auth"}>
           <Button size="lg" className="bg-emerald-600 dark:bg-emerald-500 hover:bg-emerald-700 dark:hover:bg-emerald-600 text-white px-8 py-6 text-lg" style={{ fontFamily: bodyFont, fontWeight: isRTL ? 600 : 'inherit' }}>
             {t.beginJourney}
           </Button>
@@ -192,7 +192,7 @@ export default function LandingPage({ isAuthenticated = false, onSignOut }: Land
         <p className="text-emerald-600 dark:text-emerald-400 mb-8 max-w-2xl mx-auto" style={{ fontFamily: bodyFont, lineHeight: isRTL ? '1.8' : 'inherit' }}>
           {t.startTodayDesc}
         </p>
-        <Link to={isAuthenticated ? "/dashboard" : "/auth"}>
+        <Link to={isAuthenticated ? "/home" : "/auth"}>
           <Button size="lg" className="bg-emerald-600 dark:bg-emerald-500 hover:bg-emerald-700 dark:hover:bg-emerald-600 text-white px-8 py-6 text-lg" style={{ fontFamily: bodyFont, fontWeight: isRTL ? 600 : 'inherit' }}>
             {t.getStartedFree}
           </Button>
