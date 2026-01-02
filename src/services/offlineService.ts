@@ -95,11 +95,15 @@ export async function downloadSurah(
     // IMPORTANT: Also cache page-based data for Reading Mode
     // Download all pages that this surah appears on
     if (chapter.pages && chapter.pages.length > 0) {
-      console.log(`Downloading ${chapter.pages.length} pages for chapter ${surahNumber}...`);
+      // chapter.pages is an array like [2, 49] (first and last page)
+      // We need to cache ALL pages from first to last
+      const firstPage = chapter.pages[0];
+      const lastPage = chapter.pages[chapter.pages.length - 1];
+      const totalPages = lastPage - firstPage + 1;
       
-      const totalPages = chapter.pages.length;
-      for (let i = 0; i < totalPages; i++) {
-        const pageNum = chapter.pages[i];
+      console.log(`Downloading ${totalPages} pages for chapter ${surahNumber} (pages ${firstPage}-${lastPage})...`);
+      
+      for (let pageNum = firstPage; pageNum <= lastPage; pageNum++) {
         const pageUrl = `https://api.quran.com/api/v4/verses/by_page/${pageNum}?language=ar&words=false&translations=131&fields=text_uthmani&per_page=50`;
         
         try {
@@ -128,7 +132,7 @@ export async function downloadSurah(
         }
         
         // Update progress: 60% to 90% for page downloads
-        const pageProgress = 60 + (30 * (i + 1) / totalPages);
+        const pageProgress = 60 + (30 * (pageNum - firstPage + 1) / totalPages);
         onProgress?.(Math.round(pageProgress));
       }
     }
@@ -213,7 +217,12 @@ export async function deleteSurah(surahNumber: number): Promise<void> {
       
       // Delete all pages associated with this surah
       if (chapter.pages && chapter.pages.length > 0) {
-        for (const pageNum of chapter.pages) {
+        // chapter.pages is an array like [2, 49] (first and last page)
+        // We need to delete ALL pages from first to last
+        const firstPage = chapter.pages[0];
+        const lastPage = chapter.pages[chapter.pages.length - 1];
+        
+        for (let pageNum = firstPage; pageNum <= lastPage; pageNum++) {
           const pageUrl = `https://api.quran.com/api/v4/verses/by_page/${pageNum}?language=ar&words=false&translations=131&fields=text_uthmani&per_page=50`;
           await cache.delete(pageUrl);
           

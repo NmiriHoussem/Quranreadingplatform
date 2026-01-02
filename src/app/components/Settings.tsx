@@ -9,6 +9,9 @@ import { Input } from './ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './ui/dialog';
 import ProfileMenu from './ProfileMenu';
 import { useDarkMode } from '../utils/useDarkMode';
+import { getStoredLanguage, setStoredLanguage, getTranslations, Language } from '../utils/translations';
+import { getReadingStats, getMilestoneStats, resetAllProgress, resetReadingProgress, resetMemorizationProgress, exportProgressData } from '../utils/localStorage';
+import { useOfflineDownload, getDownloadedSurahs, removeSurahFromCache, removeAllFromCache } from '../../services/offlineService';
 
 interface SettingsProps {
   isAuthenticated: boolean;

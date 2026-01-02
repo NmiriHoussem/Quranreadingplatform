@@ -15,6 +15,12 @@ export interface PresenceData {
 // Update user's presence (heartbeat)
 export async function updatePresence(groupId: string): Promise<PresenceData | null> {
   try {
+    // Skip if offline
+    if (!navigator.onLine) {
+      console.log('📵 [PRESENCE] Offline - skipping presence update');
+      return null;
+    }
+    
     const accessToken = localStorage.getItem('auth_token');
     
     if (!accessToken) {

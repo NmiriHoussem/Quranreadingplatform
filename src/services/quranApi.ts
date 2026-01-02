@@ -7,11 +7,50 @@ async function fetchWithCache(url: string): Promise<Response> {
   try {
     // Try to get from cache first
     const cache = await caches.open(OFFLINE_CACHE_NAME);
-    const cachedResponse = await cache.match(url);
+    
+    // Try exact match first
+    let cachedResponse = await cache.match(url);
+    
+    // If no exact match, try ignoring query string differences
+    if (!cachedResponse) {
+      cachedResponse = await cache.match(url, { ignoreSearch: false });
+    }
     
     if (cachedResponse) {
       console.log('✅ Serving from cache:', url);
       return cachedResponse;
+    }
+    
+    // Check if we're online before trying network
+    if (!navigator.onLine) {
+      console.warn('📵 Offline and no cache found for:', url);
+      
+      // Debug: List what's actually in the cache
+      console.log('🔍 Checking what URLs are in cache...');
+      const requests = await cache.keys();
+      console.log(`📦 Cache has ${requests.length} entries:`);
+      requests.forEach((req, idx) => {
+        if (idx < 10) { // Only show first 10 to avoid spam
+          console.log(`  ${idx + 1}. ${req.url}`);
+        }
+      });
+      if (requests.length > 10) {
+        console.log(`  ... and ${requests.length - 10} more`);
+      }
+      
+      // Try checking all caches one more time
+      const cacheNames = await caches.keys();
+      console.log('🔍 Available caches:', cacheNames);
+      for (const cacheName of cacheNames) {
+        const otherCache = await caches.open(cacheName);
+        const otherResponse = await otherCache.match(url);
+        if (otherResponse) {
+          console.log(`✅ Found in cache (${cacheName}):`, url);
+          return otherResponse;
+        }
+      }
+      
+      throw new Error(`Offline and no cached version available for ${url}`);
     }
     
     // If not in cache, fetch from network
@@ -28,7 +67,7 @@ async function fetchWithCache(url: string): Promise<Response> {
     
     return response;
   } catch (error) {
-    console.warn('Network fetch failed, checking cache:', error);
+    console.warn('❌ Network fetch failed:', error);
     
     // If network fails, try cache one more time (in case it was added during download)
     const cache = await caches.open(OFFLINE_CACHE_NAME);
@@ -41,6 +80,7 @@ async function fetchWithCache(url: string): Promise<Response> {
     
     // Check workbox caches as well
     const cacheNames = await caches.keys();
+    console.log('🔍 Searching all caches:', cacheNames);
     for (const cacheName of cacheNames) {
       const workboxCache = await caches.open(cacheName);
       const workboxResponse = await workboxCache.match(url);

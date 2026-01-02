@@ -343,6 +343,12 @@ export default function KhatmahReader({ isAuthenticated, onSignOut, onToggleDark
 
     // Send heartbeat to server
     const sendHeartbeat = async () => {
+      // Skip if offline
+      if (!navigator.onLine) {
+        console.log('📵 [HEARTBEAT] Offline - skipping heartbeat');
+        return;
+      }
+      
       try {
         const response = await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-bf07b5b1/khatmah/heartbeat`, {
           method: 'POST',
