@@ -138,7 +138,7 @@ export default function ReadingDashboard({ isAuthenticated, onSignOut, onToggleD
               <div>
                 <div className="text-2xl text-emerald-900 dark:text-emerald-100">{overallProgress}%</div>
                 <div className="text-sm text-emerald-600 dark:text-emerald-400">
-                  {language === 'ar' ? 'مكتمل' : 'Complete'}
+                  {language === 'ar' ? 'متمل' : 'Complete'}
                 </div>
               </div>
             </div>
@@ -221,7 +221,10 @@ export default function ReadingDashboard({ isAuthenticated, onSignOut, onToggleD
                     <Button 
                       variant="outline"
                       className="border-emerald-600 dark:border-emerald-500 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900 py-6"
-                      onClick={() => navigate(`/groups?filter=reading&tab=joined&highlight=${currentKhatmahData.groupId}`)}
+                      onClick={() => {
+                        window.scrollTo(0, 0);
+                        navigate(`/groups/${currentKhatmahData.groupId}`);
+                      }}
                     >
                       <Users className="w-4 h-4 mr-2" />
                       {language === 'ar' ? 'حلقة القراءة' : 'Reading Circle'}
