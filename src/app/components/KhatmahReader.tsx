@@ -641,6 +641,7 @@ export default function KhatmahReader({ isAuthenticated, onSignOut, onToggleDark
             {/* Page Navigation - Moved Below Card */}
             <div className="flex justify-between items-center my-6">
               <Button
+                type="button"
                 variant="outline"
                 onClick={() => {
                   autoMarkPageIfTimeSpent(currentPage);
@@ -666,6 +667,7 @@ export default function KhatmahReader({ isAuthenticated, onSignOut, onToggleDark
               </div>
               
               <Button
+                type="button"
                 variant="outline"
                 onClick={() => {
                   autoMarkPageIfTimeSpent(currentPage);
@@ -683,6 +685,7 @@ export default function KhatmahReader({ isAuthenticated, onSignOut, onToggleDark
             {!pageReadStatus && (
               <div className="mt-4 text-center">
                 <Button
+                  type="button"
                   onClick={handleMarkPageAsRead}
                   className="bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600"
                 >
