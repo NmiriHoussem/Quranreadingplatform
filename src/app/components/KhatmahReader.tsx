@@ -647,6 +647,7 @@ export default function KhatmahReader({ isAuthenticated, onSignOut, onToggleDark
                   autoMarkPageIfTimeSpent(currentPage);
                   setCurrentPage(Math.min(604, currentPage + 1));
                 }}
+                onTouchEnd={(e) => e.stopPropagation()}
                 disabled={currentPage === 604 || loading}
                 className="border-emerald-600 dark:border-emerald-500 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900"
               >
@@ -673,6 +674,7 @@ export default function KhatmahReader({ isAuthenticated, onSignOut, onToggleDark
                   autoMarkPageIfTimeSpent(currentPage);
                   setCurrentPage(Math.max(1, currentPage - 1));
                 }}
+                onTouchEnd={(e) => e.stopPropagation()}
                 disabled={currentPage === 1 || loading}
                 className="border-emerald-600 dark:border-emerald-500 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900"
               >
@@ -687,6 +689,7 @@ export default function KhatmahReader({ isAuthenticated, onSignOut, onToggleDark
                 <Button
                   type="button"
                   onClick={handleMarkPageAsRead}
+                  onTouchEnd={(e) => e.stopPropagation()}
                   className="bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600"
                 >
                   <Check className="w-4 h-4 mr-2" />
