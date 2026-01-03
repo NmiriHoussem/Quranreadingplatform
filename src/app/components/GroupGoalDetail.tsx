@@ -12,13 +12,15 @@ import {
   getSurahMemorizationStats,
   getCurrentKhatmah,
   markEntireSurahAsMemorized,
-  isSurahFullyMemorized
+  isSurahFullyMemorized,
+  switchKhatmahGroup
 } from '../utils/localStorage';
 import { getStoredUser } from '../../services/authService';
 import { joinGroupOnServer, leaveGroupOnServer } from '../../services/syncService';
 import SurahCompletionModal from './SurahCompletionModal';
 import { getTranslations, getStoredLanguage } from '../utils/translations';
 import { SURAHS, getSurahName } from '../utils/surahs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './ui/dialog';
 
 interface GroupGoalDetailProps {
   isAuthenticated: boolean;
@@ -32,6 +34,8 @@ export default function GroupGoalDetail({ isAuthenticated, onSignOut, onToggleDa
   const [isMember, setIsMember] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [showKhatmahWarning, setShowKhatmahWarning] = useState(false);
+  const [pendingKhatmahId, setPendingKhatmahId] = useState<string | null>(null);
   
   const translations = getTranslations(getStoredLanguage());
   const language = getStoredLanguage();
@@ -109,6 +113,17 @@ export default function GroupGoalDetail({ isAuthenticated, onSignOut, onToggleDa
           return;
         }
         
+        // Check if trying to join a khatmah while already in another
+        if (isKhatmahGroup) {
+          const currentKhatmah = getCurrentKhatmah();
+          if (currentKhatmah && currentKhatmah !== id) {
+            // Show warning modal
+            setPendingKhatmahId(id);
+            setShowKhatmahWarning(true);
+            return;
+          }
+        }
+        
         try {
           joinGroup(id);
           setIsMember(true);
@@ -118,6 +133,37 @@ export default function GroupGoalDetail({ isAuthenticated, onSignOut, onToggleDa
           // Show the error message
           setJoinError(error instanceof Error ? error.message : 'Failed to join group');
         }
+      }
+    }
+  };
+
+  const confirmSwitchKhatmah = () => {
+    if (pendingKhatmahId) {
+      try {
+        // Get the old khatmah before switching
+        const oldKhatmah = getCurrentKhatmah();
+        
+        // Switch to new khatmah (this also leaves the old one)
+        switchKhatmahGroup(pendingKhatmahId);
+        setIsMember(true);
+        setJoinError(null);
+        setShowKhatmahWarning(false);
+        setPendingKhatmahId(null);
+        
+        if (isAuthenticated) {
+          // Leave old khatmah on server
+          if (oldKhatmah) {
+            leaveGroupOnServer(oldKhatmah);
+          }
+          // Join new khatmah on server
+          joinGroupOnServer(pendingKhatmahId);
+        }
+        
+        // Reload to show updated UI
+        window.location.reload();
+      } catch (error) {
+        setJoinError(error instanceof Error ? error.message : 'Failed to switch khatmah');
+        setShowKhatmahWarning(false);
       }
     }
   };
@@ -272,6 +318,21 @@ export default function GroupGoalDetail({ isAuthenticated, onSignOut, onToggleDa
             <div className="space-y-3 max-h-[500px] overflow-y-auto">
               {khatmahMilestones.map((milestone, idx) => {
                 const isCompleted = isMember && milestone.completed;
+                
+                // Calculate Juz range for display
+                const startJuz = Math.ceil(milestone.startPage / 20);
+                const endJuz = Math.ceil(milestone.endPage / 20);
+                const juzRange = startJuz !== endJuz ? `${startJuz}-${endJuz}` : `${startJuz}`;
+                
+                // Build translated title and description
+                const milestoneTitle = language === 'ar' 
+                  ? `${translations.day} ${milestone.day}`
+                  : `${translations.day} ${milestone.day}`;
+                
+                const milestoneDescription = language === 'ar'
+                  ? `${translations.pagesLabel} ${milestone.startPage}-${milestone.endPage} (${translations.juz} ${juzRange})`
+                  : `${translations.pagesLabel} ${milestone.startPage}-${milestone.endPage} (${translations.juz} ${juzRange})`;
+                
                 return (
                   <div 
                     key={idx} 
@@ -301,7 +362,7 @@ export default function GroupGoalDetail({ isAuthenticated, onSignOut, onToggleDa
                           ? 'text-gray-900 dark:text-gray-100'
                           : 'text-gray-700 dark:text-gray-300'
                       }`}>
-                        {milestone.title}
+                        {milestoneTitle}
                       </div>
                       <div className={`text-sm ${
                         isCompleted 
@@ -310,7 +371,7 @@ export default function GroupGoalDetail({ isAuthenticated, onSignOut, onToggleDa
                           ? 'text-emerald-600 dark:text-emerald-400'
                           : 'text-gray-500 dark:text-gray-400'
                       }`}>
-                        {milestone.description}
+                        {milestoneDescription}
                       </div>
                     </div>
                     {isCompleted && (
@@ -415,6 +476,75 @@ export default function GroupGoalDetail({ isAuthenticated, onSignOut, onToggleDa
           surahNumber={surahData.number}
           totalAyahs={surahData.verses}
         />
+      )}
+
+      {/* Khatmah Switch Warning Modal */}
+      {showKhatmahWarning && (
+        <Dialog open={showKhatmahWarning} onOpenChange={setShowKhatmahWarning}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-xl">
+                <AlertCircle className="w-6 h-6 text-orange-600" />
+                {language === 'ar' ? 'هل أنت متأكد؟' : 'Are you sure?'}
+              </DialogTitle>
+              <DialogDescription className="space-y-4 pt-4">
+                <div className="p-4 rounded-lg bg-emerald-50 dark:bg-emerald-900/20">
+                  <p className="font-medium mb-2 text-emerald-900 dark:text-emerald-100">
+                    {language === 'ar' 
+                      ? '💡 نوصي بشدة بالاستمرار في ختمتك الحالية' 
+                      : '💡 We highly recommend staying in your current khatmah'}
+                  </p>
+                  <p className="text-sm text-gray-700 dark:text-gray-300">
+                    {language === 'ar'
+                      ? 'الانتظام في القراءة والالتزام بنفس الوتيرة يساعدك على تحقيق أهدافك بشكل أفضل.'
+                      : 'Consistency and sticking to the same pace helps you achieve your goals better.'}
+                  </p>
+                </div>
+                
+                <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                  <p className="font-medium text-gray-900 dark:text-gray-100">
+                    {language === 'ar' ? 'ماذا سيحدث إذا قمت بالتبديل؟' : 'What happens if you switch?'}
+                  </p>
+                  <ul className="space-y-1.5 mr-4">
+                    <li className="flex items-start gap-2">
+                      <span className="text-green-600 mt-0.5">✓</span>
+                      <span>{language === 'ar' 
+                        ? 'ستبقى صفحاتك المقروءة محفوظة ولن تفقد تقدمك'
+                        : 'Your read pages will be preserved - you won\'t lose your progress'}</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-600 mt-0.5">↻</span>
+                      <span>{language === 'ar'
+                        ? 'سيتم إعادة حساب تقدمك بناءً على وتيرة الختمة الجديدة'
+                        : 'Your progress will be recalculated based on the new khatmah pace'}</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-orange-600 mt-0.5">!</span>
+                      <span>{language === 'ar'
+                        ? 'قد تتغير نسبة إنجازك اليومي حسب سرعة الختمة الجديدة'
+                        : 'Your daily milestone progress may change based on the new pace'}</span>
+                    </li>
+                  </ul>
+                </div>
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="flex gap-2 sm:gap-3">
+              <Button 
+                className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+                onClick={() => setShowKhatmahWarning(false)}
+              >
+                {language === 'ar' ? 'البقاء في ختمتي الحالية' : 'Stay in Current Khatmah'}
+              </Button>
+              <Button 
+                variant="outline" 
+                className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+                onClick={confirmSwitchKhatmah}
+              >
+                {language === 'ar' ? 'تبديل الختمة' : 'Switch Anyway'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );

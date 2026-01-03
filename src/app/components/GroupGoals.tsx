@@ -17,6 +17,7 @@ import {
   isMemberOfGroup,
   getSurahMemorizationStats // Added for progress tracking
 } from '../utils/localStorage';
+import { joinGroupOnServer, leaveGroupOnServer } from '../../services/syncService';
 import AppHeader from './AppHeader';
 import { getTranslations, getStoredLanguage } from '../utils/translations';
 import { SURAHS, getSurahName } from '../utils/surahs';
@@ -195,9 +196,20 @@ export default function GroupGoals({ isAuthenticated, onSignOut, onToggleDarkMod
   // Confirm switching khatmah groups
   const confirmSwitchKhatmah = () => {
     if (pendingKhatmahGroup && currentKhatmah) {
+      // Get the old khatmah before switching
+      const oldKhatmah = currentKhatmah;
+      
       // Remove old khatmah, add new one
       setJoinedGroups(joinedGroups.filter(id => id !== currentKhatmah).concat(pendingKhatmahGroup));
       switchKhatmahGroup(pendingKhatmahGroup);
+      
+      // Sync with server if authenticated
+      if (isAuthenticated) {
+        // Leave old khatmah on server
+        leaveGroupOnServer(oldKhatmah);
+        // Join new khatmah on server
+        joinGroupOnServer(pendingKhatmahGroup);
+      }
     }
     setShowKhatmahWarning(false);
     setPendingKhatmahGroup(null);
@@ -263,13 +275,13 @@ export default function GroupGoals({ isAuthenticated, onSignOut, onToggleDarkMod
             <TabsTrigger value="discover">{translations.discover}</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="my-groups" className="space-y-6">
+          <TabsContent value="my-groups" className="space-y-8">
             {myGroupsData.map((group) => {
               // Check if surah is fully memorized
               const isMemorized = group.type === 'memorization' && 'isFullyMemorized' in group && group.isFullyMemorized;
               
               return (
-                <Link key={group.id} to={`/groups/${group.id}`}>
+                <Link key={group.id} to={`/groups/${group.id}`} className="block mb-6">
                   <Card className={`p-6 ${colorScheme.cardBorder} hover:shadow-lg transition-shadow cursor-pointer`}>
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex-1">
@@ -305,7 +317,7 @@ export default function GroupGoals({ isAuthenticated, onSignOut, onToggleDarkMod
             })}
           </TabsContent>
 
-          <TabsContent value="discover" className="space-y-6">
+          <TabsContent value="discover" className="space-y-8">
             {/* Filter Buttons - Only show when NOT coming from a filtered context */}
             {!urlFilter && (
               <div className="flex gap-2 mb-6">
@@ -339,7 +351,7 @@ export default function GroupGoals({ isAuthenticated, onSignOut, onToggleDarkMod
               const isMemorized = group.type === 'memorization' && 'isFullyMemorized' in group && group.isFullyMemorized;
               
               return (
-                <Link key={group.id} to={`/groups/${group.id}`}>
+                <Link key={group.id} to={`/groups/${group.id}`} className="block mb-6">
                   <Card className={`p-6 ${colorScheme.cardBorder} ${isJoined ? `ring-2 ${urlFilter === 'memorization' ? 'ring-purple-400 dark:ring-purple-500' : 'ring-emerald-400 dark:ring-emerald-500'} shadow-lg` : ''} transition-all hover:shadow-lg cursor-pointer`}>
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex-1">

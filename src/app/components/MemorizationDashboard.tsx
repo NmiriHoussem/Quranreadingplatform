@@ -79,7 +79,7 @@ export default function MemorizationDashboard({ isAuthenticated, onSignOut, onTo
             </Link>
             <Brain className="w-8 h-8 text-purple-600 dark:text-purple-400" />
             <span className="text-2xl text-purple-900 dark:text-purple-100">
-              {language === 'ar' ? 'دوائر الحفظ' : 'Memorization Circles'}
+              {language === 'ar' ? 'حلقات الحفظ' : 'Memorization Circles'}
             </span>
           </div>
           <div className="flex gap-2 items-center">
