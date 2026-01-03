@@ -4,7 +4,7 @@ import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Progress } from './ui/progress';
 import { Badge } from './ui/badge';
-import { getJoinedGroups, getKhatmahReadingStats, getCurrentKhatmah, calculateKhatmahMilestones, isKhatmahPageRead } from '../utils/localStorage';
+import { getJoinedGroups, getKhatmahReadingStats, getCurrentKhatmah, calculateKhatmahMilestonesForGroup, isKhatmahPageRead } from '../utils/localStorage';
 import ProfileMenu from './ProfileMenu';
 import { getTranslations, getStoredLanguage, setStoredLanguage, type Language } from '../utils/translations';
 
@@ -31,7 +31,7 @@ export default function ReadingDashboard({ isAuthenticated, onSignOut, onToggleD
   // Calculate stats for current khatmah only (not aggregate)
   const currentKhatmahStats = currentKhatmah ? getKhatmahReadingStats(currentKhatmah) : null;
   const currentKhatmahDays = currentKhatmah ? parseInt(currentKhatmah.split('-')[1]) : 0;
-  const currentKhatmahMilestones = currentKhatmah ? calculateKhatmahMilestones(currentKhatmahDays) : [];
+  const currentKhatmahMilestones = currentKhatmah ? calculateKhatmahMilestonesForGroup(currentKhatmah, currentKhatmahDays) : [];
   const completedDays = currentKhatmahMilestones.filter(m => m.completed).length;
   
   // Use current khatmah stats for overall progress

@@ -51,9 +51,9 @@ export function DialogTitle({ children }: { children: React.ReactNode }) {
 
 export function DialogDescription({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-sm text-emerald-600 dark:text-emerald-400 mt-2">
+    <div className="text-sm text-emerald-600 dark:text-emerald-400 mt-2">
       {children}
-    </p>
+    </div>
   );
 }
 

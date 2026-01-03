@@ -227,9 +227,9 @@ export default function GroupGoals({ isAuthenticated, onSignOut, onToggleDarkMod
               variant="ghost"
               onClick={() => {
                 if (urlFilter === 'reading') {
-                  navigate('/reading');
+                  navigate('/reading-dashboard');
                 } else if (urlFilter === 'memorization') {
-                  navigate('/memorization');
+                  navigate('/memorization-dashboard');
                 }
               }}
               className={`${colorScheme.text} ${colorScheme.bgHover} -ml-2`}
