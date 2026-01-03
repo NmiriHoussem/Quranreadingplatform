@@ -251,6 +251,7 @@ export default function KhatmahReader({ isAuthenticated, onSignOut, onToggleDark
   // Swipe handlers
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
+    touchEndX.current = e.touches[0].clientX; // Initialize to prevent tap from triggering swipe
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
@@ -261,18 +262,21 @@ export default function KhatmahReader({ isAuthenticated, onSignOut, onToggleDark
     const swipeDistance = touchEndX.current - touchStartX.current;
     const minSwipeDistance = 50;
 
-    if (swipeDistance > minSwipeDistance && currentPage < 604) {
-      autoMarkPageIfTimeSpent(currentPage); // Auto-mark before navigating FORWARD
-      setCurrentPage(prev => prev + 1);
-      setSlideDirection('right');
-      setShowSwipeIndicator(true);
-      setTimeout(() => setShowSwipeIndicator(false), 1000);
-    }
-    else if (swipeDistance < -minSwipeDistance && currentPage > 1) {
-      setCurrentPage(prev => prev - 1);
-      setSlideDirection('left');
-      setShowSwipeIndicator(true);
-      setTimeout(() => setShowSwipeIndicator(false), 1000);
+    // Only navigate if there was actual swipe movement
+    if (Math.abs(swipeDistance) >= minSwipeDistance) {
+      if (swipeDistance > minSwipeDistance && currentPage < 604) {
+        autoMarkPageIfTimeSpent(currentPage); // Auto-mark before navigating FORWARD
+        setCurrentPage(prev => prev + 1);
+        setSlideDirection('right');
+        setShowSwipeIndicator(true);
+        setTimeout(() => setShowSwipeIndicator(false), 1000);
+      }
+      else if (swipeDistance < -minSwipeDistance && currentPage > 1) {
+        setCurrentPage(prev => prev - 1);
+        setSlideDirection('left');
+        setShowSwipeIndicator(true);
+        setTimeout(() => setShowSwipeIndicator(false), 1000);
+      }
     }
 
     touchStartX.current = 0;
