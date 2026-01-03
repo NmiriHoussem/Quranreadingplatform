@@ -1,5 +1,6 @@
 import { projectId, publicAnonKey } from '../../utils/supabase/info';
 import { getUserData, saveUserData, UserData } from '../app/utils/localStorage';
+import { refreshSession } from './authService';
 
 const supabaseUrl = `https://${projectId}.supabase.co`;
 const serverUrl = `${supabaseUrl}/functions/v1/make-server-bf07b5b1`;
@@ -7,46 +8,9 @@ const serverUrl = `${supabaseUrl}/functions/v1/make-server-bf07b5b1`;
 // Get access token from localStorage
 function getAccessToken(): string | null {
   const token = localStorage.getItem('auth_token'); // Changed from 'quran_access_token' to 'auth_token'
-  console.log('🔑 [SYNC] Access token from localStorage:', token ? `${token.substring(0, 50)}... (length: ${token.length})` : 'NULL');
   
-  // Also check if the token is expired by decoding it
-  if (token) {
-    try {
-      const parts = token.split('.');
-      if (parts.length === 3) {
-        // Base64 URL decode with padding
-        let base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
-        while (base64.length % 4) {
-          base64 += '=';
-        }
-        
-        const payload = JSON.parse(atob(base64));
-        const now = Math.floor(Date.now() / 1000);
-        const exp = payload.exp;
-        
-        console.log('📋 [SYNC] Token payload:', {
-          sub: payload.sub,
-          email: payload.email,
-          role: payload.role,
-          exp: exp ? new Date(exp * 1000).toISOString() : 'never',
-          iat: payload.iat ? new Date(payload.iat * 1000).toISOString() : 'unknown'
-        });
-        
-        if (exp && exp < now) {
-          console.error('❌ [SYNC] Token is EXPIRED!');
-          console.error('  - Expired at:', new Date(exp * 1000).toISOString());
-          console.error('  - Current time:', new Date(now * 1000).toISOString());
-          console.error('  - Expired', Math.floor((now - exp) / 60), 'minutes ago');
-        } else {
-          console.log('✅ [SYNC] Token is valid');
-          console.log('  - Expires at:', exp ? new Date(exp * 1000).toISOString() : 'never');
-          console.log('  - Time remaining:', exp ? Math.floor((exp - now) / 60) + ' minutes' : 'unlimited');
-        }
-      }
-    } catch (e) {
-      console.error('❌ [SYNC] Failed to decode token:', e);
-    }
-  }
+  // Don't log token details anymore - just return it
+  // The authService handles token validation and refresh
   
   return token;
 }
@@ -101,7 +65,7 @@ export async function testAuth(): Promise<void> {
       console.error('  - ❌ JWT authentication failed:', data.error);
     }
   } catch (error) {
-    console.error('  - �� Test exception:', error);
+    console.error('  -  Test exception:', error);
   }
 }
 

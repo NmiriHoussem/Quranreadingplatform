@@ -114,9 +114,8 @@ async function getUserIdFromToken(authHeader: string | null): Promise<{ userId: 
     
     const now = Math.floor(Date.now() / 1000);
     if (decoded.exp && decoded.exp < now) {
-      console.error('❌ [AUTH] JWT is expired');
-      console.error('  - Expired at:', new Date(decoded.exp * 1000).toISOString());
-      console.error('  - Current time:', new Date(now * 1000).toISOString());
+      // Token is expired - return error without detailed logging
+      // The client will handle refresh automatically
       return { userId: null, error: 'JWT expired' };
     }
     

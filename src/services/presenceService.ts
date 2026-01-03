@@ -1,4 +1,5 @@
 import { projectId, publicAnonKey } from '../../utils/supabase/info';
+import { refreshSession } from './authService';
 
 const supabaseUrl = `https://${projectId}.supabase.co`;
 
@@ -21,14 +22,15 @@ export async function updatePresence(groupId: string): Promise<PresenceData | nu
       return null;
     }
     
-    const accessToken = localStorage.getItem('auth_token');
+    let accessToken = localStorage.getItem('auth_token');
     
     if (!accessToken) {
       console.log('No access token - skipping presence update');
       return null;
     }
 
-    const response = await fetch(
+    // First attempt
+    let response = await fetch(
       `${supabaseUrl}/functions/v1/make-server-bf07b5b1/groups/${groupId}/presence`,
       {
         method: 'POST',
@@ -40,6 +42,32 @@ export async function updatePresence(groupId: string): Promise<PresenceData | nu
       }
     );
 
+    // If we get a 401, try refreshing the token and retry once
+    if (response.status === 401) {
+      console.log('🔄 [PRESENCE] Token expired, refreshing...');
+      const refreshResult = await refreshSession();
+      
+      if (refreshResult.error || !refreshResult.accessToken) {
+        console.error('Failed to refresh token:', refreshResult.error);
+        return null;
+      }
+      
+      accessToken = refreshResult.accessToken;
+      
+      // Retry with fresh token
+      response = await fetch(
+        `${supabaseUrl}/functions/v1/make-server-bf07b5b1/groups/${groupId}/presence`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${publicAnonKey}`,
+            'X-User-Token': accessToken
+          }
+        }
+      );
+    }
+
     if (!response.ok) {
       console.error('Failed to update presence:', response.status);
       return null;
@@ -49,33 +77,6 @@ export async function updatePresence(groupId: string): Promise<PresenceData | nu
     return data;
   } catch (error) {
     console.error('Error updating presence:', error);
-    return null;
-  }
-}
-
-// Get active readers for a group
-export async function getActiveReaders(groupId: string): Promise<PresenceData | null> {
-  try {
-    const response = await fetch(
-      `${supabaseUrl}/functions/v1/make-server-bf07b5b1/groups/${groupId}/presence`,
-      {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${publicAnonKey}`
-        }
-      }
-    );
-
-    if (!response.ok) {
-      console.error('Failed to get active readers:', response.status);
-      return null;
-    }
-
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error('Error getting active readers:', error);
     return null;
   }
 }
