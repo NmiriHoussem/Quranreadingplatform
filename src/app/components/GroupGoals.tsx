@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
-import { Book, Home, Plus, Search, Users, Target, Calendar, AlertCircle, LogIn, CheckCircle2, ArrowLeft } from 'lucide-react';
+import { Book, Home, Plus, Search, Users, Target, Calendar, AlertCircle, LogIn, CheckCircle2, ArrowLeft, Check } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Input } from './ui/input';
@@ -263,7 +263,7 @@ export default function GroupGoals({ isAuthenticated, onSignOut, onToggleDarkMod
             <TabsTrigger value="discover">{translations.discover}</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="my-groups" className="space-y-4">
+          <TabsContent value="my-groups" className="space-y-6">
             {myGroupsData.map((group) => {
               // Check if surah is fully memorized
               const isMemorized = group.type === 'memorization' && 'isFullyMemorized' in group && group.isFullyMemorized;
@@ -305,7 +305,7 @@ export default function GroupGoals({ isAuthenticated, onSignOut, onToggleDarkMod
             })}
           </TabsContent>
 
-          <TabsContent value="discover" className="space-y-4">
+          <TabsContent value="discover" className="space-y-6">
             {/* Filter Buttons - Only show when NOT coming from a filtered context */}
             {!urlFilter && (
               <div className="flex gap-2 mb-6">
@@ -340,23 +340,18 @@ export default function GroupGoals({ isAuthenticated, onSignOut, onToggleDarkMod
               
               return (
                 <Link key={group.id} to={`/groups/${group.id}`}>
-                  <Card className={`p-6 ${colorScheme.cardBorder} transition-shadow hover:shadow-lg cursor-pointer`}>
+                  <Card className={`p-6 ${colorScheme.cardBorder} ${isJoined ? `ring-2 ${urlFilter === 'memorization' ? 'ring-purple-400 dark:ring-purple-500' : 'ring-emerald-400 dark:ring-emerald-500'} shadow-lg` : ''} transition-all hover:shadow-lg cursor-pointer`}>
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
                           <h3 className={`text-xl ${colorScheme.textDark}`}>{group.title}</h3>
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${ 
                             group.type === 'memorization' 
                               ? 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300' 
                               : colorScheme.badge
                           }`}>
                             {group.type === 'memorization' ? translations.memorization : translations.khatmah}
                           </span>
-                          {isJoined && (
-                            <span className={`px-3 py-1 rounded-full text-xs ${colorScheme.badgeJoined} text-white font-medium`}>
-                              {translations.joined}
-                            </span>
-                          )}
                           {isMemorized && (
                             <span className="px-3 py-1 rounded-full text-xs bg-amber-600 dark:bg-amber-700 text-white font-medium flex items-center gap-1">
                               <CheckCircle2 className="w-3 h-3" />
@@ -366,7 +361,11 @@ export default function GroupGoals({ isAuthenticated, onSignOut, onToggleDarkMod
                         </div>
                         <p className={`${colorScheme.text} mb-3`}>{group.description}</p>
                       </div>
-                      {!isJoined && (
+                      {isJoined ? (
+                        <div className={`w-10 h-10 rounded-full ${urlFilter === 'memorization' ? 'bg-purple-100 dark:bg-purple-900' : 'bg-emerald-100 dark:bg-emerald-900'} flex items-center justify-center shrink-0`}>
+                          <Check className={`w-6 h-6 ${urlFilter === 'memorization' ? 'text-purple-600 dark:text-purple-400' : 'text-emerald-600 dark:text-emerald-400'}`} />
+                        </div>
+                      ) : (
                         <Button 
                           className={colorScheme.button} 
                           onClick={(e) => {
@@ -374,7 +373,7 @@ export default function GroupGoals({ isAuthenticated, onSignOut, onToggleDarkMod
                             handleJoinGroup(group.id);
                           }}
                         >
-                          Join Goal
+                          {translations.joinGoal}
                         </Button>
                       )}
                     </div>
@@ -417,22 +416,66 @@ export default function GroupGoals({ isAuthenticated, onSignOut, onToggleDarkMod
 
       {/* Khatmah Warning Dialog */}
       <Dialog open={showKhatmahWarning} onOpenChange={setShowKhatmahWarning}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <AlertCircle className="w-5 h-5 text-orange-600" />
-              Already in a Khatmah Group
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <AlertCircle className="w-6 h-6 text-orange-600" />
+              {language === 'ar' ? 'هل أنت متأكد؟' : 'Are you sure?'}
             </DialogTitle>
-            <DialogDescription>
-              You can only be in one Khatmah reading group at a time. Joining this new group will automatically remove you from your current Khatmah group.
+            <DialogDescription className="space-y-4 pt-4">
+              <div className={`p-4 rounded-lg ${urlFilter === 'memorization' ? 'bg-purple-50 dark:bg-purple-900/20' : 'bg-emerald-50 dark:bg-emerald-900/20'}`}>
+                <p className={`font-medium mb-2 ${urlFilter === 'memorization' ? 'text-purple-900 dark:text-purple-100' : 'text-emerald-900 dark:text-emerald-100'}`}>
+                  {language === 'ar' 
+                    ? '💡 نوصي بشدة بالاستمرار في ختمتك الحالية' 
+                    : '💡 We highly recommend staying in your current khatmah'}
+                </p>
+                <p className="text-sm text-gray-700 dark:text-gray-300">
+                  {language === 'ar'
+                    ? 'الانتظام في القراءة والالتزام بنفس الوتيرة يساعدك على تحقيق أهدافك بشكل أفضل.'
+                    : 'Consistency and sticking to the same pace helps you achieve your goals better.'}
+                </p>
+              </div>
+              
+              <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                <p className="font-medium text-gray-900 dark:text-gray-100">
+                  {language === 'ar' ? 'ماذا سيحدث إذا قمت بالتبديل؟' : 'What happens if you switch?'}
+                </p>
+                <ul className="space-y-1.5 mr-4">
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-600 mt-0.5">✓</span>
+                    <span>{language === 'ar' 
+                      ? 'ستبقى صفحاتك المقروءة محفوظة ولن تفقد تقدمك'
+                      : 'Your read pages will be preserved - you won\'t lose your progress'}</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-600 mt-0.5">↻</span>
+                    <span>{language === 'ar'
+                      ? 'سيتم إعادة حساب تقدمك بناءً على وتيرة الختمة الجديدة'
+                      : 'Your progress will be recalculated based on the new khatmah pace'}</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-orange-600 mt-0.5">!</span>
+                    <span>{language === 'ar'
+                      ? 'قد تتغير نسبة إنجازك اليومي حسب سرعة الختمة الجديدة'
+                      : 'Your daily milestone progress may change based on the new pace'}</span>
+                  </li>
+                </ul>
+              </div>
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="flex gap-2">
-            <Button variant="outline" onClick={() => setShowKhatmahWarning(false)}>
-              Cancel
+          <DialogFooter className="flex gap-2 sm:gap-3">
+            <Button 
+              className={`flex-1 ${urlFilter === 'memorization' ? 'bg-purple-600 hover:bg-purple-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
+              onClick={() => setShowKhatmahWarning(false)}
+            >
+              {language === 'ar' ? 'البقاء في ختمتي الحالية' : 'Stay in Current Khatmah'}
             </Button>
-            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={confirmSwitchKhatmah}>
-              Switch Groups
+            <Button 
+              variant="outline" 
+              className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+              onClick={confirmSwitchKhatmah}
+            >
+              {language === 'ar' ? 'تبديل الختمة' : 'Switch Anyway'}
             </Button>
           </DialogFooter>
         </DialogContent>

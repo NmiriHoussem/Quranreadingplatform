@@ -349,7 +349,7 @@ export const translations: Record<Language, Translations> = {
     // Group Detail Page
     backToGroups: 'Back to Groups',
     leaveGoal: 'Leave Goal',
-    joinGoal: 'Join Goal',
+    joinGoal: 'Join',
     cannotJoinKhatmah: 'Cannot Join Khatmah',
     viewYourCurrentKhatmah: 'View Your Current Khatmah',
     previewMode: 'Preview Mode',
@@ -638,7 +638,7 @@ export const translations: Record<Language, Translations> = {
     // Group Detail Page
     backToGroups: 'العودة إلى المجموعات',
     leaveGoal: 'ترك الهدف',
-    joinGoal: 'انضمام إلى الهدف',
+    joinGoal: 'انضم',
     cannotJoinKhatmah: 'لا يمكنك الانضمام إلى الختمة',
     viewYourCurrentKhatmah: 'عرض ختمتك الحالية',
     previewMode: 'الوضع المعاين',

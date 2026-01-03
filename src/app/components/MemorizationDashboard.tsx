@@ -72,7 +72,7 @@ export default function MemorizationDashboard({ isAuthenticated, onSignOut, onTo
       <header className="border-b border-purple-100 dark:border-purple-800 bg-white/80 dark:bg-purple-950/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <Link to="/">
+            <Link to="/home">
               <Button variant="ghost" size="icon" className="text-purple-600 dark:text-purple-400">
                 <ArrowLeft className="w-5 h-5" />
               </Button>

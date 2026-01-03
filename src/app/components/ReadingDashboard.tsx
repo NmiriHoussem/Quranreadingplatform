@@ -4,7 +4,7 @@ import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Progress } from './ui/progress';
 import { Badge } from './ui/badge';
-import { getJoinedGroups, getKhatmahReadingStats, getCurrentKhatmah, calculateKhatmahMilestones } from '../utils/localStorage';
+import { getJoinedGroups, getKhatmahReadingStats, getCurrentKhatmah, calculateKhatmahMilestones, isKhatmahPageRead } from '../utils/localStorage';
 import ProfileMenu from './ProfileMenu';
 import { getTranslations, getStoredLanguage, setStoredLanguage, type Language } from '../utils/translations';
 
@@ -41,17 +41,40 @@ export default function ReadingDashboard({ isAuthenticated, onSignOut, onToggleD
 
   // Calculate today's milestone remaining pages
   const todayMilestone = currentKhatmahMilestones.find(m => !m.completed);
-  const todayTargetPage = todayMilestone ? todayMilestone.endPage : totalPagesGoal;
-  const pagesRemainingToday = todayTargetPage - totalPagesRead;
+  const todayMilestoneNumber = todayMilestone 
+    ? currentKhatmahMilestones.findIndex(m => !m.completed) + 1 
+    : 0;
   
-  // Calculate today's milestone progress
-  const todayMilestoneStartPage = todayMilestone ? todayMilestone.startPage : 1;
-  const todayMilestoneEndPage = todayMilestone ? todayMilestone.endPage : totalPagesGoal;
-  const todayMilestoneTotalPages = todayMilestoneEndPage - todayMilestoneStartPage + 1;
-  const todayMilestonePagesRead = Math.max(0, totalPagesRead - todayMilestoneStartPage + 1);
-  const todayMilestoneProgress = todayMilestone 
-    ? Math.min(100, Math.max(0, (todayMilestonePagesRead / todayMilestoneTotalPages) * 100))
-    : 100;
+  // Calculate today's milestone progress by counting pages within the milestone range
+  let todayMilestonePagesRead = 0;
+  let todayMilestoneTotalPages = 0;
+  let pagesRemainingToday = 0;
+  let todayMilestoneProgress = 0;
+  
+  if (todayMilestone && currentKhatmah) {
+    const todayMilestoneStartPage = todayMilestone.startPage;
+    const todayMilestoneEndPage = todayMilestone.endPage;
+    todayMilestoneTotalPages = todayMilestoneEndPage - todayMilestoneStartPage + 1;
+    
+    // Count how many pages in TODAY'S milestone range have been marked as read
+    for (let page = todayMilestoneStartPage; page <= todayMilestoneEndPage; page++) {
+      if (isKhatmahPageRead(currentKhatmah, page)) {
+        todayMilestonePagesRead++;
+      }
+    }
+    
+    todayMilestoneProgress = (todayMilestonePagesRead / todayMilestoneTotalPages) * 100;
+    pagesRemainingToday = todayMilestoneTotalPages - todayMilestonePagesRead;
+    
+    // Debug logging
+    console.log('Today Milestone Debug:', {
+      milestone: `Pages ${todayMilestoneStartPage}-${todayMilestoneEndPage}`,
+      totalPages: todayMilestoneTotalPages,
+      pagesRead: todayMilestonePagesRead,
+      pagesRemaining: pagesRemainingToday,
+      progress: todayMilestoneProgress.toFixed(1) + '%'
+    });
+  }
   
   // Build list of all khatmahs with their stats
   const groupsWithStats = joinedGroups.map(groupId => {
@@ -76,7 +99,7 @@ export default function ReadingDashboard({ isAuthenticated, onSignOut, onToggleD
       <header className="border-b border-emerald-100 dark:border-emerald-800 bg-white/80 dark:bg-emerald-950/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <Link to="/">
+            <Link to="/home">
               <Button variant="ghost" size="icon" className="text-emerald-600 dark:text-emerald-400">
                 <ArrowLeft className="w-5 h-5" />
               </Button>
@@ -117,102 +140,114 @@ export default function ReadingDashboard({ isAuthenticated, onSignOut, onToggleD
       </header>
 
       <div className="container mx-auto px-4 py-8 max-w-4xl">
-        {/* Overall Progress Stats */}
+        {/* Guest Mode Banner */}
+        {!isAuthenticated && (
+          <Card className="p-4 mb-6 border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center flex-shrink-0">
+                <Users className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-sm font-semibold text-amber-900 dark:text-amber-100 mb-1">
+                  {language === 'ar' ? 'وضع الضيف' : 'Guest Mode'}
+                </h3>
+                <p className="text-sm text-amber-700 dark:text-amber-300" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+                  {language === 'ar' 
+                    ? 'تقدمك محفوظ محليًا على هذا الجهاز فقط. سجّل حسابًا لمزامنة تقدمك عبر جميع أجهزتك.' 
+                    : 'Your progress is saved locally on this device only. Create an account to sync your progress across all devices.'}
+                </p>
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {/* Today's Milestone Progress - Only Current Milestone */}
         <Card className="p-6 mb-8 border-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/50">
-          <h2 className="text-xl text-emerald-900 dark:text-emerald-100 mb-4">
-            {language === 'ar' ? 'التقدم الإجمالي' : 'Overall Progress'}
+          <h2 className="text-xl text-emerald-900 dark:text-emerald-100 mb-4" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+            {language === 'ar' ? `ورد اليوم ${todayMilestoneNumber}` : `Day ${todayMilestoneNumber} Goal`}
           </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
-                <Target className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
-              </div>
-              <div>
-                <div className="text-2xl text-emerald-900 dark:text-emerald-100">{completedDays}</div>
-                <div className="text-sm text-emerald-600 dark:text-emerald-400">
-                  {language === 'ar' ? 'أيام مكتملة' : 'Days Completed'}
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
-                <Book className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
-              </div>
-              <div>
-                <div className="text-2xl text-emerald-900 dark:text-emerald-100">{totalPagesRead}</div>
-                <div className="text-sm text-emerald-600 dark:text-emerald-400">
-                  {language === 'ar' ? 'صفحات مقروءة' : 'Pages Read'}
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
-                <Users className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
-              </div>
-              <div>
-                <div className="text-2xl text-emerald-900 dark:text-emerald-100">{overallProgress}%</div>
-                <div className="text-sm text-emerald-600 dark:text-emerald-400">
-                  {language === 'ar' ? 'مكتمل' : 'Complete'}
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
-                <svg className="w-6 h-6 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div>
-                <div className="text-2xl text-emerald-900 dark:text-emerald-100">{completedKhatmahs.length}</div>
-                <div className="text-sm text-emerald-600 dark:text-emerald-400">
-                  {language === 'ar' ? 'ختمات مكتملة' : 'Completed Khatmahs'}
-                </div>
-              </div>
-            </div>
-          </div>
-          {totalPagesGoal > 0 && (
-            <div className="space-y-2">
-              <div 
-                className="text-sm text-emerald-600 dark:text-emerald-400"
-                dir={language === 'ar' ? 'rtl' : 'ltr'}
-              >
-                {pagesRemainingToday > 0 ? (
-                  language === 'ar' 
-                    ? `${pagesRemainingToday} صفحة متبقية لإكمالك وردك اليوم`
-                    : `${pagesRemainingToday} pages remaining to complete today's goal`
-                ) : (
-                  language === 'ar'
-                    ? '🎉 أكملت ورد اليوم!'
-                    : '🎉 Today\'s goal completed!'
-                )}
-              </div>
-              <div className="relative">
-                {/* Animated gradient background */}
-                <div className="absolute inset-0 rounded-full overflow-hidden bg-emerald-100 dark:bg-emerald-900/30">
-                  <div 
-                    className="h-full bg-gradient-to-r from-emerald-500 via-emerald-600 to-emerald-500 dark:from-emerald-400 dark:via-emerald-500 dark:to-emerald-400 transition-all duration-1000 ease-out relative"
-                    style={{ width: `${todayMilestoneProgress}%` }}
-                  >
-                    {/* Shimmer effect */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer" 
-                         style={{ 
-                           backgroundSize: '200% 100%',
-                           animation: 'shimmer 2s infinite'
-                         }} 
-                    />
-                    {/* Glow effect */}
-                    <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white/30 to-transparent" />
+          
+          {todayMilestone ? (
+            <>
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                {/* Pages Read in Current Milestone */}
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
+                    <Book className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <div>
+                    <div className="text-2xl text-emerald-900 dark:text-emerald-100">{todayMilestonePagesRead}</div>
+                    <div className="text-sm text-emerald-600 dark:text-emerald-400">
+                      {language === 'ar' ? 'صفحات مقروءة' : 'Pages Read'}
+                    </div>
                   </div>
                 </div>
-                {/* Progress percentage text */}
-                <div className="relative h-3 flex items-center justify-end px-2">
-                  {todayMilestoneProgress > 15 && (
-                    <span className="text-xs text-white dark:text-white font-semibold drop-shadow-md">
-                      {Math.round(todayMilestoneProgress)}%
-                    </span>
-                  )}
+
+                {/* Pages Remaining in Current Milestone */}
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
+                    <Target className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <div>
+                    <div className="text-2xl text-emerald-900 dark:text-emerald-100">{pagesRemainingToday}</div>
+                    <div className="text-sm text-emerald-600 dark:text-emerald-400">
+                      {language === 'ar' ? 'صفحات متبقية' : 'Pages Remaining'}
+                    </div>
+                  </div>
                 </div>
               </div>
+
+              <div className="space-y-2">
+                <div 
+                  className="text-sm text-emerald-600 dark:text-emerald-400"
+                  dir={language === 'ar' ? 'rtl' : 'ltr'}
+                >
+                  {pagesRemainingToday > 0 ? (
+                    language === 'ar' 
+                      ? `${pagesRemainingToday} صفحة متبقية لإكمال ورد اليوم ${todayMilestoneNumber}`
+                      : `${pagesRemainingToday} pages remaining to complete Day ${todayMilestoneNumber} goal`
+                  ) : (
+                    language === 'ar'
+                      ? `🎉 أكملت ورد اليوم ${todayMilestoneNumber}!`
+                      : `🎉 Day ${todayMilestoneNumber} goal completed!`
+                  )}
+                </div>
+                <div className="relative">
+                  {/* Animated gradient background */}
+                  <div className="absolute inset-0 rounded-full overflow-hidden bg-emerald-100 dark:bg-emerald-900/30">
+                    <div 
+                      className="h-full bg-gradient-to-r from-emerald-500 via-emerald-600 to-emerald-500 dark:from-emerald-400 dark:via-emerald-500 dark:to-emerald-400 transition-all duration-1000 ease-out relative"
+                      style={{ width: `${todayMilestoneProgress}%` }}
+                    >
+                      {/* Shimmer effect */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer" 
+                           style={{ 
+                             backgroundSize: '200% 100%',
+                             animation: 'shimmer 2s infinite'
+                           }} 
+                      />
+                      {/* Glow effect */}
+                      <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white/30 to-transparent" />
+                    </div>
+                  </div>
+                  {/* Progress percentage text */}
+                  <div className="relative h-3 flex items-center justify-end px-2">
+                    {todayMilestoneProgress > 15 && (
+                      <span className="text-xs text-white dark:text-white font-semibold drop-shadow-md">
+                        {Math.round(todayMilestoneProgress)}%
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-4">
+              <p className="text-emerald-600 dark:text-emerald-400">
+                {language === 'ar' 
+                  ? '🎉 أكملت جميع أيام الختمة!' 
+                  : '🎉 All milestones completed!'}
+              </p>
             </div>
           )}
         </Card>

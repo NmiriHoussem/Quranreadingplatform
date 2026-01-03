@@ -155,11 +155,11 @@ function App() {
         
         {/* Reading & Memorization Dashboards */}
         <Route 
-          path="/reading" 
+          path="/reading-dashboard" 
           element={<ReadingDashboard isAuthenticated={isAuthenticated} onSignOut={handleSignOut} onToggleDarkMode={toggleDarkMode} />} 
         />
         <Route 
-          path="/memorization" 
+          path="/memorization-dashboard" 
           element={<MemorizationDashboard isAuthenticated={isAuthenticated} onSignOut={handleSignOut} onToggleDarkMode={toggleDarkMode} />} 
         />
         

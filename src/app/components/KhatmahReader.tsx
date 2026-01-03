@@ -410,30 +410,37 @@ export default function KhatmahReader({ isAuthenticated, onSignOut, onToggleDark
 
   // Calculate today's milestone progress
   const calculateTodayMilestoneProgress = () => {
-    if (!groupId || milestones.length === 0) return { progress: 0, pagesRemaining: 0, isCompleted: false };
-    
-    const stats = getKhatmahReadingStats(groupId);
-    const totalPagesRead = stats.pagesRead;
+    if (!groupId || milestones.length === 0) return { progress: 0, pagesRemaining: 0, isCompleted: false, pagesRead: 0, totalPages: 0 };
     
     // Find the current uncompleted milestone (today's goal)
     const todayMilestone = milestones.find(m => !m.completed);
     
     if (!todayMilestone) {
       // All milestones completed
-      return { progress: 100, pagesRemaining: 0, isCompleted: true };
+      return { progress: 100, pagesRemaining: 0, isCompleted: true, pagesRead: 0, totalPages: 0 };
     }
     
     const todayMilestoneStartPage = todayMilestone.startPage;
     const todayMilestoneEndPage = todayMilestone.endPage;
     const todayMilestoneTotalPages = todayMilestoneEndPage - todayMilestoneStartPage + 1;
-    const todayMilestonePagesRead = Math.max(0, totalPagesRead - todayMilestoneStartPage + 1);
-    const todayMilestoneProgress = Math.min(100, Math.max(0, (todayMilestonePagesRead / todayMilestoneTotalPages) * 100));
-    const pagesRemainingToday = todayMilestoneEndPage - totalPagesRead;
+    
+    // Count how many pages in TODAY'S milestone range have been marked as read
+    let todayMilestonePagesRead = 0;
+    for (let page = todayMilestoneStartPage; page <= todayMilestoneEndPage; page++) {
+      if (isKhatmahPageRead(groupId, page)) {
+        todayMilestonePagesRead++;
+      }
+    }
+    
+    const todayMilestoneProgress = (todayMilestonePagesRead / todayMilestoneTotalPages) * 100;
+    const pagesRemainingToday = todayMilestoneTotalPages - todayMilestonePagesRead;
     
     return { 
       progress: todayMilestoneProgress, 
-      pagesRemaining: Math.max(0, pagesRemainingToday),
-      isCompleted: false 
+      pagesRemaining: pagesRemainingToday,
+      pagesRead: todayMilestonePagesRead,
+      totalPages: todayMilestoneTotalPages,
+      isCompleted: todayMilestonePagesRead === todayMilestoneTotalPages
     };
   };
 
@@ -453,7 +460,7 @@ export default function KhatmahReader({ isAuthenticated, onSignOut, onToggleDark
           <div className="flex justify-between items-center">
             {/* Back Arrow & Title */}
             <div className="flex items-center gap-2 min-w-0 flex-1">
-              <Link to="/dashboard">
+              <Link to="/reading-dashboard">
                 <Button variant="ghost" size="icon" className="hover:bg-emerald-50 dark:hover:bg-emerald-900 shrink-0">
                   <ArrowLeft className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                 </Button>

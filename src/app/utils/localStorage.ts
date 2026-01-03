@@ -203,17 +203,26 @@ export const leaveGroup = (groupId: string): void => {
 export const switchKhatmahGroup = (newKhatmahId: string): void => {
   const data = getUserData();
   
-  // Remove old khatmah
-  if (data.groups.includes('khatmah-')) {
-    data.groups = data.groups.filter(id => !id.startsWith('khatmah-'));
+  // Find current khatmah
+  const currentKhatmah = data.groups.find(id => id.startsWith('khatmah-'));
+  
+  // Transfer progress from old khatmah to new khatmah
+  if (currentKhatmah && data.khatmahProgress[currentKhatmah]) {
+    // Copy all progress from old khatmah to new khatmah
+    // This preserves all the pages the user has read
+    data.khatmahProgress[newKhatmahId] = { ...data.khatmahProgress[currentKhatmah] };
+    
+    // Delete old khatmah progress
+    delete data.khatmahProgress[currentKhatmah];
   }
+  
+  // Remove old khatmah from groups
+  data.groups = data.groups.filter(id => !id.startsWith('khatmah-'));
   
   // Add new khatmah
   if (!data.groups.includes(newKhatmahId)) {
     data.groups.push(newKhatmahId);
   }
-  data.groups = data.groups.filter(id => !id.startsWith('khatmah-'));
-  data.groups.push(newKhatmahId);
   
   saveUserData(data);
 };

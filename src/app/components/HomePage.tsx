@@ -131,7 +131,7 @@ export default function HomePage({ isAuthenticated, onSignOut, onToggleDarkMode 
         {/* Two Main Cards */}
         <div className="grid md:grid-cols-2 gap-6">
           {/* Reading Card */}
-          <Link to="/reading" className="block group">
+          <Link to="/reading-dashboard" className="block group">
             <Card className="p-8 border-2 border-emerald-100 dark:border-emerald-800 hover:border-emerald-400 dark:hover:border-emerald-600 transition-all duration-300 hover:shadow-xl dark:bg-emerald-950/50 h-full">
               <div className="flex flex-col h-full">
                 {/* Icon */}
@@ -207,7 +207,7 @@ export default function HomePage({ isAuthenticated, onSignOut, onToggleDarkMode 
           </Link>
 
           {/* Memorization Card */}
-          <Link to="/memorization" className="block group">
+          <Link to="/memorization-dashboard" className="block group">
             <Card className="p-8 border-2 border-purple-100 dark:border-purple-800 hover:border-purple-400 dark:hover:border-purple-600 transition-all duration-300 hover:shadow-xl dark:bg-purple-950/30 h-full">
               <div className="flex flex-col h-full">
                 {/* Icon */}
