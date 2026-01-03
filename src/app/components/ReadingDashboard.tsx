@@ -39,6 +39,20 @@ export default function ReadingDashboard({ isAuthenticated, onSignOut, onToggleD
   const totalPagesGoal = 604;
   const overallProgress = currentKhatmahStats?.percentComplete || 0;
 
+  // Calculate today's milestone remaining pages
+  const todayMilestone = currentKhatmahMilestones.find(m => !m.completed);
+  const todayTargetPage = todayMilestone ? todayMilestone.endPage : totalPagesGoal;
+  const pagesRemainingToday = todayTargetPage - totalPagesRead;
+  
+  // Calculate today's milestone progress
+  const todayMilestoneStartPage = todayMilestone ? todayMilestone.startPage : 1;
+  const todayMilestoneEndPage = todayMilestone ? todayMilestone.endPage : totalPagesGoal;
+  const todayMilestoneTotalPages = todayMilestoneEndPage - todayMilestoneStartPage + 1;
+  const todayMilestonePagesRead = Math.max(0, totalPagesRead - todayMilestoneStartPage + 1);
+  const todayMilestoneProgress = todayMilestone 
+    ? Math.min(100, Math.max(0, (todayMilestonePagesRead / todayMilestoneTotalPages) * 100))
+    : 100;
+  
   // Build list of all khatmahs with their stats
   const groupsWithStats = joinedGroups.map(groupId => {
     const stats = getKhatmahReadingStats(groupId);
@@ -108,7 +122,7 @@ export default function ReadingDashboard({ isAuthenticated, onSignOut, onToggleD
           <h2 className="text-xl text-emerald-900 dark:text-emerald-100 mb-4">
             {language === 'ar' ? 'التقدم الإجمالي' : 'Overall Progress'}
           </h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
                 <Target className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
@@ -142,13 +156,63 @@ export default function ReadingDashboard({ isAuthenticated, onSignOut, onToggleD
                 </div>
               </div>
             </div>
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
+                <svg className="w-6 h-6 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <div className="text-2xl text-emerald-900 dark:text-emerald-100">{completedKhatmahs.length}</div>
+                <div className="text-sm text-emerald-600 dark:text-emerald-400">
+                  {language === 'ar' ? 'ختمات مكتملة' : 'Completed Khatmahs'}
+                </div>
+              </div>
+            </div>
           </div>
           {totalPagesGoal > 0 && (
             <div className="space-y-2">
-              <div className="flex justify-between text-sm text-emerald-600 dark:text-emerald-400">
-                <span>{totalPagesRead} / {totalPagesGoal} {language === 'ar' ? 'صفحة' : 'pages'}</span>
+              <div 
+                className="text-sm text-emerald-600 dark:text-emerald-400"
+                dir={language === 'ar' ? 'rtl' : 'ltr'}
+              >
+                {pagesRemainingToday > 0 ? (
+                  language === 'ar' 
+                    ? `${pagesRemainingToday} صفحة متبقية لإكمالك وردك اليوم`
+                    : `${pagesRemainingToday} pages remaining to complete today's goal`
+                ) : (
+                  language === 'ar'
+                    ? '🎉 أكملت ورد اليوم!'
+                    : '🎉 Today\'s goal completed!'
+                )}
               </div>
-              <Progress value={overallProgress} className="h-3" />
+              <div className="relative">
+                {/* Animated gradient background */}
+                <div className="absolute inset-0 rounded-full overflow-hidden bg-emerald-100 dark:bg-emerald-900/30">
+                  <div 
+                    className="h-full bg-gradient-to-r from-emerald-500 via-emerald-600 to-emerald-500 dark:from-emerald-400 dark:via-emerald-500 dark:to-emerald-400 transition-all duration-1000 ease-out relative"
+                    style={{ width: `${todayMilestoneProgress}%` }}
+                  >
+                    {/* Shimmer effect */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer" 
+                         style={{ 
+                           backgroundSize: '200% 100%',
+                           animation: 'shimmer 2s infinite'
+                         }} 
+                    />
+                    {/* Glow effect */}
+                    <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white/30 to-transparent" />
+                  </div>
+                </div>
+                {/* Progress percentage text */}
+                <div className="relative h-3 flex items-center justify-end px-2">
+                  {todayMilestoneProgress > 15 && (
+                    <span className="text-xs text-white dark:text-white font-semibold drop-shadow-md">
+                      {Math.round(todayMilestoneProgress)}%
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
           )}
         </Card>
@@ -194,28 +258,13 @@ export default function ReadingDashboard({ isAuthenticated, onSignOut, onToggleD
                     </div>
                   </div>
                   
-                  <Progress value={currentKhatmahData.stats.percentComplete} className="h-3 mb-4" />
-                  
-                  <div className="bg-white dark:bg-emerald-950 rounded-lg p-4 mb-4">
-                    <p className="text-center text-emerald-700 dark:text-emerald-300 mb-1">
-                      {language === 'ar' 
-                        ? currentKhatmahData.stats.pagesRead > 0 
-                          ? '✨ واصل القراءة وأكمل ختمتك!' 
-                          : '✨ ابدأ ختمتك الآن!'
-                        : currentKhatmahData.stats.pagesRead > 0
-                          ? '✨ Keep reading and complete your Khatmah!'
-                          : '✨ Start your Khatmah now!'
-                      }
-                    </p>
-                    {currentKhatmahData.stats.pagesRead > 0 && (
-                      <p className="text-sm text-center text-emerald-600 dark:text-emerald-400">
-                        {language === 'ar' 
-                          ? `${604 - currentKhatmahData.stats.pagesRead} صفحة متبقية`
-                          : `${604 - currentKhatmahData.stats.pagesRead} pages remaining`
-                        }
-                      </p>
-                    )}
-                  </div>
+                  <Progress value={currentKhatmahData.stats.percentComplete} className="h-3 mb-2" />
+                  <p className="text-sm text-center text-emerald-600 dark:text-emerald-400" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+                    {language === 'ar' 
+                      ? `${604 - currentKhatmahData.stats.pagesRead} صفحة متبقية`
+                      : `${604 - currentKhatmahData.stats.pagesRead} pages remaining`
+                    }
+                  </p>
                   
                   <div className="flex gap-3">
                     <Button 

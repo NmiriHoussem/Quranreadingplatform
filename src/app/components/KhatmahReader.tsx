@@ -398,18 +398,45 @@ export default function KhatmahReader({ isAuthenticated, onSignOut, onToggleDark
   };
 
   // Get pages read count
-  const getPagesReadCount = () => {
+  const getPagesRead = () => {
     if (!groupId) return 0;
     const stats = getKhatmahReadingStats(groupId);
     return stats.pagesRead;
   };
 
-  // Get today's milestone
-  const getTodayMilestone = () => {
-    return milestones[currentDay - 1];
+  // Calculate today's milestone progress
+  const calculateTodayMilestoneProgress = () => {
+    if (!groupId || milestones.length === 0) return { progress: 0, pagesRemaining: 0, isCompleted: false };
+    
+    const stats = getKhatmahReadingStats(groupId);
+    const totalPagesRead = stats.pagesRead;
+    
+    // Find the current uncompleted milestone (today's goal)
+    const todayMilestone = milestones.find(m => !m.completed);
+    
+    if (!todayMilestone) {
+      // All milestones completed
+      return { progress: 100, pagesRemaining: 0, isCompleted: true };
+    }
+    
+    const todayMilestoneStartPage = todayMilestone.startPage;
+    const todayMilestoneEndPage = todayMilestone.endPage;
+    const todayMilestoneTotalPages = todayMilestoneEndPage - todayMilestoneStartPage + 1;
+    const todayMilestonePagesRead = Math.max(0, totalPagesRead - todayMilestoneStartPage + 1);
+    const todayMilestoneProgress = Math.min(100, Math.max(0, (todayMilestonePagesRead / todayMilestoneTotalPages) * 100));
+    const pagesRemainingToday = todayMilestoneEndPage - totalPagesRead;
+    
+    return { 
+      progress: todayMilestoneProgress, 
+      pagesRemaining: Math.max(0, pagesRemainingToday),
+      isCompleted: false 
+    };
   };
 
-  const todayMilestone = getTodayMilestone();
+  const todayMilestoneProgress = calculateTodayMilestoneProgress();
+  
+  // Get today's milestone details for display
+  const todayMilestone = milestones.find(m => !m.completed);
 
   const translations = getTranslations(getStoredLanguage());
   const language = getStoredLanguage();
@@ -490,11 +517,51 @@ export default function KhatmahReader({ isAuthenticated, onSignOut, onToggleDark
           </div>
 
           {/* Progress Bar */}
-          <div className="mt-2">
-            <Progress value={calculateProgress()} className="h-1.5" />
-            <div className="flex justify-between text-xs text-emerald-600 dark:text-emerald-400 mt-1">
-              <span>{calculateProgress()}% Complete</span>
-              <span>{milestones.filter(m => m.completed).length} / {milestones.length} days</span>
+          <div className="mt-2 space-y-2">
+            <div 
+              className="text-xs text-emerald-600 dark:text-emerald-400"
+              dir={language === 'ar' ? 'rtl' : 'ltr'}
+            >
+              {todayMilestoneProgress.isCompleted ? (
+                language === 'ar'
+                  ? '🎉 أكملت ورد اليوم!'
+                  : '🎉 Today\'s goal completed!'
+              ) : todayMilestoneProgress.pagesRemaining > 0 ? (
+                language === 'ar' 
+                  ? `${todayMilestoneProgress.pagesRemaining} صفحة متبقية لإكمالك وردك اليوم`
+                  : `${todayMilestoneProgress.pagesRemaining} pages remaining to complete today's goal`
+              ) : (
+                language === 'ar'
+                  ? 'ابدأ القراءة اليوم'
+                  : 'Start reading today'
+              )}
+            </div>
+            <div className="relative">
+              {/* Animated gradient background */}
+              <div className="absolute inset-0 rounded-full overflow-hidden bg-emerald-100 dark:bg-emerald-900/30">
+                <div 
+                  className="h-full bg-gradient-to-r from-emerald-500 via-emerald-600 to-emerald-500 dark:from-emerald-400 dark:via-emerald-500 dark:to-emerald-400 transition-all duration-1000 ease-out relative"
+                  style={{ width: `${todayMilestoneProgress.progress}%` }}
+                >
+                  {/* Shimmer effect */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer" 
+                       style={{ 
+                         backgroundSize: '200% 100%',
+                         animation: 'shimmer 2s infinite'
+                       }} 
+                  />
+                  {/* Glow effect */}
+                  <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white/30 to-transparent" />
+                </div>
+              </div>
+              {/* Progress percentage text */}
+              <div className="relative h-1.5 flex items-center justify-end px-2">
+                {todayMilestoneProgress.progress > 15 && (
+                  <span className="text-[10px] text-white dark:text-white font-semibold drop-shadow-md">
+                    {Math.round(todayMilestoneProgress.progress)}%
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </div>

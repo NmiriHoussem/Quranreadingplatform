@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
-import { Book, Home, Plus, Search, Users, Target, Calendar, AlertCircle, LogIn, CheckCircle2 } from 'lucide-react';
+import { Book, Home, Plus, Search, Users, Target, Calendar, AlertCircle, LogIn, CheckCircle2, ArrowLeft } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Input } from './ui/input';
@@ -62,6 +62,39 @@ export default function GroupGoals({ isAuthenticated, onSignOut, onToggleDarkMod
   const translations = getTranslations(getStoredLanguage());
   const language = getStoredLanguage();
 
+  // Dynamic color scheme based on filter
+  const colorScheme = urlFilter === 'memorization' ? {
+    gradient: 'from-purple-50 to-white dark:from-purple-950 dark:to-purple-900',
+    text: 'text-purple-600 dark:text-purple-400',
+    textDark: 'text-purple-900 dark:text-purple-100',
+    bg: 'bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600',
+    bgHover: 'hover:bg-purple-50 dark:hover:bg-purple-900',
+    border: 'border-purple-200 dark:border-purple-800',
+    borderInput: 'border-purple-200',
+    icon: 'text-purple-600',
+    cardBorder: 'border-purple-100 dark:border-purple-800',
+    cardBg: 'bg-purple-50 dark:bg-purple-900/20',
+    badge: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
+    badgeJoined: 'bg-purple-600 dark:bg-purple-700',
+    outline: 'border-purple-600 dark:border-purple-500 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900',
+    button: 'bg-purple-600 hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-600'
+  } : {
+    gradient: 'from-emerald-50 to-white dark:from-emerald-950 dark:to-emerald-900',
+    text: 'text-emerald-600 dark:text-emerald-400',
+    textDark: 'text-emerald-900 dark:text-emerald-100',
+    bg: 'bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600',
+    bgHover: 'hover:bg-emerald-50 dark:hover:bg-emerald-900',
+    border: 'border-emerald-200 dark:border-emerald-800',
+    borderInput: 'border-emerald-200',
+    icon: 'text-emerald-600',
+    cardBorder: 'border-emerald-100 dark:border-emerald-800',
+    cardBg: 'bg-emerald-50 dark:bg-emerald-900/20',
+    badge: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300',
+    badgeJoined: 'bg-emerald-600 dark:bg-emerald-700',
+    outline: 'border-emerald-600 dark:border-emerald-500 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900',
+    button: 'bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600'
+  };
+
   // Generate memorization groups from SURAHS
   const memorizationGroups = SURAHS.map(surah => {
     const stats = getSurahMemorizationStats(surah.number, surah.verses);
@@ -122,6 +155,9 @@ export default function GroupGoals({ isAuthenticated, onSignOut, onToggleDarkMod
     // Must be a joined group
     if (!joinedGroups.includes(g.id)) return false;
     
+    // Apply type filter when coming from reading/memorization dashboard
+    if (filterType !== 'all' && g.type !== filterType) return false;
+    
     // Apply search query filter (search in title and description)
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -179,21 +215,44 @@ export default function GroupGoals({ isAuthenticated, onSignOut, onToggleDarkMod
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-50 to-white dark:from-emerald-950 dark:to-emerald-900">
+    <div className={`min-h-screen ${colorScheme.gradient}`}>
       {/* Header */}
       <AppHeader isAuthenticated={isAuthenticated} onSignOut={onSignOut} onToggleDarkMode={onToggleDarkMode} />
 
       <div className="container mx-auto px-4 py-8 max-w-6xl">
+        {/* Back Button - Show when coming from a filtered context */}
+        {urlFilter && (
+          <div className="mb-6">
+            <Button
+              variant="ghost"
+              onClick={() => {
+                if (urlFilter === 'reading') {
+                  navigate('/reading');
+                } else if (urlFilter === 'memorization') {
+                  navigate('/memorization');
+                }
+              }}
+              className={`${colorScheme.text} ${colorScheme.bgHover} -ml-2`}
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              {urlFilter === 'reading' 
+                ? (language === 'ar' ? 'العودة إلى لوحة القراءة' : 'Back to Reading Dashboard')
+                : (language === 'ar' ? 'العودة إلى لوحة الحفظ' : 'Back to Memorization Dashboard')
+              }
+            </Button>
+          </div>
+        )}
+        
         {/* Search */}
         <div className="mb-8">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-emerald-600" />
+            <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 ${colorScheme.icon}`} />
             <Input
               type="text"
               placeholder={`Search ${translations.circles.toLowerCase()}...`}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 border-emerald-200"
+              className={`pl-10 ${colorScheme.borderInput}`}
             />
           </div>
         </div>
@@ -211,30 +270,30 @@ export default function GroupGoals({ isAuthenticated, onSignOut, onToggleDarkMod
               
               return (
                 <Link key={group.id} to={`/groups/${group.id}`}>
-                  <Card className="p-6 border-emerald-100 hover:shadow-lg transition-shadow cursor-pointer">
+                  <Card className={`p-6 ${colorScheme.cardBorder} hover:shadow-lg transition-shadow cursor-pointer`}>
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
-                          <h3 className="text-xl text-emerald-900">{group.title}</h3>
+                          <h3 className={`text-xl ${colorScheme.textDark}`}>{group.title}</h3>
                           <span className={`px-2 py-1 rounded-full text-xs ${
                             group.type === 'memorization' 
-                              ? 'bg-amber-100 text-amber-700' 
-                              : 'bg-emerald-100 text-emerald-700'
+                              ? 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300' 
+                              : colorScheme.badge
                           }`}>
                             {group.type}
                           </span>
                           {isMemorized && (
-                            <span className="px-3 py-1 rounded-full text-xs bg-amber-600 text-white font-medium flex items-center gap-1">
+                            <span className="px-3 py-1 rounded-full text-xs bg-amber-600 dark:bg-amber-700 text-white font-medium flex items-center gap-1">
                               <CheckCircle2 className="w-3 h-3" />
                               Memorized
                             </span>
                           )}
                         </div>
-                        <p className="text-emerald-600 mb-3">{group.description}</p>
+                        <p className={`${colorScheme.text} mb-3`}>{group.description}</p>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-4 text-sm text-emerald-600">
+                    <div className={`flex items-center gap-4 text-sm ${colorScheme.text}`}>
                       <span className="flex items-center gap-1">
                         <Users className="w-4 h-4" />
                         {group.members} {translations.members.toLowerCase()}
@@ -247,30 +306,32 @@ export default function GroupGoals({ isAuthenticated, onSignOut, onToggleDarkMod
           </TabsContent>
 
           <TabsContent value="discover" className="space-y-4">
-            {/* Filter Buttons */}
-            <div className="flex gap-2 mb-6">
-              <Button
-                variant={filterType === 'all' ? 'default' : 'outline'}
-                onClick={() => setFilterType('all')}
-                className={filterType === 'all' ? 'bg-emerald-600 hover:bg-emerald-700' : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-700 dark:text-emerald-300'}
-              >
-                {translations.all} ({allGroups.length})
-              </Button>
-              <Button
-                variant={filterType === 'memorization' ? 'default' : 'outline'}
-                onClick={() => setFilterType('memorization')}
-                className={filterType === 'memorization' ? 'bg-emerald-600 hover:bg-emerald-700' : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-700 dark:text-emerald-300'}
-              >
-                {translations.memorization} ({memorizationGroups.length})
-              </Button>
-              <Button
-                variant={filterType === 'reading' ? 'default' : 'outline'}
-                onClick={() => setFilterType('reading')}
-                className={filterType === 'reading' ? 'bg-emerald-600 hover:bg-emerald-700' : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-700 dark:text-emerald-300'}
-              >
-                {translations.khatmah} ({readingGroups.length})
-              </Button>
-            </div>
+            {/* Filter Buttons - Only show when NOT coming from a filtered context */}
+            {!urlFilter && (
+              <div className="flex gap-2 mb-6">
+                <Button
+                  variant={filterType === 'all' ? 'default' : 'outline'}
+                  onClick={() => setFilterType('all')}
+                  className={filterType === 'all' ? 'bg-emerald-600 hover:bg-emerald-700' : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-700 dark:text-emerald-300'}
+                >
+                  {translations.all} ({allGroups.length})
+                </Button>
+                <Button
+                  variant={filterType === 'memorization' ? 'default' : 'outline'}
+                  onClick={() => setFilterType('memorization')}
+                  className={filterType === 'memorization' ? 'bg-emerald-600 hover:bg-emerald-700' : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-700 dark:text-emerald-300'}
+                >
+                  {translations.memorization} ({memorizationGroups.length})
+                </Button>
+                <Button
+                  variant={filterType === 'reading' ? 'default' : 'outline'}
+                  onClick={() => setFilterType('reading')}
+                  className={filterType === 'reading' ? 'bg-emerald-600 hover:bg-emerald-700' : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-700 dark:text-emerald-300'}
+                >
+                  {translations.khatmah} ({readingGroups.length})
+                </Button>
+              </div>
+            )}
 
             {filteredGroups.map((group) => {
               const isJoined = joinedGroups.includes(group.id);
@@ -279,20 +340,20 @@ export default function GroupGoals({ isAuthenticated, onSignOut, onToggleDarkMod
               
               return (
                 <Link key={group.id} to={`/groups/${group.id}`}>
-                  <Card className={`p-6 border-emerald-100 dark:border-emerald-800 transition-shadow hover:shadow-lg cursor-pointer`}>
+                  <Card className={`p-6 ${colorScheme.cardBorder} transition-shadow hover:shadow-lg cursor-pointer`}>
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
-                          <h3 className="text-xl text-emerald-900 dark:text-emerald-100">{group.title}</h3>
+                          <h3 className={`text-xl ${colorScheme.textDark}`}>{group.title}</h3>
                           <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                             group.type === 'memorization' 
                               ? 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300' 
-                              : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300'
+                              : colorScheme.badge
                           }`}>
                             {group.type === 'memorization' ? translations.memorization : translations.khatmah}
                           </span>
                           {isJoined && (
-                            <span className="px-3 py-1 rounded-full text-xs bg-emerald-600 dark:bg-emerald-700 text-white font-medium">
+                            <span className={`px-3 py-1 rounded-full text-xs ${colorScheme.badgeJoined} text-white font-medium`}>
                               {translations.joined}
                             </span>
                           )}
@@ -303,11 +364,11 @@ export default function GroupGoals({ isAuthenticated, onSignOut, onToggleDarkMod
                             </span>
                           )}
                         </div>
-                        <p className="text-emerald-600 dark:text-emerald-400 mb-3">{group.description}</p>
+                        <p className={`${colorScheme.text} mb-3`}>{group.description}</p>
                       </div>
                       {!isJoined && (
                         <Button 
-                          className="bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600" 
+                          className={colorScheme.button} 
                           onClick={(e) => {
                             e.preventDefault(); // Prevent Link navigation
                             handleJoinGroup(group.id);
@@ -318,7 +379,7 @@ export default function GroupGoals({ isAuthenticated, onSignOut, onToggleDarkMod
                       )}
                     </div>
 
-                    <div className="flex items-center gap-4 text-sm text-emerald-600 dark:text-emerald-400">
+                    <div className={`flex items-center gap-4 text-sm ${colorScheme.text}`}>
                       <span className="flex items-center gap-1">
                         <Users className="w-4 h-4" />
                         {group.members} {translations.members.toLowerCase()}
@@ -332,22 +393,22 @@ export default function GroupGoals({ isAuthenticated, onSignOut, onToggleDarkMod
         </Tabs>
 
         {/* Info Card */}
-        <Card className="p-6 mt-8 border-emerald-100 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20">
-          <h3 className="text-lg text-emerald-900 dark:text-emerald-100 mb-2">{translations.aboutCircleGoals}</h3>
-          <p className="text-emerald-600 dark:text-emerald-400 mb-4">
+        <Card className={`p-6 mt-8 ${colorScheme.cardBorder} ${colorScheme.cardBg}`}>
+          <h3 className={`text-lg ${colorScheme.textDark} mb-2`}>{translations.aboutCircleGoals}</h3>
+          <p className={`${colorScheme.text} mb-4`}>
             {translations.aboutCircleGoalsDesc}
           </p>
-          <ul className="space-y-2 text-sm text-emerald-600 dark:text-emerald-400">
+          <ul className={`space-y-2 text-sm ${colorScheme.text}`}>
             <li className="flex items-center gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400" />
+              <div className={`w-1.5 h-1.5 rounded-full ${urlFilter === 'memorization' ? 'bg-purple-600 dark:bg-purple-400' : 'bg-emerald-600 dark:bg-emerald-400'}`} />
               {translations.noUsernamesVisible}
             </li>
             <li className="flex items-center gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400" />
+              <div className={`w-1.5 h-1.5 rounded-full ${urlFilter === 'memorization' ? 'bg-purple-600 dark:bg-purple-400' : 'bg-emerald-600 dark:bg-emerald-400'}`} />
               {translations.progressTrackedCollectively}
             </li>
             <li className="flex items-center gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400" />
+              <div className={`w-1.5 h-1.5 rounded-full ${urlFilter === 'memorization' ? 'bg-purple-600 dark:bg-purple-400' : 'bg-emerald-600 dark:bg-emerald-400'}`} />
               {translations.noChatOrComments}
             </li>
           </ul>

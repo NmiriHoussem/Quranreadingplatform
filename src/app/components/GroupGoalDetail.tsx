@@ -138,7 +138,7 @@ export default function GroupGoalDetail({ isAuthenticated, onSignOut, onToggleDa
       {/* Header */}
       <header className="border-b border-emerald-100 dark:border-emerald-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <Link to="/groups">
+          <Link to={`/groups?filter=${isKhatmahGroup ? 'reading' : 'memorization'}`}>
             <Button variant="ghost" className="text-emerald-600 dark:text-emerald-400">
               <ArrowLeft className="w-4 h-4 mr-2" />
               {translations.backToGroups}

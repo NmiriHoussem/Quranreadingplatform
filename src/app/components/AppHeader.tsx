@@ -60,18 +60,6 @@ export default function AppHeader({ isAuthenticated, onSignOut, onToggleDarkMode
               )}
             </Button>
           )}
-          <Link to="/reader">
-            <Button variant="outline" className="border-emerald-600 dark:border-emerald-500 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900">
-              <Book className="w-4 h-4 md:mr-2" />
-              <span className="hidden md:inline">{t.reader}</span>
-            </Button>
-          </Link>
-          <Link to="/groups">
-            <Button variant="outline" className="border-emerald-600 dark:border-emerald-500 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900">
-              <Users className="w-4 h-4 md:mr-2" />
-              <span className="hidden md:inline">{t.circles}</span>
-            </Button>
-          </Link>
           <ProfileMenu isAuthenticated={isAuthenticated} onSignOut={onSignOut} />
         </div>
       </div>
