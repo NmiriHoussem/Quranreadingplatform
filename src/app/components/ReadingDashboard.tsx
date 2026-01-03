@@ -108,7 +108,7 @@ export default function ReadingDashboard({ isAuthenticated, onSignOut, onToggleD
           <h2 className="text-xl text-emerald-900 dark:text-emerald-100 mb-4">
             {language === 'ar' ? 'التقدم الإجمالي' : 'Overall Progress'}
           </h2>
-          <div className="grid md:grid-cols-3 gap-4 mb-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
                 <Target className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
@@ -138,7 +138,7 @@ export default function ReadingDashboard({ isAuthenticated, onSignOut, onToggleD
               <div>
                 <div className="text-2xl text-emerald-900 dark:text-emerald-100">{overallProgress}%</div>
                 <div className="text-sm text-emerald-600 dark:text-emerald-400">
-                  {language === 'ar' ? 'متمل' : 'Complete'}
+                  {language === 'ar' ? 'مكتمل' : 'Complete'}
                 </div>
               </div>
             </div>
