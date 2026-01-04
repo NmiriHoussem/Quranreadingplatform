@@ -211,15 +211,15 @@ export default function Settings({ isAuthenticated, onSignOut }: SettingsProps) 
           <Card className="p-6 mb-6 border-emerald-100 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/30">
             <div className="flex items-center gap-2 mb-4">
               <LogIn className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-              <h2 className="text-xl text-emerald-900 dark:text-emerald-100">Sign In</h2>
+              <h2 className="text-xl text-emerald-900 dark:text-emerald-100">{t.signIn}</h2>
             </div>
             
             <p className="text-emerald-600 dark:text-emerald-400 mb-4">
-              Sign in to access group goals, sync your progress across devices, and join the community.
+              {t.signInDescription}
             </p>
             <Link to="/auth">
               <Button className="w-full bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600">
-                Sign In / Sign Up
+                {t.signInSignUp}
               </Button>
             </Link>
           </Card>
@@ -229,14 +229,14 @@ export default function Settings({ isAuthenticated, onSignOut }: SettingsProps) 
         <Card className="p-6 mb-6 border-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/50">
           <div className="flex items-center gap-2 mb-4">
             <Download className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-            <h2 className="text-xl text-emerald-900 dark:text-emerald-100">Data Management</h2>
+            <h2 className="text-xl text-emerald-900 dark:text-emerald-100">{t.dataManagement}</h2>
           </div>
           
           <div className="space-y-4">
             <div>
-              <Label className="text-emerald-900 dark:text-emerald-100">Export Your Progress</Label>
+              <Label className="text-emerald-900 dark:text-emerald-100">{t.exportYourProgress}</Label>
               <p className="text-sm text-emerald-600 dark:text-emerald-400 mb-3">
-                Download a backup of all your reading and memorization progress as a JSON file.
+                {t.exportProgressDescription}
               </p>
               <Button
                 variant="outline"
@@ -244,7 +244,7 @@ export default function Settings({ isAuthenticated, onSignOut }: SettingsProps) 
                 className="w-full border-emerald-600 dark:border-emerald-500 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900"
               >
                 <Download className="w-4 h-4 mr-2" />
-                Export Progress
+                {t.exportProgress}
               </Button>
             </div>
           </div>
@@ -331,8 +331,8 @@ export default function Settings({ isAuthenticated, onSignOut }: SettingsProps) 
 
         {/* Footer Info */}
         <div className="mt-8 text-center text-sm text-emerald-600 dark:text-emerald-400">
-          <p>Quran Companion v1.0.0</p>
-          <p className="mt-2">Built with respect for your privacy and spiritual journey</p>
+          <p>{t.appName} v1.0.0</p>
+          <p className="mt-2">{t.builtWithRespect}</p>
         </div>
       </div>
 

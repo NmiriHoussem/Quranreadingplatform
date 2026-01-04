@@ -193,6 +193,30 @@ export interface Translations {
   howToJoinCircle: string;
   circleFeatures: string;
   
+  // Offline Reading
+  offlineReading: string;
+  offlineReadingDescription: string;
+  offlineStorage: string;
+  downloadedSurahs: string;
+  quickDownload: string;
+  downloadByJuz: string;
+  customSelection: string;
+  selected: string;
+  downloadSelected: string;
+  downloading: string;
+  popularSurahs: string;
+  allSurahs: string;
+  
+  // Settings - Account & Data Management
+  signInDescription: string;
+  signInSignUp: string;
+  dataManagement: string;
+  exportYourProgress: string;
+  exportProgressDescription: string;
+  exportProgress: string;
+  appVersion: string;
+  builtWithRespect: string;
+  
   // Dashboard
   greeting: string;
   guest: string;
@@ -476,6 +500,30 @@ export const translations: Record<Language, Translations> = {
     privacyDescription: 'Your personal progress is stored locally on your device. Circle features only sync what\'s necessary.',
     howToJoinCircle: 'How to join a circle?',
     circleFeatures: 'Browse available circles, join challenges, and see how many people are reading alongside you',
+    
+    // Offline Reading
+    offlineReading: 'Offline Reading',
+    offlineReadingDescription: 'Download and read the Quran offline on your device',
+    offlineStorage: 'Offline Storage',
+    downloadedSurahs: 'Downloaded Surahs',
+    quickDownload: 'Quick Download',
+    downloadByJuz: 'Download by Juz',
+    customSelection: 'Custom Selection',
+    selected: 'Selected',
+    downloadSelected: 'Download Selected',
+    downloading: 'Downloading',
+    popularSurahs: 'Popular',
+    allSurahs: 'All',
+    
+    // Settings - Account & Data Management
+    signInDescription: 'Sign in to access group goals, sync your progress across devices, and join the community.',
+    signInSignUp: 'Sign In / Sign Up',
+    dataManagement: 'Data Management',
+    exportYourProgress: 'Export Your Progress',
+    exportProgressDescription: 'Download a backup of all your reading and memorization progress as a JSON file.',
+    exportProgress: 'Export Progress',
+    appVersion: 'App Version',
+    builtWithRespect: 'Built with respect for your privacy and spiritual journey',
     
     // Dashboard
     greeting: 'Hello',
@@ -783,6 +831,30 @@ export const translations: Record<Language, Translations> = {
     privacyDescription: 'يتم تخزين تقدمك الشخصي محليًا على جهازك. ميزات الحلقات تزامن فقط ما هو ضروري.',
     howToJoinCircle: 'كيفية الانضمام إلى حلقة؟',
     circleFeatures: 'تصفح الحلقات المتاحة، وانضم إلى التحديات، وشاهد عدد الأشخاص الذين يقرؤون معك',
+    
+    // Offline Reading
+    offlineReading: 'القراءة دون اتصال بالإنترنت',
+    offlineReadingDescription: 'قم بتنزيل السور لقراءتها دون اتصال بالإنترنت في أي وقت وفي أي مكان. مثالي للسفر أو المساجد أو المناطق ذات الاتصال المحدود.',
+    offlineStorage: 'تخزين غير متصل بالإنترنت',
+    downloadedSurahs: 'السور المحمولة',
+    quickDownload: 'تحميل سريع',
+    downloadByJuz: 'تحميل حسب الجزء',
+    customSelection: 'اختيار مخصص',
+    selected: 'مختار',
+    downloadSelected: 'تحميل المختار',
+    downloading: 'جاري التحميل',
+    popularSurahs: 'السور الشائعة',
+    allSurahs: 'جميع السور',
+    
+    // Settings - Account & Data Management
+    signInDescription: 'تسجيل الدخول للوصول إلى أهداف المجموعة، ومزامنة تقدمك عبر الأجهزة، وانضمام المجتمع.',
+    signInSignUp: 'تسجيل الدخول / إنشاء حساب',
+    dataManagement: 'إدارة البيانات',
+    exportYourProgress: 'تصدير تقدمك',
+    exportProgressDescription: 'تحميل نسخة من تقدم قراءتك وحفظك كملف JSON.',
+    exportProgress: 'تصدير التقدم',
+    appVersion: 'إصدار التطبيق',
+    builtWithRespect: 'مبنٍ باحترام لخصوصيتك ورحلتك الروحية',
     
     // Dashboard
     greeting: 'مرحبا',

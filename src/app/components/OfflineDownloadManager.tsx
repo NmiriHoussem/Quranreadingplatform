@@ -11,7 +11,6 @@ import {
   deleteAllSurahs,
   getDownloadedSurahs,
   getOfflineStorageInfo,
-  getPopularSurahs,
   getJuzSurahs,
   isSurahDownloaded,
   type DownloadProgress,
@@ -65,11 +64,6 @@ export default function OfflineDownloadManager() {
 
   const handleSelectNone = () => {
     setSelectedSurahs(new Set());
-  };
-
-  const handleSelectPopular = () => {
-    const popular = getPopularSurahs();
-    setSelectedSurahs(new Set(popular));
   };
 
   const handleSelectJuz = (juzNumber: number) => {
@@ -186,26 +180,15 @@ export default function OfflineDownloadManager() {
         <Label className="text-emerald-900 dark:text-emerald-100 mb-3 block">
           {t.quickDownload || 'Quick Download'}
         </Label>
-        <div className="grid grid-cols-2 gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleSelectPopular}
-            className="border-emerald-600 dark:border-emerald-500 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900"
-          >
-            <Download className="w-4 h-4 mr-2" />
-            {t.popularSurahs || 'Popular'} (12)
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleSelectAll}
-            className="border-emerald-600 dark:border-emerald-500 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900"
-          >
-            <Download className="w-4 h-4 mr-2" />
-            {t.allSurahs || 'All'} (114)
-          </Button>
-        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleSelectAll}
+          className="w-full border-emerald-600 dark:border-emerald-500 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900"
+        >
+          <Download className="w-4 h-4 mr-2" />
+          {t.allSurahs || 'All'} (114)
+        </Button>
         
         {/* Juz Selection */}
         <div className="mt-3">
