@@ -5,6 +5,7 @@ import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { getTranslations, getStoredLanguage, setStoredLanguage, Language } from '../utils/translations';
 import ProfileMenu from './ProfileMenu';
+import Logo from './Logo';
 
 interface LandingPageProps {
   isAuthenticated?: boolean;

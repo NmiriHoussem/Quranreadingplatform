@@ -13,16 +13,61 @@ import GroupGoalDetail from './components/GroupGoalDetail';
 import Settings from './components/Settings';
 import HelpPage from './components/HelpPage';
 import DownloadQuran from './pages/DownloadQuran';
+import AdminPanel from './components/AdminPanel';
 import { useDarkMode } from './utils/useDarkMode';
 import { getCurrentSession, signOut as authSignOut, refreshSession } from '../services/authService';
 import { loadProgressFromServer, autoSyncProgress } from '../services/syncService';
 import { setSyncTrigger } from './utils/localStorage';
 import { getTranslations, getStoredLanguage } from './utils/translations';
+import { initializeLogo, getCachedLogo } from './utils/logoStorage';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const { isDarkMode, toggleDarkMode } = useDarkMode(isAuthenticated);
+  
+  // Initialize logo from KV store
+  useEffect(() => {
+    initializeLogo().then(logoUrl => {
+      // Update favicon with logo from KV store
+      const link = document.querySelector("link[rel*='icon']") || document.createElement('link');
+      link.type = 'image/svg+xml';
+      link.rel = 'icon';
+      link.href = logoUrl;
+      document.getElementsByTagName('head')[0].appendChild(link);
+      
+      // Update Open Graph image for social sharing
+      const updateOrCreateMetaTag = (property: string, content: string) => {
+        let metaTag = document.querySelector(`meta[property="${property}"]`);
+        if (metaTag) {
+          metaTag.setAttribute('content', content);
+        } else {
+          metaTag = document.createElement('meta');
+          metaTag.setAttribute('property', property);
+          metaTag.setAttribute('content', content);
+          document.head.appendChild(metaTag);
+        }
+      };
+      
+      updateOrCreateMetaTag('og:image', logoUrl);
+      
+      const updateOrCreateTwitterTag = (name: string, content: string) => {
+        let metaTag = document.querySelector(`meta[name="${name}"]`);
+        if (metaTag) {
+          metaTag.setAttribute('content', content);
+        } else {
+          metaTag = document.createElement('meta');
+          metaTag.setAttribute('name', name);
+          metaTag.setAttribute('content', content);
+          document.head.appendChild(metaTag);
+        }
+      };
+      
+      updateOrCreateTwitterTag('twitter:image', logoUrl);
+    }).catch(error => {
+      console.error('Error initializing logo:', error);
+    });
+  }, []);
   
   // Set document title and meta description based on language
   useEffect(() => {
@@ -195,6 +240,12 @@ function App() {
         <Route 
           path="/download" 
           element={<DownloadQuran isAuthenticated={isAuthenticated} onSignOut={handleSignOut} />} 
+        />
+        
+        {/* Admin Panel */}
+        <Route 
+          path="/admin" 
+          element={<AdminPanel isDarkMode={isDarkMode} />} 
         />
       </Routes>
     </Router>

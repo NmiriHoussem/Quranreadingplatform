@@ -1,11 +1,13 @@
 import { Link } from 'react-router-dom';
-import { User, Settings, HelpCircle, LogOut, LogIn, CheckCircle2, Globe, BookOpen, Type, Download } from 'lucide-react';
+import { User, Settings, HelpCircle, LogOut, LogIn, CheckCircle2, Globe, BookOpen, Type, Download, Shield } from 'lucide-react';
 import { Button } from './ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from './ui/sheet';
 import { Separator } from './ui/separator';
 import { useEffect, useState } from 'react';
 import { getTranslations, getStoredLanguage } from '../utils/translations';
 import { getMushafViewMode, setMushafViewMode, type MushafViewMode } from '../../services/preferenceService';
+
+const ADMIN_EMAIL = 'houssem.addin@gmail.com';
 
 interface ProfileMenuProps {
   isAuthenticated: boolean;
@@ -16,6 +18,7 @@ export default function ProfileMenu({ isAuthenticated, onSignOut }: ProfileMenuP
   const language = getStoredLanguage();
   const t = getTranslations(language);
   const [userName, setUserName] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   const [mushafMode, setMushafMode] = useState<MushafViewMode>('mushaf');
   const [isOpen, setIsOpen] = useState(false);
   
@@ -26,12 +29,14 @@ export default function ProfileMenu({ isAuthenticated, onSignOut }: ProfileMenuP
         if (authUser) {
           const user = JSON.parse(authUser);
           setUserName(user.name || null);
+          setUserEmail(user.email || null);
         }
       } catch (error) {
         console.error('Error reading user from localStorage:', error);
       }
     } else {
       setUserName(null);
+      setUserEmail(null);
     }
     
     // Load mushaf view mode preference
@@ -41,6 +46,9 @@ export default function ProfileMenu({ isAuthenticated, onSignOut }: ProfileMenuP
   
   // Get first letter of name for avatar
   const avatarLetter = userName ? userName.charAt(0).toUpperCase() : 'U';
+  
+  // Check if user is admin
+  const isAdmin = userEmail === ADMIN_EMAIL;
   
   const handleMushafModeChange = async (mode: MushafViewMode) => {
     setMushafMode(mode);
@@ -185,6 +193,19 @@ export default function ProfileMenu({ isAuthenticated, onSignOut }: ProfileMenuP
               {t.officialWebsite}
             </Button>
           </Link>
+          
+          {/* Admin Panel - Only visible to admin */}
+          {isAdmin && (
+            <>
+              <Separator className="my-4" />
+              <Link to="/admin" onClick={() => setIsOpen(false)}>
+                <Button variant="ghost" className="w-full justify-start text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950">
+                  <Shield className="w-5 h-5 mr-3" />
+                  {language === 'ar' ? 'لوحة الإدارة' : 'Admin Panel'}
+                </Button>
+              </Link>
+            </>
+          )}
           
           {isAuthenticated && (
             <>

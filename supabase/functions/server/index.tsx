@@ -474,61 +474,6 @@ app.get("/make-server-bf07b5b1/groups/:groupId/presence", async (c) => {
 
 // ===== ANONYMOUS KHATMAH ACTIVITY TRACKING =====
 
-// ===== USER PREFERENCES ROUTES =====
-
-// Get user preferences
-app.get("/make-server-bf07b5b1/preferences", async (c) => {
-  try {
-    const authHeader = c.req.header('Authorization');
-    const { userId, error: authError } = await getUserIdFromToken(authHeader);
-    
-    if (authError || !userId) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
-    
-    const key = `user:${userId}:preferences`;
-    const preferences = await kv.get(key) || {};
-    
-    console.log('✅ [PREFERENCES] Retrieved for user:', userId);
-    return c.json(preferences);
-  } catch (error) {
-    console.error('Get preferences error:', error);
-    return c.json({ error: 'Failed to get preferences' }, 500);
-  }
-});
-
-// Save user preferences
-app.post("/make-server-bf07b5b1/preferences", async (c) => {
-  try {
-    const authHeader = c.req.header('Authorization');
-    const { userId, error: authError } = await getUserIdFromToken(authHeader);
-    
-    if (authError || !userId) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
-    
-    const newPrefs = await c.req.json();
-    const key = `user:${userId}:preferences`;
-    
-    // Get existing preferences
-    const existing = await kv.get(key) || {};
-    
-    // Merge with new preferences
-    const updated = { ...existing, ...newPrefs };
-    
-    // Save to KV store
-    await kv.set(key, updated);
-    
-    console.log('✅ [PREFERENCES] Saved for user:', userId, updated);
-    return c.json({ success: true });
-  } catch (error) {
-    console.error('Save preferences error:', error);
-    return c.json({ error: 'Failed to save preferences' }, 500);
-  }
-});
-
-// ===== ANONYMOUS KHATMAH ACTIVITY TRACKING =====
-
 // Anonymous heartbeat for "reading with you now" feature
 // NO AUTH REQUIRED - uses anonymous session IDs
 app.post("/make-server-bf07b5b1/khatmah/heartbeat", async (c) => {
@@ -592,6 +537,72 @@ app.post("/make-server-bf07b5b1/khatmah/heartbeat", async (c) => {
   } catch (error) {
     console.error('💓 [HEARTBEAT] Error:', error);
     return c.json({ error: 'Failed to update heartbeat' }, 500);
+  }
+});
+
+// ===== GENERIC KV STORE ROUTES =====
+
+// Get a value from KV store (public, no auth required)
+app.get("/make-server-bf07b5b1/kv/get", async (c) => {
+  try {
+    const key = c.req.query('key');
+    
+    if (!key) {
+      return c.json({ error: 'Key parameter required' }, 400);
+    }
+    
+    console.log('📖 [KV-GET] Reading key:', key);
+    const value = await kv.get(key);
+    
+    if (value === null || value === undefined) {
+      return c.json({ error: 'Key not found' }, 404);
+    }
+    
+    console.log('📖 [KV-GET] Found value for key:', key);
+    return c.json({ key, value });
+  } catch (error) {
+    console.error('📖 [KV-GET] Error:', error);
+    return c.json({ error: 'Failed to get value' }, 500);
+  }
+});
+
+// Set a value in KV store (public, no auth required)
+app.post("/make-server-bf07b5b1/kv/set", async (c) => {
+  try {
+    const { key, value } = await c.req.json();
+    
+    if (!key) {
+      return c.json({ error: 'Key is required' }, 400);
+    }
+    
+    console.log('💾 [KV-SET] Storing key:', key);
+    await kv.set(key, value);
+    
+    console.log('💾 [KV-SET] Successfully stored key:', key);
+    return c.json({ success: true, key });
+  } catch (error) {
+    console.error('💾 [KV-SET] Error:', error);
+    return c.json({ error: 'Failed to set value' }, 500);
+  }
+});
+
+// Delete a value from KV store (public, no auth required)
+app.delete("/make-server-bf07b5b1/kv/delete", async (c) => {
+  try {
+    const key = c.req.query('key');
+    
+    if (!key) {
+      return c.json({ error: 'Key parameter required' }, 400);
+    }
+    
+    console.log('🗑️ [KV-DELETE] Deleting key:', key);
+    await kv.del(key);
+    
+    console.log('🗑️ [KV-DELETE] Successfully deleted key:', key);
+    return c.json({ success: true, key });
+  } catch (error) {
+    console.error('🗑️ [KV-DELETE] Error:', error);
+    return c.json({ error: 'Failed to delete value' }, 500);
   }
 });
 
