@@ -7,6 +7,7 @@ import { Badge } from './ui/badge';
 import { getJoinedGroups, getKhatmahReadingStats, getCurrentKhatmah, calculateKhatmahMilestonesForGroup, isKhatmahPageRead } from '../utils/localStorage';
 import ProfileMenu from './ProfileMenu';
 import { getTranslations, getStoredLanguage, setStoredLanguage, type Language } from '../utils/translations';
+import Logo from './Logo';
 
 interface ReadingDashboardProps {
   isAuthenticated: boolean;

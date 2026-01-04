@@ -44,7 +44,7 @@ export default function LandingPage({ isAuthenticated = false, onSignOut }: Land
       <header className="border-b border-emerald-100 dark:border-emerald-800 bg-white/80 dark:bg-emerald-950/80 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-6 flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <Book className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
+            <Logo size={32} className="text-emerald-600 dark:text-emerald-400" />
             <span className="text-2xl text-emerald-900 dark:text-emerald-100 hidden md:inline" style={{ fontFamily: logoFont, fontWeight: isRTL ? 700 : 'inherit' }}>
               {isRTL ? t.appNameArabic : t.appName}
             </span>

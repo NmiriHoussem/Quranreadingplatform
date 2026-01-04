@@ -4,6 +4,7 @@ import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import ProfileMenu from './ProfileMenu';
 import { getTranslations, getStoredLanguage, setStoredLanguage, type Language } from '../utils/translations';
+import Logo from './Logo';
 
 interface AppHeaderProps {
   isAuthenticated: boolean;
@@ -26,7 +27,7 @@ export default function AppHeader({ isAuthenticated, onSignOut, onToggleDarkMode
     <header className="border-b border-emerald-100 dark:border-emerald-800 bg-white/80 dark:bg-emerald-950/80 backdrop-blur-sm sticky top-0 z-50">
       <div className="container mx-auto px-4 py-4 flex justify-between items-center">
         <Link to="/dashboard" className="flex items-center gap-2">
-          <Book className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
+          <Logo size={32} className="text-emerald-600 dark:text-emerald-400" />
           <span className="text-2xl text-emerald-900 dark:text-emerald-100 hidden md:inline">{t.appName}</span>
           {!isAuthenticated && (
             <Badge variant="secondary" className="ml-2 bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-700">
