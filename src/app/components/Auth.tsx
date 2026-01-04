@@ -134,35 +134,31 @@ export default function Auth({ onAuthSuccess }: AuthProps) {
           {isFromGroupJoin ? (
             <div className="space-y-2">
               <p className="text-emerald-700 dark:text-emerald-300">
-                {isSignUp ? 'Sign up to join this goal' : 'Sign in to join this goal'}
+                {isSignUp ? t.signUpToJoinGoal : t.signInToJoinGoal}
               </p>
               <div className="bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-900/30 dark:to-green-900/30 rounded-lg p-4 text-left">
                 <p className="text-sm text-emerald-900 dark:text-emerald-100 mb-2">
-                  <strong>Why join {groupType} goals?</strong>
+                  <strong>{groupType.includes('Khatmah') ? t.whyJoinKhatmahGoals : t.whyJoinMemorizationGoals}</strong>
                 </p>
                 <ul className="text-xs text-emerald-700 dark:text-emerald-300 space-y-1.5">
                   <li className="flex items-start">
                     <span className="text-emerald-600 dark:text-emerald-400 mr-2">•</span>
-                    <span>Stay motivated with real-time community progress</span>
+                    <span>{t.stayMotivated}</span>
                   </li>
                   <li className="flex items-start">
                     <span className="text-emerald-600 dark:text-emerald-400 mr-2">•</span>
-                    <span>Track your progress alongside others on the same journey</span>
+                    <span>{t.trackProgressTogether}</span>
                   </li>
                   <li className="flex items-start">
                     <span className="text-emerald-600 dark:text-emerald-400 mr-2">•</span>
-                    <span>Build consistent habits through collective accountability</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-emerald-600 dark:text-emerald-400 mr-2">•</span>
-                    <span>Earn the reward of reading together as an Ummah</span>
+                    <span>{t.buildConsistentHabits}</span>
                   </li>
                 </ul>
               </div>
             </div>
           ) : (
             <p className="text-emerald-600 dark:text-emerald-400">
-              {isSignUp ? 'Create your account' : 'Welcome back'}
+              {isSignUp ? t.createYourAccount : t.welcomeBack}
             </p>
           )}
         </div>
@@ -172,7 +168,7 @@ export default function Auth({ onAuthSuccess }: AuthProps) {
           {isSignUp && (
             <div>
               <label htmlFor="name" className="block text-sm text-emerald-900 dark:text-emerald-100 mb-2">
-                Name
+                {t.name}
               </label>
               <input
                 id="name"
@@ -180,7 +176,7 @@ export default function Auth({ onAuthSuccess }: AuthProps) {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="w-full px-4 py-3 rounded-lg border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-emerald-950 text-emerald-900 dark:text-emerald-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                placeholder="Enter your name"
+                placeholder={t.enterYourName}
                 required={isSignUp}
               />
             </div>
@@ -188,7 +184,7 @@ export default function Auth({ onAuthSuccess }: AuthProps) {
 
           <div>
             <label htmlFor="email" className="block text-sm text-emerald-900 dark:text-emerald-100 mb-2">
-              Email
+              {t.email}
             </label>
             <input
               id="email"
@@ -196,14 +192,14 @@ export default function Auth({ onAuthSuccess }: AuthProps) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-4 py-3 rounded-lg border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-emerald-950 text-emerald-900 dark:text-emerald-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              placeholder="Enter your email"
+              placeholder={t.enterYourEmail}
               required
             />
           </div>
 
           <div>
             <label htmlFor="password" className="block text-sm text-emerald-900 dark:text-emerald-100 mb-2">
-              Password
+              {t.password}
             </label>
             <input
               id="password"
@@ -211,13 +207,13 @@ export default function Auth({ onAuthSuccess }: AuthProps) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-4 py-3 rounded-lg border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-emerald-950 text-emerald-900 dark:text-emerald-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              placeholder="Enter your password"
+              placeholder={t.enterYourPassword}
               required
               minLength={6}
             />
             {isSignUp && (
               <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">
-                Minimum 6 characters
+                {t.minimumCharacters}
               </p>
             )}
           </div>
@@ -236,10 +232,10 @@ export default function Auth({ onAuthSuccess }: AuthProps) {
             {loading ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                {isSignUp ? 'Creating account...' : 'Signing in...'}
+                {isSignUp ? t.creatingAccount : t.signingIn}
               </>
             ) : (
-              <>{isSignUp ? 'Sign Up' : 'Sign In'}</>
+              <>{isSignUp ? t.signUp : t.signIn}</>
             )}
           </Button>
         </form>
@@ -254,8 +250,8 @@ export default function Auth({ onAuthSuccess }: AuthProps) {
             className="text-sm text-emerald-600 dark:text-emerald-400 hover:underline"
           >
             {isSignUp
-              ? 'Already have an account? Sign in'
-              : "Don't have an account? Sign up"}
+              ? `${t.alreadyHaveAccount} ${t.signIn.toLowerCase()}`
+              : `${t.dontHaveAccount} ${t.signUp.toLowerCase()}`}
           </button>
         </div>
 

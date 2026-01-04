@@ -36,6 +36,7 @@ export default function GroupGoalDetail({ isAuthenticated, onSignOut, onToggleDa
   const [showCompletionModal, setShowCompletionModal] = useState(false);
   const [showKhatmahWarning, setShowKhatmahWarning] = useState(false);
   const [pendingKhatmahId, setPendingKhatmahId] = useState<string | null>(null);
+  const [showLeaveConfirmation, setShowLeaveConfirmation] = useState(false);
   
   const translations = getTranslations(getStoredLanguage());
   const language = getStoredLanguage();
@@ -61,11 +62,19 @@ export default function GroupGoalDetail({ isAuthenticated, onSignOut, onToggleDa
   const surahDisplayName = surahNumber ? getSurahName(surahNumber, language) : null;
   const surahMeaning = surahNumber ? translations.surahMeanings[surahNumber - 1] : null;
   
+  // Helper function to get the correct Arabic word for days
+  const getArabicDaysWord = (days: number): string => {
+    if (days === 1) return 'يوم';
+    if (days === 2) return 'يومان';
+    if (days >= 3 && days <= 10) return 'أيام';
+    return 'يومًا'; // 11+
+  };
+  
   // Generate data based on group type
   const goal = isKhatmahGroup && khatmahDays ? {
     id: id,
     title: language === 'ar' 
-      ? `${translations.completeKhatmahIn} ${khatmahDays} ${khatmahDays === 1 ? translations.day : translations.days}` 
+      ? `إتمام الختمة في ${khatmahDays} ${getArabicDaysWord(khatmahDays)}` 
       : `${translations.completeKhatmahIn} ${khatmahDays} ${khatmahDays === 1 ? 'Day' : 'Days'}`,
     description: language === 'ar'
       ? `${translations.readEntireQuranIn} ${khatmahDays} ${translations.daysWithCommunity}`
@@ -209,7 +218,7 @@ export default function GroupGoalDetail({ isAuthenticated, onSignOut, onToggleDa
               <Button 
                 variant="outline" 
                 className="border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900"
-                onClick={handleJoinLeave}
+                onClick={() => setShowLeaveConfirmation(true)}
               >
                 {translations.leaveGoal}
               </Button>
@@ -302,9 +311,9 @@ export default function GroupGoalDetail({ isAuthenticated, onSignOut, onToggleDa
             <h2 className="text-xl text-emerald-900 dark:text-emerald-100 mb-4 flex items-center justify-between">
               <span>{isMember ? translations.yourProgress : translations.readingPlan}</span>
               <span className="text-sm text-emerald-600 dark:text-emerald-400">
-                {isMember && language === 'ar' && `${completedCount} ${translations.of} ${khatmahMilestones.length} ${translations.daysCompleted}`}
+                {isMember && language === 'ar' && `تم إكمال ${completedCount} / ${khatmahMilestones.length} يومًا`}
                 {isMember && language === 'en' && `${completedCount} ${translations.of} ${khatmahMilestones.length} ${translations.daysCompleted.toLowerCase()}`}
-                {!isMember && language === 'ar' && `${khatmahMilestones.length} ${translations.daySchedule}`}
+                {!isMember && language === 'ar' && `جدول ${khatmahMilestones.length} ${getArabicDaysWord(khatmahMilestones.length)}`}
                 {!isMember && language === 'en' && `${khatmahMilestones.length} ${translations.day} ${translations.daySchedule.toLowerCase()}`}
               </span>
             </h2>
@@ -541,6 +550,52 @@ export default function GroupGoalDetail({ isAuthenticated, onSignOut, onToggleDa
                 onClick={confirmSwitchKhatmah}
               >
                 {language === 'ar' ? 'تبديل الختمة' : 'Switch Anyway'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Leave Confirmation Modal */}
+      {showLeaveConfirmation && (
+        <Dialog open={showLeaveConfirmation} onOpenChange={setShowLeaveConfirmation}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-xl">
+                <AlertCircle className="w-6 h-6 text-orange-600" />
+                {language === 'ar' ? 'هل أنت متأكد؟' : 'Are you sure?'}
+              </DialogTitle>
+              <DialogDescription className="space-y-4 pt-4">
+                <div className="p-4 rounded-lg bg-emerald-50 dark:bg-emerald-900/20">
+                  <p className="font-medium mb-2 text-emerald-900 dark:text-emerald-100">
+                    {language === 'ar' 
+                      ? '💡 هل أنت متأكد من رغبتك في مغادرة هذه الختمة؟' 
+                      : '💡 Are you sure you want to leave this khatmah?'}
+                  </p>
+                  <p className="text-sm text-gray-700 dark:text-gray-300">
+                    {language === 'ar'
+                      ? 'سيتم حفظ تقدمك حتى الآن، ولكن لن تتمكن من متابعة الختمة بعد مغادرتك.'
+                      : 'Your progress will be saved, but you will not be able to follow the khatmah after leaving.'}
+                  </p>
+                </div>
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="flex gap-2 sm:gap-3">
+              <Button 
+                className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+                onClick={() => setShowLeaveConfirmation(false)}
+              >
+                {language === 'ar' ? 'البقاء في الختمة' : 'Stay in Khatmah'}
+              </Button>
+              <Button 
+                variant="outline" 
+                className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+                onClick={() => {
+                  handleJoinLeave();
+                  setShowLeaveConfirmation(false);
+                }}
+              >
+                {language === 'ar' ? 'مغادرة الختمة' : 'Leave Anyway'}
               </Button>
             </DialogFooter>
           </DialogContent>

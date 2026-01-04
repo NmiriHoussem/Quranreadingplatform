@@ -166,6 +166,24 @@ export interface Translations {
   name: string;
   signUp: string;
   participateInCircles: string;
+  signUpToJoinGoal: string;
+  signInToJoinGoal: string;
+  whyJoinKhatmahGoals: string;
+  whyJoinMemorizationGoals: string;
+  stayMotivated: string;
+  trackProgressTogether: string;
+  buildConsistentHabits: string;
+  earnRewardTogether: string;
+  createYourAccount: string;
+  welcomeBack: string;
+  enterYourName: string;
+  enterYourEmail: string;
+  enterYourPassword: string;
+  minimumCharacters: string;
+  creatingAccount: string;
+  signingIn: string;
+  alreadyHaveAccount: string;
+  dontHaveAccount: string;
   
   // Help & Info
   whatIsQuranCircle: string;
@@ -432,6 +450,24 @@ export const translations: Record<Language, Translations> = {
     name: 'Name',
     signUp: 'Sign Up',
     participateInCircles: 'Participate in circle challenges and memorization goals',
+    signUpToJoinGoal: 'Sign up to join this goal',
+    signInToJoinGoal: 'Sign in to join this goal',
+    whyJoinKhatmahGoals: 'Why join Khatmah Circle goals?',
+    whyJoinMemorizationGoals: 'Why join Memorization Circle goals?',
+    stayMotivated: 'Stay motivated with real-time community progress',
+    trackProgressTogether: 'Track your progress alongside others on the same journey',
+    buildConsistentHabits: 'Build consistent habits through collective accountability',
+    earnRewardTogether: 'Earn the reward of reading together as an Ummah',
+    createYourAccount: 'Create Your Account',
+    welcomeBack: 'Welcome Back',
+    enterYourName: 'Enter Your Name',
+    enterYourEmail: 'Enter Your Email',
+    enterYourPassword: 'Enter Your Password',
+    minimumCharacters: 'Minimum 6 characters',
+    creatingAccount: 'Creating Account',
+    signingIn: 'Signing In',
+    alreadyHaveAccount: 'Already have an account?',
+    dontHaveAccount: "Don't have an account?",
     
     // Help & Info
     whatIsQuranCircle: 'What is Quran Circle?',
@@ -641,7 +677,7 @@ export const translations: Record<Language, Translations> = {
     joinGoal: 'انضم',
     cannotJoinKhatmah: 'لا يمكنك الانضمام إلى الختمة',
     viewYourCurrentKhatmah: 'عرض ختمتك الحالية',
-    previewMode: 'الوضع المعاين',
+    previewMode: 'لست عضوًا بعد',
     previewModeDesc: 'عرض خطة قراءتك للختمة دون الانضمام إلى الحلقة.',
     openKhatmahReader: 'فتح قارئ الختمة',
     continueMemorizing: 'استمر في الحفظ',
@@ -671,7 +707,7 @@ export const translations: Record<Language, Translations> = {
     oneCircleLimit: 'يمكنك الانضمام إلى حلقة ختمة واحدة فقط في كل مرة',
     switchCircleWarning: 'الانضمام إلى هذه الحلقة الجديدة سيزيلك تلقائيًا من حلقة الختمة الحالية',
     viewingAsGuest: 'أنت تشاهد هذه الحلقة كضيف',
-    joinToContribute: 'انضم لتتبع تقدمك مع هذا المجتمع',
+    joinToContribute: 'انضم لتتمكن من تتبع تقدمك مع هذه المجموعة',
     
     // Navigation
     dashboard: 'لوحة التحكم',
@@ -721,6 +757,24 @@ export const translations: Record<Language, Translations> = {
     name: 'الاسم',
     signUp: 'إنشاء حساب',
     participateInCircles: 'شارك في تحديات الحلقات وأهداف الحفظ',
+    signUpToJoinGoal: 'إنشاء حساب للانضمام إلى هذا الهدف',
+    signInToJoinGoal: 'تسجيل الدخول للانضمام',
+    whyJoinKhatmahGoals: 'لماذا الانضمام إلى أهداف الختمة؟',
+    whyJoinMemorizationGoals: 'لماذا الانضمام إلى أهداف الحفظ؟',
+    stayMotivated: 'ابق متحفزًا مع متابعة تقدم المجموعة',
+    trackProgressTogether: 'تتبع تقدمك جنبًا إلى جنب مع الآخرين في نفس الرحلة',
+    buildConsistentHabits: 'بناء عادات ثابتة من خلال المسؤولية الجماعية',
+    earnRewardTogether: 'اكسب أجر القراءة الجماعية كأمة واحدة',
+    createYourAccount: 'إنشاء حسابك',
+    welcomeBack: 'مرحبًا بك مرة أخرى',
+    enterYourName: 'أدخل اسمك',
+    enterYourEmail: 'أدخل بريدك الإلكتروني',
+    enterYourPassword: 'أدخل كلمة المرور',
+    minimumCharacters: '6 أحرف على الأقل',
+    creatingAccount: 'إنشاء حساب',
+    signingIn: 'تسجيل الدخول',
+    alreadyHaveAccount: 'لديك حساب بالفعل؟',
+    dontHaveAccount: "ليس لديك حساب؟",
     
     // Help & Info
     whatIsQuranCircle: 'ما هي حلقة القرآن؟',

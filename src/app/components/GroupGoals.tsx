@@ -115,11 +115,19 @@ export default function GroupGoals({ isAuthenticated, onSignOut, onToggleDarkMod
     };
   });
 
+  // Helper function to get the correct Arabic word for days
+  const getArabicDaysWord = (days: number): string => {
+    if (days === 1) return 'يوم';
+    if (days === 2) return 'يومان';
+    if (days >= 3 && days <= 10) return 'أيام';
+    return 'يومًا'; // 11+
+  };
+
   // Generate reading groups from KHATMAH_GROUPS
   const readingGroups = KHATMAH_GROUPS.map(khatmah => ({
     id: khatmah.id,
     title: language === 'ar' 
-      ? `${translations.completeKhatmahIn} ${khatmah.days} ${khatmah.days === 1 ? translations.day : translations.days}`
+      ? `إتمام الختمة في ${khatmah.days} ${getArabicDaysWord(khatmah.days)}`
       : `${translations.completeKhatmahIn} ${khatmah.days} ${translations.days}`,
     description: language === 'ar'
       ? `${translations.readEntireQuranIn} ${khatmah.days} ${translations.daysWithCommunity}`
