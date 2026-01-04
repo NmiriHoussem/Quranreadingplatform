@@ -1,9 +1,10 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Upload, Save, Eye, X } from 'lucide-react';
 import { getStoredUser } from '../../services/authService';
-import { updateLogo } from '../utils/logoStorage';
+import { updateLogo, getLogo } from '../utils/logoStorage';
 import { getTranslations, getStoredLanguage } from '../utils/translations';
+import Logo from './Logo';
 
 const ADMIN_EMAIL = 'houssem.addin@gmail.com';
 
@@ -20,10 +21,24 @@ export default function AdminPanel({ isDarkMode }: AdminPanelProps) {
   
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [currentLogoUrl, setCurrentLogoUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Load current logo on mount
+  useEffect(() => {
+    const loadCurrentLogo = async () => {
+      try {
+        const logoUrl = await getLogo();
+        setCurrentLogoUrl(logoUrl);
+      } catch (error) {
+        console.error('Error loading current logo:', error);
+      }
+    };
+    loadCurrentLogo();
+  }, []);
 
   // Check if user is admin
   if (!user || user.email !== ADMIN_EMAIL) {
@@ -162,6 +177,25 @@ export default function AdminPanel({ isDarkMode }: AdminPanelProps) {
 
           {/* Upload Area */}
           <div className="space-y-6">
+            {/* Current Logo Display */}
+            {currentLogoUrl && !previewUrl && (
+              <div>
+                <label className="block text-sm font-medium mb-3">
+                  {isRtl ? 'الشعار الحالي' : 'Current Logo'}
+                </label>
+                <div className="border-2 border-gray-300 dark:border-gray-600 rounded-lg p-8 bg-white dark:bg-gray-800">
+                  <div className="flex flex-col items-center gap-4">
+                    <Logo className="w-32 h-32 text-emerald-600 dark:text-emerald-400" />
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      {isRtl 
+                        ? 'هذا هو الشعار المستخدم حاليًا في التطبيق' 
+                        : 'This is the logo currently used in the app'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             {/* File Input */}
             <div>
               <label className="block text-sm font-medium mb-2">

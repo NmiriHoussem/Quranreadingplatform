@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { Book, Brain, ChevronRight, Users, Target, Moon, Sun, Globe } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
-import { getJoinedGroups, getKhatmahReadingStats, getJoinedMemorizationGroups, getSurahMemorizationStats, getCurrentKhatmah, calculateKhatmahMilestones } from '../utils/localStorage';
+import { getJoinedGroups, getKhatmahReadingStats, getJoinedMemorizationGroups, getSurahMemorizationStats, getCurrentKhatmah, calculateKhatmahMilestonesForGroup } from '../utils/localStorage';
 import { getSurahByNumber } from '../utils/surahs';
 import ProfileMenu from './ProfileMenu';
 import { getTranslations, getStoredLanguage, setStoredLanguage, type Language } from '../utils/translations';
@@ -50,7 +50,7 @@ export default function HomePage({ isAuthenticated, onSignOut, onToggleDarkMode 
   
   // Calculate completed days for current khatmah
   const currentKhatmahDays = currentKhatmah ? parseInt(currentKhatmah.split('-')[1]) : 0;
-  const currentKhatmahMilestones = currentKhatmah ? calculateKhatmahMilestones(currentKhatmahDays) : [];
+  const currentKhatmahMilestones = currentKhatmah ? calculateKhatmahMilestonesForGroup(currentKhatmah, currentKhatmahDays) : [];
   const completedDays = currentKhatmahMilestones.filter(m => m.completed).length;
 
   // Calculate Memorization Stats
