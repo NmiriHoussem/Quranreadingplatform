@@ -1,15 +1,12 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
 import { Card } from './ui/card';
 import { signIn, signUp } from '../../services/authService';
 import { loadProgressFromServer, saveProgressToServer, testAuth } from '../../services/syncService';
 import { getUserData } from '../utils/localStorage';
-import { Loader2, X } from 'lucide-react';
+import { Loader2, BookOpen, X } from 'lucide-react';
 import { getTranslations, getStoredLanguage } from '../utils/translations';
-import Logo from './Logo';
 
 interface AuthProps {
   onAuthSuccess: () => void;
@@ -26,8 +23,7 @@ export default function Auth({ onAuthSuccess }: AuthProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
-  const location = useLocation();
-  const searchParams = new URLSearchParams(location.search);
+  const [searchParams] = useSearchParams();
   const redirect = searchParams.get('redirect') || '/dashboard';
   
   // Check if user is coming from a group join attempt
@@ -129,7 +125,7 @@ export default function Auth({ onAuthSuccess }: AuthProps) {
         {/* Logo/Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-emerald-100 dark:bg-emerald-900 rounded-full mb-4">
-            <Logo className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
+            <BookOpen className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
           </div>
           <h1 className="text-3xl text-emerald-900 dark:text-emerald-100 mb-2">
             {t.appName}
@@ -171,10 +167,10 @@ export default function Auth({ onAuthSuccess }: AuthProps) {
         <form onSubmit={handleSubmit} className="space-y-4">
           {isSignUp && (
             <div>
-              <Label htmlFor="name" className="block text-sm text-emerald-900 dark:text-emerald-100 mb-2">
+              <label htmlFor="name" className="block text-sm text-emerald-900 dark:text-emerald-100 mb-2">
                 {t.name}
-              </Label>
-              <Input
+              </label>
+              <input
                 id="name"
                 type="text"
                 value={name}
@@ -187,10 +183,10 @@ export default function Auth({ onAuthSuccess }: AuthProps) {
           )}
 
           <div>
-            <Label htmlFor="email" className="block text-sm text-emerald-900 dark:text-emerald-100 mb-2">
+            <label htmlFor="email" className="block text-sm text-emerald-900 dark:text-emerald-100 mb-2">
               {t.email}
-            </Label>
-            <Input
+            </label>
+            <input
               id="email"
               type="email"
               value={email}
@@ -202,10 +198,10 @@ export default function Auth({ onAuthSuccess }: AuthProps) {
           </div>
 
           <div>
-            <Label htmlFor="password" className="block text-sm text-emerald-900 dark:text-emerald-100 mb-2">
+            <label htmlFor="password" className="block text-sm text-emerald-900 dark:text-emerald-100 mb-2">
               {t.password}
-            </Label>
-            <Input
+            </label>
+            <input
               id="password"
               type="password"
               value={password}

@@ -1,14 +1,14 @@
-import { Link } from 'react-router-dom';
-import { BookOpen, Brain, Target, Users, TrendingUp, Award, Calendar, ArrowRight, CheckCircle2, Star } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Book, Flame, Target, Users, Settings as SettingsIcon, CheckCircle2, CloudOff, Cloud, Moon, Sun, Globe } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
-import { Badge } from './ui/badge';
 import { Progress } from './ui/progress';
-import { getJoinedGroups, getKhatmahReadingStats, getMemorizedSurahs, getSurahMemorizationStats, getJoinedMemorizationGroups, getCurrentKhatmah, calculateKhatmahMilestones } from '../utils/localStorage';
-import { getSurahByNumber } from '../utils/surahs';
+import { Badge } from './ui/badge';
+import { getReadingStats, getJoinedGroups, getMilestoneStats, getCurrentKhatmah, getKhatmahReadingStats, getJoinedMemorizationGroups, getSurahMemorizationStats } from '../utils/localStorage';
+import { SURAHS, getSurahByNumber } from '../utils/surahs';
 import ProfileMenu from './ProfileMenu';
-import { getTranslations, getStoredLanguage } from '../utils/translations';
-import Logo from './Logo';
+import { getTranslations, getStoredLanguage, setStoredLanguage, type Language } from '../utils/translations';
 
 interface DashboardProps {
   isAuthenticated: boolean;
@@ -17,11 +17,20 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ isAuthenticated, onSignOut, onToggleDarkMode }: DashboardProps) {
+  const navigate = useNavigate();
   const language = getStoredLanguage();
   const t = getTranslations(language);
   
+  const toggleLanguage = () => {
+    const newLanguage: Language = language === 'en' ? 'ar' : 'en';
+    setStoredLanguage(newLanguage);
+    // Force page reload to apply new language
+    window.location.reload();
+  };
+  
   // Get real reading stats from localStorage
   const joinedGroups = getJoinedGroups();
+  const milestoneStats = getMilestoneStats();
   const currentKhatmah = getCurrentKhatmah();
   
   // State for showing all memorization surahs (mobile)
@@ -80,9 +89,9 @@ export default function Dashboard({ isAuthenticated, onSignOut, onToggleDarkMode
   const stats = {
     currentStreak: 12,
     totalRead: khatmahStats?.pagesRead || 0,
-    memorized: getMemorizedSurahs().length,
+    memorized: milestoneStats.completedSurahs,
     khatmaProgress: khatmahStats?.percentComplete || 0,
-    completedKhatmas: calculateKhatmahMilestones().completedKhatmas
+    completedKhatmas: milestoneStats.khatmahs
   };
 
   const recentProgress = [
@@ -97,7 +106,7 @@ export default function Dashboard({ isAuthenticated, onSignOut, onToggleDarkMode
       <header className="border-b border-emerald-100 dark:border-emerald-800 bg-white/80 dark:bg-emerald-950/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <Logo className="w-8 h-8" />
+            <Book className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
             <span className="text-2xl text-emerald-900 dark:text-emerald-100 hidden md:inline">{t.appName}</span>
             {!isAuthenticated && (
               <Badge variant="secondary" className="ml-2 bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-700">
@@ -133,7 +142,7 @@ export default function Dashboard({ isAuthenticated, onSignOut, onToggleDarkMode
             )}
             <Link to="/reader">
               <Button variant="outline" className="border-emerald-600 dark:border-emerald-500 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900">
-                <BookOpen className="w-4 h-4 md:mr-2" />
+                <Book className="w-4 h-4 md:mr-2" />
                 <span className="hidden md:inline">{t.reader}</span>
               </Button>
             </Link>
@@ -247,7 +256,7 @@ export default function Dashboard({ isAuthenticated, onSignOut, onToggleDarkMode
           <Card className="p-6 mb-8 border-emerald-100 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/30">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
-                <BookOpen className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                <Book className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
               </div>
               <div>
                 <h3 className="text-lg text-emerald-900 dark:text-emerald-100">{t.startKhatmah}</h3>

@@ -1,23 +1,23 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import LandingPage from './components/LandingPage';
+import Auth from './components/Auth';
 import Dashboard from './components/Dashboard';
+import HomePage from './components/HomePage';
+import ReadingDashboard from './components/ReadingDashboard';
+import MemorizationDashboard from './components/MemorizationDashboard';
 import QuranReader from './components/QuranReader';
+import KhatmahReader from './components/KhatmahReader';
 import GroupGoals from './components/GroupGoals';
 import GroupGoalDetail from './components/GroupGoalDetail';
-import Auth from './components/Auth';
 import Settings from './components/Settings';
-import { getCurrentSession, signOut } from '../services/authService';
-import { autoSyncProgress, loadProgressFromServer } from '../services/syncService';
-import { setSyncTrigger } from './utils/localStorage';
-import { useDarkMode } from './utils/useDarkMode';
-import { getStoredLanguage, getTranslations } from './utils/translations';
-import LandingPage from './components/LandingPage';
-import HomePage from './components/HomePage';
 import HelpPage from './components/HelpPage';
-import MemorizationDashboard from './components/MemorizationDashboard';
-import ReadingDashboard from './components/ReadingDashboard';
-import KhatmahReader from './components/KhatmahReader';
 import DownloadQuran from './pages/DownloadQuran';
+import { useDarkMode } from './utils/useDarkMode';
+import { getCurrentSession, signOut as authSignOut, refreshSession } from '../services/authService';
+import { loadProgressFromServer, autoSyncProgress } from '../services/syncService';
+import { setSyncTrigger } from './utils/localStorage';
+import { getTranslations, getStoredLanguage } from './utils/translations';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -31,28 +31,6 @@ function App() {
     
     // Update document title
     document.title = t.appName;
-    
-    // Update favicon
-    const updateFavicon = () => {
-      // Remove existing favicon links
-      const existingFavicons = document.querySelectorAll("link[rel*='icon']");
-      existingFavicons.forEach(favicon => favicon.remove());
-      
-      // Add new favicon
-      const link = document.createElement('link');
-      link.rel = 'icon';
-      link.type = 'image/png';
-      link.href = '/qurancirclelogo.png';
-      document.head.appendChild(link);
-      
-      // Add apple-touch-icon for iOS
-      const appleTouchIcon = document.createElement('link');
-      appleTouchIcon.rel = 'apple-touch-icon';
-      appleTouchIcon.href = '/qurancirclelogo.png';
-      document.head.appendChild(appleTouchIcon);
-    };
-    
-    updateFavicon();
     
     // Update meta description
     const metaDescription = document.querySelector('meta[name="description"]');
@@ -139,7 +117,7 @@ function App() {
   };
 
   const handleSignOut = async () => {
-    await signOut();
+    await authSignOut();
     setIsAuthenticated(false);
   };
 

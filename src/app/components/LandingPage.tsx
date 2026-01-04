@@ -1,11 +1,10 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { Target, Users, TrendingUp, Languages } from 'lucide-react';
+import { Book, Target, Users, TrendingUp, Languages } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { getTranslations, getStoredLanguage, setStoredLanguage, Language } from '../utils/translations';
 import ProfileMenu from './ProfileMenu';
-import Logo from './Logo';
 
 interface LandingPageProps {
   isAuthenticated?: boolean;
@@ -44,7 +43,7 @@ export default function LandingPage({ isAuthenticated = false, onSignOut }: Land
       <header className="border-b border-emerald-100 dark:border-emerald-800 bg-white/80 dark:bg-emerald-950/80 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-6 flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <Logo className="w-8 h-8" />
+            <Book className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
             <span className="text-2xl text-emerald-900 dark:text-emerald-100 hidden md:inline" style={{ fontFamily: logoFont, fontWeight: isRTL ? 700 : 'inherit' }}>
               {isRTL ? t.appNameArabic : t.appName}
             </span>
@@ -104,6 +103,16 @@ export default function LandingPage({ isAuthenticated = false, onSignOut }: Land
         </p>
         
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+          <Card className="p-6 border-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/50 hover:shadow-lg transition-shadow">
+            <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center mb-4">
+              <Book className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <h3 className="text-lg text-emerald-900 dark:text-emerald-100 mb-2" style={{ fontFamily: headingFont, fontWeight: isRTL ? 600 : 'inherit' }}>{t.personalTracking}</h3>
+            <p className="text-emerald-600 dark:text-emerald-400" style={{ fontFamily: bodyFont, lineHeight: isRTL ? '1.8' : 'inherit' }}>
+              {t.personalTrackingDesc}
+            </p>
+          </Card>
+
           <Card className="p-6 border-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/50 hover:shadow-lg transition-shadow">
             <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center mb-4">
               <Target className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />

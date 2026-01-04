@@ -1,12 +1,11 @@
 import { Link } from 'react-router-dom';
-import { Brain, ChevronRight, Users, Target, Moon, Sun, Globe } from 'lucide-react';
+import { Book, Brain, ChevronRight, Users, Target, Moon, Sun, Globe } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { getJoinedGroups, getKhatmahReadingStats, getJoinedMemorizationGroups, getSurahMemorizationStats, getCurrentKhatmah, calculateKhatmahMilestones } from '../utils/localStorage';
 import { getSurahByNumber } from '../utils/surahs';
 import ProfileMenu from './ProfileMenu';
 import { getTranslations, getStoredLanguage, setStoredLanguage, type Language } from '../utils/translations';
-import Logo from './Logo';
 
 interface HomePageProps {
   isAuthenticated: boolean;
@@ -84,7 +83,7 @@ export default function HomePage({ isAuthenticated, onSignOut, onToggleDarkMode 
       <header className="border-b border-emerald-100 dark:border-emerald-800 bg-white/80 dark:bg-emerald-950/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <Logo className="w-8 h-8" />
+            <Book className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
             <span className="text-2xl text-emerald-900 dark:text-emerald-100">{t.appName}</span>
           </div>
           <div className="flex gap-2 items-center">
@@ -137,7 +136,7 @@ export default function HomePage({ isAuthenticated, onSignOut, onToggleDarkMode 
               <div className="flex flex-col h-full">
                 {/* Icon */}
                 <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 dark:from-emerald-600 dark:to-emerald-700 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
-                  <Logo className="w-8 h-8 text-white" />
+                  <Book className="w-8 h-8 text-white" />
                 </div>
 
                 {/* Title */}
@@ -165,7 +164,7 @@ export default function HomePage({ isAuthenticated, onSignOut, onToggleDarkMode 
                     {/* Current Khatmah Progress */}
                     {currentKhatmahStats && (
                       <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
-                        <Logo className="w-4 h-4" />
+                        <Book className="w-4 h-4" />
                         <span>
                           {currentKhatmahStats.pagesRead}/{currentKhatmahStats.totalPages} {language === 'ar' ? 'صفحة' : 'pages'}
                         </span>
