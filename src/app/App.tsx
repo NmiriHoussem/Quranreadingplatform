@@ -35,35 +35,6 @@ function App() {
       link.rel = 'icon';
       link.href = logoUrl;
       document.getElementsByTagName('head')[0].appendChild(link);
-      
-      // Update Open Graph image for social sharing
-      const updateOrCreateMetaTag = (property: string, content: string) => {
-        let metaTag = document.querySelector(`meta[property="${property}"]`);
-        if (metaTag) {
-          metaTag.setAttribute('content', content);
-        } else {
-          metaTag = document.createElement('meta');
-          metaTag.setAttribute('property', property);
-          metaTag.setAttribute('content', content);
-          document.head.appendChild(metaTag);
-        }
-      };
-      
-      updateOrCreateMetaTag('og:image', logoUrl);
-      
-      const updateOrCreateTwitterTag = (name: string, content: string) => {
-        let metaTag = document.querySelector(`meta[name="${name}"]`);
-        if (metaTag) {
-          metaTag.setAttribute('content', content);
-        } else {
-          metaTag = document.createElement('meta');
-          metaTag.setAttribute('name', name);
-          metaTag.setAttribute('content', content);
-          document.head.appendChild(metaTag);
-        }
-      };
-      
-      updateOrCreateTwitterTag('twitter:image', logoUrl);
     }).catch(error => {
       console.error('Error initializing logo:', error);
     });
@@ -105,6 +76,10 @@ function App() {
     updateOrCreateMetaTag('og:title', t.appName);
     updateOrCreateMetaTag('og:description', t.metaDescription);
     updateOrCreateMetaTag('og:type', 'website');
+    updateOrCreateMetaTag('og:image', `${window.location.origin}/pwa-192x192.png`);
+    updateOrCreateMetaTag('og:image:width', '192');
+    updateOrCreateMetaTag('og:image:height', '192');
+    updateOrCreateMetaTag('og:url', window.location.href);
     
     // Twitter Card tags
     const updateOrCreateTwitterTag = (name: string, content: string) => {
@@ -122,6 +97,7 @@ function App() {
     updateOrCreateTwitterTag('twitter:card', 'summary_large_image');
     updateOrCreateTwitterTag('twitter:title', t.appName);
     updateOrCreateTwitterTag('twitter:description', t.metaDescription);
+    updateOrCreateTwitterTag('twitter:image', `${window.location.origin}/pwa-192x192.png`);
   }, []);
   
   // Set up sync trigger for localStorage changes
