@@ -18,7 +18,6 @@ import MemorizationDashboard from './components/MemorizationDashboard';
 import ReadingDashboard from './components/ReadingDashboard';
 import KhatmahReader from './components/KhatmahReader';
 import DownloadQuran from './pages/DownloadQuran';
-import logoImage from "figma:asset/f0974d5cf68fa4ddb25435b034b5b8923c40306d.png";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -43,13 +42,13 @@ function App() {
       const link = document.createElement('link');
       link.rel = 'icon';
       link.type = 'image/png';
-      link.href = logoImage;
+      link.href = '/qurancirclelogo.png';
       document.head.appendChild(link);
       
       // Add apple-touch-icon for iOS
       const appleTouchIcon = document.createElement('link');
       appleTouchIcon.rel = 'apple-touch-icon';
-      appleTouchIcon.href = logoImage;
+      appleTouchIcon.href = '/qurancirclelogo.png';
       document.head.appendChild(appleTouchIcon);
     };
     
