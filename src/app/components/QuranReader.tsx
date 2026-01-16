@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Book, ChevronLeft, ChevronRight, Home, Menu, BookOpen, Brain, Loader2, Play, Pause, RotateCcw, X, Moon, Sun } from 'lucide-react';
+import { Book, ChevronLeft, ChevronRight, Home, Menu, BookOpen, Brain, Loader2, Play, Pause, RotateCcw, X, Moon, Sun, ArrowLeft } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Checkbox } from './ui/checkbox';
@@ -228,16 +228,36 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
   // Sync memorization page with current surah when switching to page mode (only once)
   const hasSetInitialPageRef = useRef(false);
   useEffect(() => {
-    if (mode === 'memorization' && memorizationMode === 'page' && chapterInfo?.pages && chapterInfo.pages.length > 0 && !hasSetInitialPageRef.current) {
-      // Set to the first page of the current surah (only once)
-      setMemorizationPage(chapterInfo.pages[0]);
-      hasSetInitialPageRef.current = true;
-    }
+    const initializePageMode = async () => {
+      if (mode === 'memorization' && memorizationMode === 'page' && !hasSetInitialPageRef.current) {
+        // If chapterInfo is not loaded yet, fetch it first
+        if (!chapterInfo && currentChapter >= 1 && currentChapter <= 114) {
+          try {
+            const chapter = await getChapter(currentChapter);
+            setChapterInfo(chapter);
+            // Set to the first page of the current surah
+            if (chapter.pages && chapter.pages.length > 0) {
+              setMemorizationPage(chapter.pages[0]);
+              hasSetInitialPageRef.current = true;
+            }
+          } catch (err) {
+            console.error('Failed to load chapter info:', err);
+          }
+        } else if (chapterInfo?.pages && chapterInfo.pages.length > 0) {
+          // ChapterInfo already loaded, just set the page
+          setMemorizationPage(chapterInfo.pages[0]);
+          hasSetInitialPageRef.current = true;
+        }
+      }
+    };
+    
+    initializePageMode();
+    
     // Reset the flag when switching away from page mode
     if (memorizationMode !== 'page') {
       hasSetInitialPageRef.current = false;
     }
-  }, [memorizationMode, mode, chapterInfo]);
+  }, [memorizationMode, mode, chapterInfo, currentChapter]);
 
   // Define fetch functions with useCallback
   const fetchPageVerses = useCallback(async () => {
@@ -265,6 +285,31 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
       setLoading(false);
     }
   }, [currentPage]);
+
+  // Fetch verses for memorization page mode
+  const fetchMemorizationPageVerses = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await getVersesByPage(memorizationPage);
+      setVerses(data.verses);
+      
+      // Get chapter info for the first verse on the page
+      if (data.verses.length > 0) {
+        const chapterNumber = parseInt(data.verses[0].verse_key.split(':')[0]);
+        const chapter = await getChapter(chapterNumber);
+        setChapterInfo(chapter);
+        // Update currentChapter to stay in sync with the page
+        setCurrentChapter(chapterNumber);
+      }
+      
+    } catch (err) {
+      setError('Failed to load Quran data. Please try again.');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [memorizationPage]);
 
   const fetchChapterVerses = useCallback(async () => {
     console.log('fetchChapterVerses called with currentChapter:', currentChapter);
@@ -318,10 +363,12 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
 
   // Fetch verses when page changes (Memorization mode - page)
   useEffect(() => {
-    if (mode === 'memorization' && memorizationMode === 'page' && memorizationPage) {
-      fetchPageVerses();
+    // Only fetch if we're in page mode AND we've set the initial page (flag is true)
+    // This prevents fetching page 1 before we've synced to the current surah's first page
+    if (mode === 'memorization' && memorizationMode === 'page' && memorizationPage && hasSetInitialPageRef.current) {
+      fetchMemorizationPageVerses();
     }
-  }, [memorizationPage, mode, memorizationMode, fetchPageVerses]);
+  }, [memorizationPage, mode, memorizationMode, fetchMemorizationPageVerses]);
 
   // Save current page to localStorage whenever it changes
   useEffect(() => {
@@ -698,18 +745,18 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
     const swipeDistance = touchEndX.current - touchStartX.current;
     const minSwipeDistance = 50; // Minimum distance for a swipe to be recognized
 
-    // Swipe right (drag to right) = next page
-    if (swipeDistance > minSwipeDistance && currentPage < 604) {
+    // Swipe left (drag to left) = next page (like turning page forward)
+    if (swipeDistance < -minSwipeDistance && currentPage < 604) {
       setCurrentPage(prev => prev + 1);
-      setSlideDirection('right');
+      setSlideDirection('left');
       setShowSwipeIndicator(true);
       setTimeout(() => setShowSwipeIndicator(false), 1000);
     }
-    // Swipe left (drag to left) = previous page
-    else if (swipeDistance < -minSwipeDistance && currentPage > 1) {
+    // Swipe right (drag to right) = previous page (like turning page backward)
+    else if (swipeDistance > minSwipeDistance && currentPage > 1) {
       // Don't auto-mark when going backward - user might be reviewing
       setCurrentPage(prev => prev - 1);
-      setSlideDirection('left');
+      setSlideDirection('right');
       setShowSwipeIndicator(true);
       setTimeout(() => setShowSwipeIndicator(false), 1000);
     }
@@ -763,28 +810,43 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
   return (
     <div className={`min-h-screen ${nightMode ? 'bg-gradient-to-b from-gray-900 to-gray-800' : 'bg-gradient-to-b from-emerald-50 to-white dark:from-emerald-950 dark:to-emerald-900'}`}>
       {/* Header */}
-      <header className={`border-b border-emerald-100 dark:border-emerald-800 bg-white/80 dark:bg-emerald-950/80 backdrop-blur-sm sticky top-0 z-10 transition-transform duration-300 ${headerVisible ? 'translate-y-0' : '-translate-y-full'}`}>
+      <header className={`border-b ${mode === 'memorization' ? 'border-violet-100 dark:border-violet-800 bg-white/80 dark:bg-violet-950/80' : 'border-emerald-100 dark:border-emerald-800 bg-white/80 dark:bg-emerald-950/80'} backdrop-blur-sm sticky top-0 z-10 transition-transform duration-300 ${headerVisible ? 'translate-y-0' : '-translate-y-full'}`}>
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-4">
-            <Link to="/dashboard">
+            <Link to={mode === 'memorization' ? '/memorization' : '/dashboard'}>
               <Button variant="ghost" size="icon">
-                <Home className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                {mode === 'memorization' ? (
+                  <ArrowLeft className={`w-5 h-5 text-violet-600 dark:text-violet-400`} />
+                ) : (
+                  <Home className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                )}
               </Button>
             </Link>
             <div className="flex items-center gap-2">
-              <Book className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+              {mode === 'memorization' ? (
+                <Brain className="w-6 h-6 text-violet-600 dark:text-violet-400" />
+              ) : (
+                <Book className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+              )}
               <div>
-                <div className="text-emerald-900 dark:text-emerald-100">
+                <div className={mode === 'memorization' ? 'text-violet-900 dark:text-violet-100' : 'text-emerald-900 dark:text-emerald-100'}>
                   {language === 'ar' ? chapterInfo?.name_arabic : chapterInfo?.name_simple || 'Al-Fatiha'}
                 </div>
-                <div className="text-xs text-emerald-600 dark:text-emerald-400">
+                <div className={`text-xs ${mode === 'memorization' ? 'text-violet-600 dark:text-violet-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
                   {chapterInfo ? t.surahMeanings[chapterInfo.chapter_number - 1] : t.surahMeanings[0]}
                 </div>
               </div>
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" className="border-emerald-600 dark:border-emerald-500 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900" onClick={openDrawer}>
+            <Button 
+              variant="outline" 
+              className={mode === 'memorization' 
+                ? 'border-violet-600 dark:border-violet-500 text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900' 
+                : 'border-emerald-600 dark:border-emerald-500 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900'
+              } 
+              onClick={openDrawer}
+            >
               <Menu className="w-4 h-4 mr-2" />
               {t.surahs}
             </Button>
@@ -792,7 +854,10 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
               <Button 
                 variant="outline" 
                 size="icon"
-                className="border-emerald-600 dark:border-emerald-500 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900"
+                className={mode === 'memorization'
+                  ? 'border-violet-600 dark:border-violet-500 text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900'
+                  : 'border-emerald-600 dark:border-emerald-500 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900'
+                }
                 onClick={onToggleDarkMode}
               >
                 {document.documentElement.classList.contains('dark') ? (
@@ -872,37 +937,26 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
             </div>
           )}
 
-          {/* Back to Reading Mode + Reciter Selection - Only show in memorization mode */}
+          {/* Reciter Selection - Only show in memorization mode */}
           {mode === 'memorization' && (
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setMode('reading')}
-                className="border-violet-200 dark:border-violet-700 text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900"
+            <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-violet-950 border border-violet-200 dark:border-violet-700 rounded-lg">
+              <label className="text-sm text-violet-700 dark:text-violet-300 whitespace-nowrap hidden md:inline">{t.reciter}:</label>
+              <select 
+                value={selectedReciter}
+                onChange={(e) => setSelectedReciter(Number(e.target.value))}
+                className="px-2 md:px-3 py-1 border border-violet-200 dark:border-violet-700 rounded text-sm text-violet-900 dark:text-violet-100 dark:bg-violet-900 focus:outline-none focus:ring-2 focus:ring-violet-500 max-w-[200px] truncate"
+                style={{ 
+                  textOverflow: 'ellipsis',
+                  overflow: 'hidden',
+                  whiteSpace: 'nowrap'
+                }}
               >
-                <ChevronLeft className="w-4 h-4" />
-                <span className="hidden md:inline">{t.readingMode}</span>
-              </Button>
-              <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-violet-950 border border-violet-200 dark:border-violet-700 rounded-lg">
-                <label className="text-sm text-violet-700 dark:text-violet-300 whitespace-nowrap hidden md:inline">{t.reciter}:</label>
-                <select 
-                  value={selectedReciter}
-                  onChange={(e) => setSelectedReciter(Number(e.target.value))}
-                  className="px-2 md:px-3 py-1 border border-violet-200 dark:border-violet-700 rounded text-sm text-violet-900 dark:text-violet-100 dark:bg-violet-900 focus:outline-none focus:ring-2 focus:ring-violet-500 max-w-[200px] truncate"
-                  style={{ 
-                    textOverflow: 'ellipsis',
-                    overflow: 'hidden',
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  {RECITERS.map(reciter => (
-                    <option key={reciter.id} value={reciter.id} className="truncate">
-                      {reciter.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                {RECITERS.map(reciter => (
+                  <option key={reciter.id} value={reciter.id} className="truncate">
+                    {reciter.name}
+                  </option>
+                ))}
+              </select>
             </div>
           )}
         </div>

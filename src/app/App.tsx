@@ -184,6 +184,16 @@ function App() {
           element={<MemorizationDashboard isAuthenticated={isAuthenticated} onSignOut={handleSignOut} onToggleDarkMode={toggleDarkMode} />} 
         />
         
+        {/* Shorter aliases for dashboards */}
+        <Route 
+          path="/reading" 
+          element={<Navigate to="/reading-dashboard" replace />} 
+        />
+        <Route 
+          path="/memorization" 
+          element={<Navigate to="/memorization-dashboard" replace />} 
+        />
+        
         {/* Readers */}
         <Route 
           path="/reader" 
