@@ -261,6 +261,10 @@ export interface Translations {
   // Reader Page
   readingMode: string;
   memorizationMode: string;
+  learningMode: string;
+  learning: string;
+  testingMode: string;
+  testing: string;
   surahs: string;
   surah: string;
   pageNumber: string;
@@ -288,6 +292,7 @@ export interface Translations {
   // Memorization Controls
   byAyah: string;
   byRange: string;
+  byPage: string;
   play: string;
   pause: string;
   repeat: string;
@@ -569,6 +574,10 @@ export const translations: Record<Language, Translations> = {
     // Reader Page
     readingMode: 'Reading Mode',
     memorizationMode: 'Memorization Mode',
+    learningMode: 'Learning Mode',
+    learning: 'Learning',
+    testingMode: 'Testing Mode',
+    testing: 'Testing',
     surahs: 'Surahs',
     surah: 'Surah',
     pageNumber: 'Page Number',
@@ -596,6 +605,7 @@ export const translations: Record<Language, Translations> = {
     // Memorization Controls
     byAyah: 'By Ayah',
     byRange: 'By Range',
+    byPage: 'By Page',
     play: 'Play',
     pause: 'Pause',
     repeat: 'Repeat:',
@@ -900,6 +910,10 @@ export const translations: Record<Language, Translations> = {
     // Reader Page
     readingMode: 'وضع القراءة',
     memorizationMode: 'وضع الحفظ',
+    learningMode: 'وضع التعلم',
+    learning: 'تعلم',
+    testingMode: 'وضع الاختبار',
+    testing: 'اختبار',
     surahs: 'السور',
     surah: 'سوة',
     pageNumber: 'رقم الصفحة',
@@ -927,6 +941,7 @@ export const translations: Record<Language, Translations> = {
     // Memorization Controls
     byAyah: 'بآية',
     byRange: 'بمجموعة آيات',
+    byPage: 'بصفحة',
     play: 'تشغيل',
     pause: 'وقف',
     repeat: 'تكرار:',

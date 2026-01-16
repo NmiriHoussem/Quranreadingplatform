@@ -4,9 +4,10 @@ import { Book, ChevronLeft, ChevronRight, Home, Menu, BookOpen, Brain, Loader2, 
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Checkbox } from './ui/checkbox';
-import { getVersesByPage, getVersesByChapter, getChapter, getChapters, Verse, Chapter, RECITERS, getVerseAudioUrl } from '../../services/quranApi';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { getVersesByPage, getVersesByChapter, getChapter, getChapters, Verse, Chapter, RECITERS, getVerseAudioUrl, getMushafPageImageUrl } from '../../services/quranApi';
 import { motion, AnimatePresence } from 'motion/react';
-import { markAyahAsMemorized, unmarkAyahAsMemorized, isAyahMemorized, getLastMemorizedAyah } from '../utils/localStorage';
+import { markAyahAsMemorized, unmarkAyahAsMemorized, isAyahMemorized, getLastMemorizedAyah, markPageAsMemorized as markPageAyahsAsMemorized, unmarkPageAsMemorized, isPageMemorized } from '../utils/localStorage';
 import { getStoredLanguage, getTranslations, type Language } from '../utils/translations';
 
 interface QuranReaderProps {
@@ -36,6 +37,12 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
   const [memorizationMode, setMemorizationMode] = useState<'ayah' | 'range' | 'page'>(() => {
     const saved = localStorage.getItem('memorizationSubMode');
     return (saved === 'ayah' || saved === 'range' || saved === 'page') ? saved : 'ayah';
+  });
+  
+  // Memorization view: learning vs testing
+  const [memorizationView, setMemorizationView] = useState<'learning' | 'testing'>(() => {
+    const saved = localStorage.getItem('memorizationView');
+    return (saved === 'learning' || saved === 'testing') ? saved : 'learning';
   });
   
   const [currentPage, setCurrentPage] = useState(() => {
@@ -87,6 +94,7 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
   
   // Page mode states (for memorization)
   const [memorizationPage, setMemorizationPage] = useState(1);
+  const [isCurrentPageMemorized, setIsCurrentPageMemorized] = useState(false);
   
   const [verses, setVerses] = useState<Verse[]>([]);
   const [chapterInfo, setChapterInfo] = useState<Chapter | null>(null);
@@ -212,6 +220,25 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
     localStorage.setItem('memorizationSubMode', memorizationMode);
   }, [memorizationMode]);
 
+  // Save memorization view
+  useEffect(() => {
+    localStorage.setItem('memorizationView', memorizationView);
+  }, [memorizationView]);
+
+  // Sync memorization page with current surah when switching to page mode (only once)
+  const hasSetInitialPageRef = useRef(false);
+  useEffect(() => {
+    if (mode === 'memorization' && memorizationMode === 'page' && chapterInfo?.pages && chapterInfo.pages.length > 0 && !hasSetInitialPageRef.current) {
+      // Set to the first page of the current surah (only once)
+      setMemorizationPage(chapterInfo.pages[0]);
+      hasSetInitialPageRef.current = true;
+    }
+    // Reset the flag when switching away from page mode
+    if (memorizationMode !== 'page') {
+      hasSetInitialPageRef.current = false;
+    }
+  }, [memorizationMode, mode, chapterInfo]);
+
   // Define fetch functions with useCallback
   const fetchPageVerses = useCallback(async () => {
     setLoading(true);
@@ -275,10 +302,10 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
     }
   }, [currentPage, mode, fetchPageVerses]);
 
-  // Fetch verses when chapter changes (Memorization mode)
+  // Fetch verses when chapter changes (Memorization mode - ayah/range)
   useEffect(() => {
     console.log('Memorization useEffect triggered. mode:', mode, 'currentChapter:', currentChapter);
-    if (mode === 'memorization') {
+    if (mode === 'memorization' && memorizationMode !== 'page') {
       // Only fetch if currentChapter is valid
       if (currentChapter && !isNaN(currentChapter) && currentChapter >= 1 && currentChapter <= 114) {
         console.log('Calling fetchChapterVerses for chapter:', currentChapter);
@@ -287,7 +314,14 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
         console.log('Chapter validation failed:', { currentChapter, isNaN: isNaN(currentChapter) });
       }
     }
-  }, [currentChapter, mode, fetchChapterVerses]);
+  }, [currentChapter, mode, memorizationMode, fetchChapterVerses]);
+
+  // Fetch verses when page changes (Memorization mode - page)
+  useEffect(() => {
+    if (mode === 'memorization' && memorizationMode === 'page' && memorizationPage) {
+      fetchPageVerses();
+    }
+  }, [memorizationPage, mode, memorizationMode, fetchPageVerses]);
 
   // Save current page to localStorage whenever it changes
   useEffect(() => {
@@ -337,6 +371,13 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
       }
     }
   }, [mode, currentChapter, verses, scrollToAyah]);
+
+  // Check if current page is memorized when verses or page changes
+  useEffect(() => {
+    if (mode === 'memorization' && memorizationMode === 'page' && verses.length > 0) {
+      setIsCurrentPageMemorized(isPageMemorized(memorizationPage, verses));
+    }
+  }, [mode, memorizationMode, memorizationPage, verses]);
 
   const openDrawer = async () => {
     setDrawerOpen(true);
@@ -768,30 +809,59 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
       <div className="container mx-auto px-4 py-4 md:py-6 max-w-5xl">
         {/* Mode Toggle */}
         <div className="flex justify-between items-center mb-4">
-          <div className="inline-flex rounded-lg border border-emerald-200 dark:border-emerald-700 p-1 bg-white dark:bg-emerald-950">
-            <button
-              onClick={() => setMode('reading')}
-              className={`flex items-center gap-2 px-3 md:px-6 py-2 rounded-md transition-colors ${
-                mode === 'reading'
-                  ? 'bg-emerald-600 dark:bg-emerald-500 text-white'
-                  : 'text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900'
-              }`}
-            >
-              <BookOpen className="w-4 h-4" />
-              <span className="hidden md:inline">{t.readingMode}</span>
-            </button>
-            <button
-              onClick={() => setMode('memorization')}
-              className={`flex items-center gap-2 px-3 md:px-6 py-2 rounded-md transition-colors ${
-                mode === 'memorization'
-                  ? 'bg-emerald-600 dark:bg-emerald-500 text-white'
-                  : 'text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900'
-              }`}
-            >
-              <Brain className="w-4 h-4" />
-              <span className="hidden md:inline">{t.memorizationMode}</span>
-            </button>
-          </div>
+          {mode === 'reading' ? (
+            // Reading mode: show "Reading Mode" and "Memorization Mode" toggle
+            <div className="inline-flex rounded-lg border border-emerald-200 dark:border-emerald-700 p-1 bg-white dark:bg-emerald-950">
+              <button
+                onClick={() => setMode('reading')}
+                className={`flex items-center gap-2 px-3 md:px-6 py-2 rounded-md transition-colors ${
+                  mode === 'reading'
+                    ? 'bg-emerald-600 dark:bg-emerald-500 text-white'
+                    : 'text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900'
+                }`}
+              >
+                <BookOpen className="w-4 h-4" />
+                <span className="hidden md:inline">{t.readingMode}</span>
+              </button>
+              <button
+                onClick={() => setMode('memorization')}
+                className={`flex items-center gap-2 px-3 md:px-6 py-2 rounded-md transition-colors ${
+                  mode === 'memorization'
+                    ? 'bg-emerald-600 dark:bg-emerald-500 text-white'
+                    : 'text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900'
+                }`}
+              >
+                <Brain className="w-4 h-4" />
+                <span className="hidden md:inline">{t.memorizationMode}</span>
+              </button>
+            </div>
+          ) : (
+            // Memorization mode: show "Learning" and "Testing" toggle with violet colors
+            <div className="inline-flex rounded-lg border border-violet-200 dark:border-violet-700 p-1 bg-white dark:bg-violet-950">
+              <button
+                onClick={() => setMemorizationView('learning')}
+                className={`flex items-center gap-2 px-3 md:px-6 py-2 rounded-md transition-colors ${
+                  memorizationView === 'learning'
+                    ? 'bg-violet-600 dark:bg-violet-500 text-white'
+                    : 'text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900'
+                }`}
+              >
+                <Brain className="w-4 h-4" />
+                <span>{t.learning}</span>
+              </button>
+              <button
+                onClick={() => setMemorizationView('testing')}
+                className={`flex items-center gap-2 px-3 md:px-6 py-2 rounded-md transition-colors ${
+                  memorizationView === 'testing'
+                    ? 'bg-violet-600 dark:bg-violet-500 text-white'
+                    : 'text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900'
+                }`}
+              >
+                <BookOpen className="w-4 h-4" />
+                <span>{t.testing}</span>
+              </button>
+            </div>
+          )}
 
           {/* Page/Juz Info - Only show in reading mode */}
           {mode === 'reading' && (
@@ -802,26 +872,37 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
             </div>
           )}
 
-          {/* Reciter Selection - Only show in memorization mode */}
+          {/* Back to Reading Mode + Reciter Selection - Only show in memorization mode */}
           {mode === 'memorization' && (
-            <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-700 rounded-lg">
-              <label className="text-sm text-emerald-700 dark:text-emerald-300 whitespace-nowrap hidden md:inline">{t.reciter}:</label>
-              <select 
-                value={selectedReciter}
-                onChange={(e) => setSelectedReciter(Number(e.target.value))}
-                className="px-2 md:px-3 py-1 border border-emerald-200 dark:border-emerald-700 rounded text-sm text-emerald-900 dark:text-emerald-100 dark:bg-emerald-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 max-w-[200px] truncate"
-                style={{ 
-                  textOverflow: 'ellipsis',
-                  overflow: 'hidden',
-                  whiteSpace: 'nowrap'
-                }}
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setMode('reading')}
+                className="border-violet-200 dark:border-violet-700 text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900"
               >
-                {RECITERS.map(reciter => (
-                  <option key={reciter.id} value={reciter.id} className="truncate">
-                    {reciter.name}
-                  </option>
-                ))}
-              </select>
+                <ChevronLeft className="w-4 h-4" />
+                <span className="hidden md:inline">{t.readingMode}</span>
+              </Button>
+              <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-violet-950 border border-violet-200 dark:border-violet-700 rounded-lg">
+                <label className="text-sm text-violet-700 dark:text-violet-300 whitespace-nowrap hidden md:inline">{t.reciter}:</label>
+                <select 
+                  value={selectedReciter}
+                  onChange={(e) => setSelectedReciter(Number(e.target.value))}
+                  className="px-2 md:px-3 py-1 border border-violet-200 dark:border-violet-700 rounded text-sm text-violet-900 dark:text-violet-100 dark:bg-violet-900 focus:outline-none focus:ring-2 focus:ring-violet-500 max-w-[200px] truncate"
+                  style={{ 
+                    textOverflow: 'ellipsis',
+                    overflow: 'hidden',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  {RECITERS.map(reciter => (
+                    <option key={reciter.id} value={reciter.id} className="truncate">
+                      {reciter.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           )}
         </div>
@@ -1070,22 +1151,67 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
                   Try Again
                 </Button>
               </Card>
+            ) : memorizationView === 'testing' ? (
+              /* Testing Mode - Placeholder for future implementation */
+              <>
+                {/* Surah Header */}
+                <Card className="p-4 mb-4 border-violet-100 dark:border-violet-800 dark:bg-violet-950/50 text-center">
+                  <div className="text-4xl text-violet-900 dark:text-violet-100 mb-1">{chapterInfo?.name_arabic}</div>
+                  <div className="text-xl text-violet-700 dark:text-violet-300 mb-1">
+                    {language === 'ar' ? chapterInfo?.name_arabic : chapterInfo?.name_simple}
+                  </div>
+                  <div className="text-violet-600 dark:text-violet-400">
+                    {chapterInfo && t.surahMeanings[chapterInfo.chapter_number - 1]} • {chapterInfo?.revelation_place === 'makkah' ? (language === 'ar' ? 'مكية' : 'Meccan') : (language === 'ar' ? 'مدنية' : 'Medinan')} • {chapterInfo?.verses_count} {language === 'ar' ? 'آية' : 'Ayahs'}
+                  </div>
+                </Card>
+
+                {/* Testing Mode Placeholder */}
+                <Card className="p-12 text-center border-violet-200 dark:border-violet-700 dark:bg-violet-950/30">
+                  <div className="max-w-md mx-auto">
+                    <div className="text-6xl mb-4">🧪</div>
+                    <h3 className="text-2xl font-bold text-violet-900 dark:text-violet-100 mb-3">
+                      {language === 'ar' ? 'وضع الاختبار' : 'Testing Mode'}
+                    </h3>
+                    <p className="text-violet-700 dark:text-violet-300 mb-6">
+                      {language === 'ar' 
+                        ? 'وضع الاختبار قريبًا! سيتيح لك هذا الوضع اختبار حفظك والتحقق من الاحتفاظ به من خلال نظام تكرار متباعد ذكي.'
+                        : 'Testing mode coming soon! This mode will allow you to test your memorization and verify retention through smart spaced repetition.'}
+                    </p>
+                    <div className="bg-violet-50 dark:bg-violet-900/30 rounded-lg p-4 text-sm text-violet-600 dark:text-violet-400">
+                      <p className="mb-2 font-semibold">{language === 'ar' ? '📋 الميزات القادمة:' : '📋 Upcoming Features:'}</p>
+                      <ul className="text-right space-y-1">
+                        <li>• {language === 'ar' ? 'اختبار الاستدعاء الذاتي' : 'Self-testing with recall'}</li>
+                        <li>• {language === 'ar' ? 'جدول المراجعة الذكي' : 'Smart review scheduling'}</li>
+                        <li>• {language === 'ar' ? 'تتبع الآيات المنسية' : 'Lapsed verse tracking'}</li>
+                        <li>• {language === 'ar' ? 'قياس قوة الحفظ' : 'Memorization strength metrics'}</li>
+                      </ul>
+                    </div>
+                    <Button
+                      onClick={() => setMemorizationView('learning')}
+                      className="mt-6 bg-violet-600 hover:bg-violet-700 dark:bg-violet-700 dark:hover:bg-violet-600"
+                    >
+                      <ChevronLeft className="w-4 h-4 mr-2" />
+                      {language === 'ar' ? 'العودة إلى وضع التعلم' : 'Back to Learning Mode'}
+                    </Button>
+                  </div>
+                </Card>
+              </>
             ) : (
               <>
                 {/* Surah Header */}
-                <Card className="p-4 mb-4 border-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/50 text-center">
-                  <div className="text-4xl text-emerald-900 dark:text-emerald-100 mb-1">{chapterInfo?.name_arabic}</div>
-                  <div className="text-xl text-emerald-700 dark:text-emerald-300 mb-1">
+                <Card className="p-4 mb-4 border-violet-100 dark:border-violet-800 dark:bg-violet-950/50 text-center">
+                  <div className="text-4xl text-violet-900 dark:text-violet-100 mb-1">{chapterInfo?.name_arabic}</div>
+                  <div className="text-xl text-violet-700 dark:text-violet-300 mb-1">
                     {language === 'ar' ? chapterInfo?.name_arabic : chapterInfo?.name_simple}
                   </div>
-                  <div className="text-emerald-600 dark:text-emerald-400">
+                  <div className="text-violet-600 dark:text-violet-400">
                     {chapterInfo && t.surahMeanings[chapterInfo.chapter_number - 1]} • {chapterInfo?.revelation_place === 'makkah' ? (language === 'ar' ? 'مكية' : 'Meccan') : (language === 'ar' ? 'مدنية' : 'Medinan')} • {chapterInfo?.verses_count} {language === 'ar' ? 'آية' : 'Ayahs'}
                   </div>
                 </Card>
 
                 {/* Memorization Sub-Mode Toggle */}
                 <div className="mb-4">
-                  <div className="inline-flex w-full md:w-auto rounded-lg border border-emerald-200 dark:border-emerald-700 p-1 bg-white dark:bg-emerald-950">
+                  <div className="inline-flex w-full md:w-auto rounded-lg border border-violet-200 dark:border-violet-700 p-1 bg-white dark:bg-violet-950">
                     <button
                       onClick={() => {
                         setMemorizationMode('ayah');
@@ -1093,8 +1219,8 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
                       }}
                       className={`flex-1 md:flex-none px-4 py-2 rounded-md transition-colors ${
                         memorizationMode === 'ayah'
-                          ? 'bg-emerald-600 dark:bg-emerald-500 text-white'
-                          : 'text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900'
+                          ? 'bg-violet-600 dark:bg-violet-500 text-white'
+                          : 'text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900'
                       }`}
                     >
                       {t.byAyah}
@@ -1106,54 +1232,80 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
                       }}
                       className={`flex-1 md:flex-none px-4 py-2 rounded-md transition-colors ${
                         memorizationMode === 'range'
-                          ? 'bg-emerald-600 dark:bg-emerald-500 text-white'
-                          : 'text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900'
+                          ? 'bg-violet-600 dark:bg-violet-500 text-white'
+                          : 'text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900'
                       }`}
                     >
                       {t.byRange}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setMemorizationMode('page');
+                        stopSequence();
+                      }}
+                      className={`flex-1 md:flex-none px-4 py-2 rounded-md transition-colors ${
+                        memorizationMode === 'page'
+                          ? 'bg-violet-600 dark:bg-violet-500 text-white'
+                          : 'text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900'
+                      }`}
+                    >
+                      {t.byPage}
                     </button>
                   </div>
                 </div>
 
                 {/* Range Controls - Only show in range mode */}
                 {memorizationMode === 'range' && (
-                  <Card className="p-4 mb-4 border-emerald-200 dark:border-emerald-700 bg-emerald-50/50 dark:bg-emerald-900/30">
+                  <Card className="p-4 mb-4 border-violet-200 dark:border-violet-700 bg-violet-50/50 dark:bg-violet-900/30">
                     {/* Mobile: 2-column grid layout, Desktop: row layout */}
                     <div className="grid grid-cols-2 md:flex md:flex-row gap-3 md:gap-4 md:items-end">
                       <div className="md:flex-1">
-                        <label className="text-sm text-emerald-700 dark:text-emerald-300 mb-1 block">{t.startAyah}</label>
-                        <input
-                          type="number"
-                          inputMode="numeric"
-                          min="1"
-                          max={chapterInfo?.verses_count || 7}
-                          value={rangeStartAyah}
-                          onFocus={(e) => e.target.select()}
-                          onChange={(e) => {
-                            const val = parseInt(e.target.value) || 1;
-                            setRangeStartAyah(Math.max(1, Math.min(chapterInfo?.verses_count || 7, val)));
+                        <label className="text-sm text-violet-700 dark:text-violet-300 mb-1 block">{t.startAyah}</label>
+                        <Select
+                          value={rangeStartAyah.toString()}
+                          onValueChange={(value) => {
+                            const newStart = parseInt(value);
+                            setRangeStartAyah(newStart);
+                            // Adjust end if it's less than new start
+                            if (rangeEndAyah < newStart) {
+                              setRangeEndAyah(newStart);
+                            }
                           }}
-                          className="w-full px-3 py-2 border border-emerald-200 dark:border-emerald-700 rounded text-gray-900 dark:text-gray-100 dark:bg-emerald-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-400"
-                        />
+                        >
+                          <SelectTrigger className="w-full border-violet-200 dark:border-violet-700 text-gray-900 dark:text-gray-100 dark:bg-violet-900 focus:ring-2 focus:ring-violet-500 dark:focus:ring-violet-400">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-[300px]">
+                            {Array.from({ length: chapterInfo?.verses_count || 7 }, (_, i) => i + 1).map((num) => (
+                              <SelectItem key={num} value={num.toString()}>
+                                {num}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div className="md:flex-1">
-                        <label className="text-sm text-emerald-700 dark:text-emerald-300 mb-1 block">{t.endAyah}</label>
-                        <input
-                          type="number"
-                          inputMode="numeric"
-                          min={rangeStartAyah}
-                          max={chapterInfo?.verses_count || 7}
-                          value={rangeEndAyah}
-                          onFocus={(e) => e.target.select()}
-                          onChange={(e) => {
-                            const val = parseInt(e.target.value) || rangeStartAyah;
-                            setRangeEndAyah(Math.max(rangeStartAyah, Math.min(chapterInfo?.verses_count || 7, val)));
-                          }}
-                          className="w-full px-3 py-2 border border-emerald-200 dark:border-emerald-700 rounded text-gray-900 dark:text-gray-100 dark:bg-emerald-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-400"
-                        />
+                        <label className="text-sm text-violet-700 dark:text-violet-300 mb-1 block">{t.endAyah}</label>
+                        <Select
+                          value={rangeEndAyah.toString()}
+                          onValueChange={(value) => setRangeEndAyah(parseInt(value))}
+                        >
+                          <SelectTrigger className="w-full border-violet-200 dark:border-violet-700 text-gray-900 dark:text-gray-100 dark:bg-violet-900 focus:ring-2 focus:ring-violet-500 dark:focus:ring-violet-400">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-[300px]">
+                            {Array.from({ length: chapterInfo?.verses_count || 7 }, (_, i) => i + 1)
+                              .filter(num => num >= rangeStartAyah)
+                              .map((num) => (
+                                <SelectItem key={num} value={num.toString()}>
+                                  {num}
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div className="md:flex-1">
-                        <label className="text-sm text-emerald-700 dark:text-emerald-300 mb-1 block">{t.repeatRange}</label>
+                        <label className="text-sm text-violet-700 dark:text-violet-300 mb-1 block">{t.repeatRange}</label>
                         <input
                           type="number"
                           inputMode="numeric"
@@ -1162,11 +1314,11 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
                           value={globalRepeatCount}
                           onFocus={(e) => e.target.select()}
                           onChange={(e) => setGlobalRepeatCount(Math.max(1, Math.min(10, parseInt(e.target.value) || 1)))}
-                          className="w-full px-3 py-2 border border-emerald-200 dark:border-emerald-700 rounded text-gray-900 dark:text-gray-100 dark:bg-emerald-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-400"
+                          className="w-full px-3 py-2 border border-violet-200 dark:border-violet-700 rounded text-gray-900 dark:text-gray-100 dark:bg-violet-900 focus:outline-none focus:ring-2 focus:ring-violet-500 dark:focus:ring-violet-400"
                         />
                       </div>
                       <div className="md:flex-1">
-                        <label className="text-sm text-emerald-700 dark:text-emerald-300 mb-1 block">{t.repeatEachAyah}</label>
+                        <label className="text-sm text-violet-700 dark:text-violet-300 mb-1 block">{t.repeatEachAyah}</label>
                         <input
                           type="number"
                           inputMode="numeric"
@@ -1175,7 +1327,7 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
                           value={perAyahRepeatCount}
                           onFocus={(e) => e.target.select()}
                           onChange={(e) => setPerAyahRepeatCount(Math.max(1, Math.min(10, parseInt(e.target.value) || 1)))}
-                          className="w-full px-3 py-2 border border-emerald-200 dark:border-emerald-700 rounded text-gray-900 dark:text-gray-100 dark:bg-emerald-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-400"
+                          className="w-full px-3 py-2 border border-violet-200 dark:border-violet-700 rounded text-gray-900 dark:text-gray-100 dark:bg-violet-900 focus:outline-none focus:ring-2 focus:ring-violet-500 dark:focus:ring-violet-400"
                         />
                       </div>
                     </div>
@@ -1186,7 +1338,7 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
                       className={`w-full mt-3 ${
                         isPlayingSequence
                           ? 'bg-amber-600 hover:bg-amber-700'
-                          : 'bg-emerald-600 hover:bg-emerald-700'
+                          : 'bg-violet-600 hover:bg-violet-700'
                       }`}
                     >
                       {isPlayingSequence ? (
@@ -1210,14 +1362,209 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
                   </Card>
                 )}
 
-                {/* Bismillah - except for Surah 1 (already has it as verse 1) and Surah 9 */}
-                {currentChapter !== 1 && currentChapter !== 9 && (
+                {/* Page Mode - Show Mushaf page image for memorization */}
+                {memorizationMode === 'page' && (
+                  <>
+                    {/* Page Navigation Controls + Mark as Memorized */}
+                    <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
+                      {/* Next Page - on LEFT (Arabic RTL reading direction) */}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setMemorizationPage(Math.min(604, memorizationPage + 1))}
+                        disabled={memorizationPage === 604}
+                        className="border-violet-600 dark:border-violet-600 text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900"
+                      >
+                        <ChevronLeft className="w-4 h-4 mr-1" />
+                        {t.next}
+                      </Button>
+                      
+                      <div className="flex items-center gap-3">
+                        {/* Page Number Input */}
+                        <div className="flex items-center gap-2">
+                          <span className="text-violet-700 dark:text-violet-300 text-sm">{t.page}</span>
+                          <input
+                            type="number"
+                            inputMode="numeric"
+                            min="1"
+                            max="604"
+                            value={memorizationPage}
+                            onFocus={(e) => e.target.select()}
+                            onChange={(e) => {
+                              const val = parseInt(e.target.value) || 1;
+                              setMemorizationPage(Math.max(1, Math.min(604, val)));
+                            }}
+                            className="w-16 px-2 py-1 text-center border border-violet-200 dark:border-violet-700 rounded text-gray-900 dark:text-gray-100 dark:bg-violet-900 focus:outline-none focus:ring-2 focus:ring-violet-500 dark:focus:ring-violet-400"
+                          />
+                          <span className="text-violet-600 dark:text-violet-400 text-sm">{t.of} 604</span>
+                        </div>
+                        
+                        {/* Mark as Memorized Checkbox */}
+                        <div className="hidden md:flex items-center gap-2 ml-2">
+                          <Checkbox
+                            id={`page-${memorizationPage}-memorized`}
+                            checked={isCurrentPageMemorized}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                markPageAyahsAsMemorized(memorizationPage, verses);
+                              } else {
+                                unmarkPageAsMemorized(memorizationPage, verses);
+                              }
+                              setIsCurrentPageMemorized(checked as boolean);
+                            }}
+                            className="border-violet-600 data-[state=checked]:bg-violet-600"
+                          />
+                          <label
+                            htmlFor={`page-${memorizationPage}-memorized`}
+                            className="text-sm text-violet-700 dark:text-violet-300 cursor-pointer"
+                          >
+                            {t.markAsMemorized}
+                          </label>
+                        </div>
+                      </div>
+                      
+                      {/* Previous Page - on RIGHT (Arabic RTL reading direction) */}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setMemorizationPage(Math.max(1, memorizationPage - 1))}
+                        disabled={memorizationPage === 1}
+                        className="border-violet-600 dark:border-violet-600 text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900"
+                      >
+                        {t.previous}
+                        <ChevronRight className="w-4 h-4 ml-1" />
+                      </Button>
+                    </div>
+                    
+                    {/* Mark as Memorized - Mobile Only */}
+                    <div className="flex md:hidden items-center justify-center gap-2 mb-4">
+                      <Checkbox
+                        id={`page-${memorizationPage}-memorized-mobile`}
+                        checked={isCurrentPageMemorized}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            markPageAyahsAsMemorized(memorizationPage, verses);
+                          } else {
+                            unmarkPageAsMemorized(memorizationPage, verses);
+                          }
+                          setIsCurrentPageMemorized(checked as boolean);
+                        }}
+                        className="border-violet-600 data-[state=checked]:bg-violet-600"
+                      />
+                      <label
+                        htmlFor={`page-${memorizationPage}-memorized-mobile`}
+                        className="text-sm text-violet-700 dark:text-violet-300 cursor-pointer"
+                      >
+                        {t.markAsMemorized}
+                      </label>
+                    </div>
+                    
+                    {/* Repetition Controls */}
+                    <Card className="p-4 mb-4 border-violet-200 dark:border-violet-700 bg-violet-50/50 dark:bg-violet-900/30">
+                      <div className="grid grid-cols-2 md:flex md:flex-row gap-3 md:gap-4 md:items-end">
+                        <div className="md:flex-1">
+                          <label className="text-sm text-violet-700 dark:text-violet-300 mb-1 block">{t.repeatRange}</label>
+                          <input
+                            type="number"
+                            inputMode="numeric"
+                            min="1"
+                            max="10"
+                            value={globalRepeatCount}
+                            onFocus={(e) => e.target.select()}
+                            onChange={(e) => setGlobalRepeatCount(Math.max(1, Math.min(10, parseInt(e.target.value) || 1)))}
+                            className="w-full px-3 py-2 border border-violet-200 dark:border-violet-700 rounded text-gray-900 dark:text-gray-100 dark:bg-violet-900 focus:outline-none focus:ring-2 focus:ring-violet-500 dark:focus:ring-violet-400"
+                          />
+                        </div>
+                        <div className="md:flex-1">
+                          <label className="text-sm text-violet-700 dark:text-violet-300 mb-1 block">{t.repeatEachAyah}</label>
+                          <input
+                            type="number"
+                            inputMode="numeric"
+                            min="1"
+                            max="10"
+                            value={perAyahRepeatCount}
+                            onFocus={(e) => e.target.select()}
+                            onChange={(e) => setPerAyahRepeatCount(Math.max(1, Math.min(10, parseInt(e.target.value) || 1)))}
+                            className="w-full px-3 py-2 border border-violet-200 dark:border-violet-700 rounded text-gray-900 dark:text-gray-100 dark:bg-violet-900 focus:outline-none focus:ring-2 focus:ring-violet-500 dark:focus:ring-violet-400"
+                          />
+                        </div>
+                      </div>
+                      
+                      <Button
+                        onClick={playSequence}
+                        className={`w-full mt-3 ${
+                          isPlayingSequence
+                            ? 'bg-amber-600 hover:bg-amber-700'
+                            : 'bg-violet-600 hover:bg-violet-700'
+                        }`}
+                      >
+                        {isPlayingSequence ? (
+                          <>
+                            <Pause className="w-4 h-4 mr-2" />
+                            Stop
+                          </>
+                        ) : (
+                          <>
+                            <Play className="w-4 h-4 mr-2" />
+                            {t.playRange}
+                          </>
+                        )}
+                      </Button>
+                      
+                      {isPlayingSequence && (
+                        <div className="mt-3 text-sm text-amber-600 text-center">
+                          Playing cycle {sequenceRepeatCount + 1} of {globalRepeatCount} • Ayah {verses.find(v => v.verse_key === playingVerse)?.verse_number || currentSequenceIndex + 1} (repetition {currentAyahRepeatCount + 1}/{perAyahRepeatCount})
+                        </div>
+                      )}
+                    </Card>
+                    
+                    {/* Mushaf Page Image with Swipe Support */}
+                    <div 
+                      className="bg-white dark:bg-gray-900 rounded-lg p-4 mb-4 select-none touch-pan-y"
+                      onTouchStart={(e) => {
+                        touchStartX.current = e.touches[0].clientX;
+                      }}
+                      onTouchMove={(e) => {
+                        touchEndX.current = e.touches[0].clientX;
+                      }}
+                      onTouchEnd={() => {
+                        const diff = touchStartX.current - touchEndX.current;
+                        const threshold = 50;
+                        
+                        if (Math.abs(diff) > threshold) {
+                          if (diff > 0) {
+                            // Swiped left - go to next page
+                            if (memorizationPage < 604) {
+                              setMemorizationPage(memorizationPage + 1);
+                            }
+                          } else {
+                            // Swiped right - go to previous page
+                            if (memorizationPage > 1) {
+                              setMemorizationPage(memorizationPage - 1);
+                            }
+                          }
+                        }
+                      }}
+                    >
+                      <img 
+                        src={getMushafPageImageUrl(memorizationPage, false)} 
+                        alt={`${t.page} ${memorizationPage}`}
+                        className="w-full h-auto block dark:invert"
+                        loading="lazy"
+                      />
+                    </div>
+                  </>
+                )}
+
+                {/* Bismillah - except for Surah 1 (already has it as verse 1) and Surah 9 - Only show in ayah/range mode */}
+                {memorizationMode !== 'page' && currentChapter !== 1 && currentChapter !== 9 && (
                   <div className="text-center mb-4">
                     <div className="text-3xl text-emerald-800 dark:text-emerald-300">بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</div>
                   </div>
                 )}
 
-                {/* Individual Ayahs */}
+                {/* Individual Ayahs - Only show in ayah/range mode */}
+                {memorizationMode !== 'page' && (
                 <div className="space-y-3">{getFilteredVerses().map((verse) => (
                     <Card 
                       key={verse.id}
@@ -1307,8 +1654,10 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
                     </Card>
                   ))}
                 </div>
+                )}
 
-                {/* Navigation */}
+                {/* Navigation - Only show in ayah/range mode */}
+                {memorizationMode !== 'page' && (
                 <div className="flex justify-between mt-4">
                   {/* Next Surah - on LEFT (Arabic RTL reading direction) */}
                   <Button 
@@ -1336,6 +1685,7 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
                     <ChevronRight className="w-4 h-4 ml-2" />
                   </Button>
                 </div>
+                )}
               </>
             )}
           </>

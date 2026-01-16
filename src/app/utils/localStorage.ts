@@ -385,6 +385,72 @@ export const getLastMemorizedAyah = (surahNumber: number): number | null => {
   return memorizedAyahs[memorizedAyahs.length - 1];
 };
 
+// Mark all ayahs on a specific page as memorized
+export const markPageAsMemorized = (pageNumber: number, verses: Array<{verse_key: string}>): void => {
+  const data = getUserData();
+  
+  // Mark each ayah on this page as memorized
+  verses.forEach(verse => {
+    const [surahStr, ayahStr] = verse.verse_key.split(':');
+    const surahNumber = parseInt(surahStr);
+    const ayahNumber = parseInt(ayahStr);
+    
+    if (!data.memorizationProgress[surahNumber.toString()]) {
+      data.memorizationProgress[surahNumber.toString()] = {};
+    }
+    
+    data.memorizationProgress[surahNumber.toString()][ayahNumber.toString()] = {
+      memorized: true,
+      timestamp: new Date().toISOString()
+    };
+  });
+  
+  // Check for auto-completed surahs
+  const affectedSurahs = new Set(verses.map(v => parseInt(v.verse_key.split(':')[0])));
+  affectedSurahs.forEach(surahNumber => {
+    const surahInfo = SURAHS.find(s => s.number === surahNumber);
+    if (surahInfo) {
+      const memorizedAyahs = Object.keys(data.memorizationProgress[surahNumber.toString()] || {}).length;
+      if (memorizedAyahs === surahInfo.verses && !data.completedSurahs.includes(surahNumber)) {
+        data.completedSurahs.push(surahNumber);
+        console.log(`🎉 Surah ${surahNumber} auto-completed! All ${surahInfo.verses} ayahs memorized.`);
+      }
+    }
+  });
+  
+  // Save once (this triggers both localStorage and database sync)
+  saveUserData(data);
+  console.log(`✅ Marked ${verses.length} ayahs on page ${pageNumber} as memorized`);
+};
+
+// Check if all ayahs on a page are memorized
+export const isPageMemorized = (pageNumber: number, verses: Array<{verse_key: string}>): boolean => {
+  return verses.every(verse => {
+    const [surahStr, ayahStr] = verse.verse_key.split(':');
+    const surahNumber = parseInt(surahStr);
+    const ayahNumber = parseInt(ayahStr);
+    return isAyahMemorized(surahNumber, ayahNumber);
+  });
+};
+
+// Unmark all ayahs on a specific page as memorized
+export const unmarkPageAsMemorized = (pageNumber: number, verses: Array<{verse_key: string}>): void => {
+  const data = getUserData();
+  
+  verses.forEach(verse => {
+    const [surahStr, ayahStr] = verse.verse_key.split(':');
+    const surahNumber = parseInt(surahStr);
+    const ayahNumber = parseInt(ayahStr);
+    
+    if (data.memorizationProgress[surahNumber.toString()]) {
+      delete data.memorizationProgress[surahNumber.toString()][ayahNumber.toString()];
+    }
+  });
+  
+  saveUserData(data);
+  console.log(`✅ Unmarked ${verses.length} ayahs on page ${pageNumber} as memorized`);
+};
+
 // Get memorization statistics for a surah
 export const getSurahMemorizationStats = (surahNumber: number, totalAyahs: number) => {
   const memorizedAyahs = getMemorizedAyahs(surahNumber);
