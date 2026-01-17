@@ -56,6 +56,7 @@ export default function InstallPrompt({ onInstallSuccess }: InstallPromptProps) 
     // Check if user has dismissed before
     const dismissedAt = localStorage.getItem('pwa-install-dismissed');
     const neverShowAgain = localStorage.getItem('pwa-install-never');
+    const dismissedThisSession = sessionStorage.getItem('pwa-install-dismissed-session');
     
     // Debug logging
     console.log('PWA Install Prompt - Debug Info:', {
@@ -63,7 +64,8 @@ export default function InstallPrompt({ onInstallSuccess }: InstallPromptProps) 
       platform: isIOSDevice ? 'iOS' : isAndroid ? 'Android' : 'Desktop',
       dismissedAt,
       neverShowAgain,
-      willShow: !standalone && !dismissedAt && neverShowAgain !== 'true'
+      dismissedThisSession,
+      willShow: !standalone && !dismissedThisSession && neverShowAgain !== 'true'
     });
     
     if (neverShowAgain === 'true') {
@@ -71,17 +73,18 @@ export default function InstallPrompt({ onInstallSuccess }: InstallPromptProps) 
       return;
     }
 
-    // Show prompt after engagement (30 seconds or after first interaction)
-    if (!standalone && !dismissedAt) {
+    // Show prompt immediately if not installed and not dismissed this session
+    if (!standalone && !dismissedThisSession) {
       const timer = setTimeout(() => {
         if (!isIOSDevice) {
           // For Android/Desktop, wait for beforeinstallprompt event
           // Don't show immediately, wait for the event
         } else {
           // For iOS, show instructional modal immediately
+          console.log('PWA Install: Showing iOS install prompt');
           setShowPrompt(true);
         }
-      }, 0); // Show immediately on first visit
+      }, 0); // Show immediately on visit
 
       return () => clearTimeout(timer);
     } else if (dismissedAt) {
@@ -103,11 +106,12 @@ export default function InstallPrompt({ onInstallSuccess }: InstallPromptProps) 
   // Auto-show prompt when deferredPrompt is available (Android/Desktop)
   useEffect(() => {
     if (deferredPrompt && !isStandalone) {
-      const dismissed = localStorage.getItem('pwa-install-dismissed');
       const neverShowAgain = localStorage.getItem('pwa-install-never');
+      const dismissedThisSession = sessionStorage.getItem('pwa-install-dismissed-session');
       
-      if (!dismissed && neverShowAgain !== 'true') {
+      if (!dismissedThisSession && neverShowAgain !== 'true') {
         const timer = setTimeout(() => {
+          console.log('PWA Install: Showing Android/Desktop install prompt');
           setShowPrompt(true);
         }, 0); // Show immediately when deferredPrompt is available
         
@@ -140,6 +144,7 @@ export default function InstallPrompt({ onInstallSuccess }: InstallPromptProps) 
   const handleDismiss = () => {
     setShowPrompt(false);
     localStorage.setItem('pwa-install-dismissed', new Date().toISOString());
+    sessionStorage.setItem('pwa-install-dismissed-session', 'true');
   };
 
   const handleNeverShow = () => {
