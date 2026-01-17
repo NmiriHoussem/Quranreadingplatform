@@ -757,15 +757,25 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
     const swipeDistance = touchEndX.current - touchStartX.current;
     const minSwipeDistance = 50; // Minimum distance for a swipe to be recognized
 
+    // In memorization by-page mode, restrict navigation to current surah's pages only
+    let minPage = 1;
+    let maxPage = 604;
+    
+    if (mode === 'memorization' && memorizationMode === 'page' && chapterInfo?.pages) {
+      const surahPages = chapterInfo.pages;
+      minPage = surahPages[0];
+      maxPage = surahPages[surahPages.length - 1];
+    }
+
     // Swipe right (drag to right) = next page (like turning page forward)
-    if (swipeDistance > minSwipeDistance && currentPage < 604) {
+    if (swipeDistance > minSwipeDistance && currentPage < maxPage) {
       setCurrentPage(prev => prev + 1);
       setSlideDirection('left');
       setShowSwipeIndicator(true);
       setTimeout(() => setShowSwipeIndicator(false), 1000);
     }
     // Swipe left (drag to left) = previous page (like turning page backward)
-    else if (swipeDistance < -minSwipeDistance && currentPage > 1) {
+    else if (swipeDistance < -minSwipeDistance && currentPage > minPage) {
       // Don't auto-mark when going backward - user might be reviewing
       setCurrentPage(prev => prev - 1);
       setSlideDirection('right');
@@ -1450,8 +1460,11 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setMemorizationPage(Math.min(604, memorizationPage + 1))}
-                        disabled={memorizationPage === 604}
+                        onClick={() => {
+                          const maxPageInSurah = chapterInfo?.pages ? chapterInfo.pages[chapterInfo.pages.length - 1] : 604;
+                          setMemorizationPage(Math.min(maxPageInSurah, memorizationPage + 1));
+                        }}
+                        disabled={memorizationPage === (chapterInfo?.pages ? chapterInfo.pages[chapterInfo.pages.length - 1] : 604)}
                         className="border-violet-600 dark:border-violet-600 text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900"
                       >
                         <ChevronLeft className="w-4 h-4 mr-1" />
@@ -1465,17 +1478,19 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
                           <input
                             type="number"
                             inputMode="numeric"
-                            min="1"
-                            max="604"
+                            min={chapterInfo?.pages ? chapterInfo.pages[0] : 1}
+                            max={chapterInfo?.pages ? chapterInfo.pages[chapterInfo.pages.length - 1] : 604}
                             value={memorizationPage}
                             onFocus={(e) => e.target.select()}
                             onChange={(e) => {
                               const val = parseInt(e.target.value) || 1;
-                              setMemorizationPage(Math.max(1, Math.min(604, val)));
+                              const minPageInSurah = chapterInfo?.pages ? chapterInfo.pages[0] : 1;
+                              const maxPageInSurah = chapterInfo?.pages ? chapterInfo.pages[chapterInfo.pages.length - 1] : 604;
+                              setMemorizationPage(Math.max(minPageInSurah, Math.min(maxPageInSurah, val)));
                             }}
                             className="w-16 px-2 py-1 text-center border border-violet-200 dark:border-violet-700 rounded text-gray-900 dark:text-gray-100 dark:bg-violet-900 focus:outline-none focus:ring-2 focus:ring-violet-500 dark:focus:ring-violet-400"
                           />
-                          <span className="text-violet-600 dark:text-violet-400 text-sm">{t.of} 604</span>
+                          <span className="text-violet-600 dark:text-violet-400 text-sm">{t.of} {chapterInfo?.pages ? chapterInfo.pages[chapterInfo.pages.length - 1] : 604}</span>
                         </div>
                         
                         {/* Mark as Memorized Checkbox */}
@@ -1506,8 +1521,11 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setMemorizationPage(Math.max(1, memorizationPage - 1))}
-                        disabled={memorizationPage === 1}
+                        onClick={() => {
+                          const minPageInSurah = chapterInfo?.pages ? chapterInfo.pages[0] : 1;
+                          setMemorizationPage(Math.max(minPageInSurah, memorizationPage - 1));
+                        }}
+                        disabled={memorizationPage === (chapterInfo?.pages ? chapterInfo.pages[0] : 1)}
                         className="border-violet-600 dark:border-violet-600 text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900"
                       >
                         {t.previous}
@@ -1610,15 +1628,18 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
                         const diff = touchStartX.current - touchEndX.current;
                         const threshold = 50;
                         
+                        const minPageInSurah = chapterInfo?.pages ? chapterInfo.pages[0] : 1;
+                        const maxPageInSurah = chapterInfo?.pages ? chapterInfo.pages[chapterInfo.pages.length - 1] : 604;
+                        
                         if (Math.abs(diff) > threshold) {
                           if (diff > 0) {
                             // Swiped left - go to next page
-                            if (memorizationPage < 604) {
+                            if (memorizationPage < maxPageInSurah) {
                               setMemorizationPage(memorizationPage + 1);
                             }
                           } else {
                             // Swiped right - go to previous page
-                            if (memorizationPage > 1) {
+                            if (memorizationPage > minPageInSurah) {
                               setMemorizationPage(memorizationPage - 1);
                             }
                           }
@@ -1735,8 +1756,8 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
                 </div>
                 )}
 
-                {/* Navigation - Only show in ayah/range mode */}
-                {memorizationMode !== 'page' && (
+                {/* Navigation - Only show in reading mode */}
+                {mode === 'reading' && (
                 <div className="flex justify-between mt-4">
                   {/* Next Surah - on LEFT (Arabic RTL reading direction) */}
                   <Button 
