@@ -1998,11 +1998,23 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
                       {language === 'ar' 
                         ? `الدورة ${sequenceRepeatCount + 1} من ${globalRepeatCount}`
                         : `Cycle ${sequenceRepeatCount + 1} of ${globalRepeatCount}`}
+                      {/* Show current ayah being played */}
+                      {playingVerse && (
+                        <>
+                          {' • '}
+                          {language === 'ar' 
+                            ? `الآية ${playingVerse.split(':')[1]}`
+                            : `Ayah ${playingVerse.split(':')[1]}`}
+                        </>
+                      )}
                     </div>
                   ) : (
                     <div className="text-xs text-gray-500 dark:text-gray-400">
                       {memorizationMode === 'range' && (
                         <span>{language === 'ar' ? `${rangeStartAyah}-${rangeEndAyah}` : `${rangeStartAyah}-${rangeEndAyah}`} • </span>
+                      )}
+                      {memorizationMode === 'page' && verses.length > 0 && (
+                        <span>{language === 'ar' ? `${verses.length} آية` : `${verses.length} verses`} • </span>
                       )}
                       {globalRepeatCount}× {language === 'ar' ? 'المقطع' : 'Range'} • {perAyahRepeatCount}× {language === 'ar' ? 'الآية' : 'Ayah'}
                     </div>
@@ -2125,6 +2137,90 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
                           {language === 'ar' 
                             ? `${rangeEndAyah - rangeStartAyah + 1} آية`
                             : `${rangeEndAyah - rangeStartAyah + 1} verses`}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Page Mode: Display ayah range (disabled, auto-determined by page) */}
+                  {memorizationMode === 'page' && verses.length > 0 && (
+                    <div className="mb-5">
+                      <label className="text-sm font-medium text-violet-700 dark:text-violet-300 mb-2 block">
+                        {language === 'ar' ? 'نطاق الصفحة' : 'Page Range'}
+                      </label>
+                      
+                      <div className="grid grid-cols-2 gap-3">
+                        {/* From Ayah - Disabled */}
+                        <div>
+                          <label className="text-xs text-gray-400 dark:text-gray-500 mb-1.5 block">
+                            {t.startAyah}
+                          </label>
+                          <div className="flex items-center gap-2 opacity-60">
+                            <Button
+                              size="icon"
+                              variant="outline"
+                              disabled={true}
+                              className="h-10 w-10 rounded-lg border-2 border-gray-300 dark:border-gray-600 cursor-not-allowed shrink-0"
+                            >
+                              <Minus className="w-4 h-4 text-gray-400" />
+                            </Button>
+                            
+                            <div className="flex-1 text-center bg-gray-100 dark:bg-gray-800 rounded-lg py-2 border border-gray-300 dark:border-gray-600">
+                              <div className="text-xl font-bold text-gray-500 dark:text-gray-400">
+                                {verses[0]?.verse_number || 1}
+                              </div>
+                            </div>
+                            
+                            <Button
+                              size="icon"
+                              variant="outline"
+                              disabled={true}
+                              className="h-10 w-10 rounded-lg border-2 border-gray-300 dark:border-gray-600 cursor-not-allowed shrink-0"
+                            >
+                              <Plus className="w-4 h-4 text-gray-400" />
+                            </Button>
+                          </div>
+                        </div>
+
+                        {/* To Ayah - Disabled */}
+                        <div>
+                          <label className="text-xs text-gray-400 dark:text-gray-500 mb-1.5 block">
+                            {t.endAyah}
+                          </label>
+                          <div className="flex items-center gap-2 opacity-60">
+                            <Button
+                              size="icon"
+                              variant="outline"
+                              disabled={true}
+                              className="h-10 w-10 rounded-lg border-2 border-gray-300 dark:border-gray-600 cursor-not-allowed shrink-0"
+                            >
+                              <Minus className="w-4 h-4 text-gray-400" />
+                            </Button>
+                            
+                            <div className="flex-1 text-center bg-gray-100 dark:bg-gray-800 rounded-lg py-2 border border-gray-300 dark:border-gray-600">
+                              <div className="text-xl font-bold text-gray-500 dark:text-gray-400">
+                                {verses[verses.length - 1]?.verse_number || 1}
+                              </div>
+                            </div>
+                            
+                            <Button
+                              size="icon"
+                              variant="outline"
+                              disabled={true}
+                              className="h-10 w-10 rounded-lg border-2 border-gray-300 dark:border-gray-600 cursor-not-allowed shrink-0"
+                            >
+                              <Plus className="w-4 h-4 text-gray-400" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Info message explaining why it's disabled */}
+                      <div className="mt-3 p-2.5 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700">
+                        <div className="text-xs text-blue-700 dark:text-blue-400 text-center">
+                          {language === 'ar' 
+                            ? `النطاق محدد تلقائيًا بواسطة الصفحة (${verses.length} آية)`
+                            : `Range auto-defined by page (${verses.length} verses)`}
                         </div>
                       </div>
                     </div>
