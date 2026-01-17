@@ -57,7 +57,17 @@ export default function InstallPrompt({ onInstallSuccess }: InstallPromptProps) 
     const dismissedAt = localStorage.getItem('pwa-install-dismissed');
     const neverShowAgain = localStorage.getItem('pwa-install-never');
     
+    // Debug logging
+    console.log('PWA Install Prompt - Debug Info:', {
+      isStandalone: standalone,
+      platform: isIOSDevice ? 'iOS' : isAndroid ? 'Android' : 'Desktop',
+      dismissedAt,
+      neverShowAgain,
+      willShow: !standalone && !dismissedAt && neverShowAgain !== 'true'
+    });
+    
     if (neverShowAgain === 'true') {
+      console.log('PWA Install: User selected "Never show again"');
       return;
     }
 
@@ -142,11 +152,20 @@ export default function InstallPrompt({ onInstallSuccess }: InstallPromptProps) 
     setShowPrompt(true);
   };
 
-  // Expose showManually to parent via ref or global
+  // Public method to reset install prompt state (for debugging)
+  const resetInstallPrompt = () => {
+    localStorage.removeItem('pwa-install-dismissed');
+    localStorage.removeItem('pwa-install-never');
+    console.log('PWA Install Prompt: State has been reset. Reload the page to see the prompt again.');
+  };
+
+  // Expose showManually and resetInstallPrompt to parent via global
   useEffect(() => {
     (window as any).showPWAInstallPrompt = showManually;
+    (window as any).resetPWAInstallPrompt = resetInstallPrompt;
     return () => {
       delete (window as any).showPWAInstallPrompt;
+      delete (window as any).resetPWAInstallPrompt;
     };
   }, []);
 
