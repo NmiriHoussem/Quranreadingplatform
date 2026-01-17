@@ -30,14 +30,21 @@ export default function InstallPrompt({ onInstallSuccess }: InstallPromptProps) 
     
     setIsStandalone(standalone);
 
-    // Detect platform
+    // Detect platform - Enhanced iOS/iPadOS detection
     const userAgent = window.navigator.userAgent.toLowerCase();
     const isIOSDevice = /iphone|ipad|ipod/.test(userAgent);
+    
+    // Additional iPadOS detection (iPadOS 13+ reports as Mac in Safari)
+    const isIPadOS = (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) 
+      || /macintosh/.test(userAgent) && 'ontouchend' in document;
+    
     const isAndroid = /android/.test(userAgent);
     
-    setIsIOS(isIOSDevice);
+    // Combine iOS detection
+    const isIOS_or_iPadOS = isIOSDevice || isIPadOS;
+    setIsIOS(isIOS_or_iPadOS);
     
-    if (isIOSDevice) {
+    if (isIOS_or_iPadOS) {
       setPlatform('ios');
     } else if (isAndroid) {
       setPlatform('android');
@@ -61,7 +68,12 @@ export default function InstallPrompt({ onInstallSuccess }: InstallPromptProps) 
     // Debug logging
     console.log('PWA Install Prompt - Debug Info:', {
       isStandalone: standalone,
-      platform: isIOSDevice ? 'iOS' : isAndroid ? 'Android' : 'Desktop',
+      platform: isIOS_or_iPadOS ? 'iOS/iPadOS' : isAndroid ? 'Android' : 'Desktop',
+      userAgent: userAgent,
+      maxTouchPoints: navigator.maxTouchPoints,
+      navigatorPlatform: navigator.platform,
+      isIOSDevice,
+      isIPadOS,
       dismissedAt,
       neverShowAgain,
       dismissedThisSession,
@@ -76,12 +88,12 @@ export default function InstallPrompt({ onInstallSuccess }: InstallPromptProps) 
     // Show prompt immediately if not installed and not dismissed this session
     if (!standalone && !dismissedThisSession) {
       const timer = setTimeout(() => {
-        if (!isIOSDevice) {
+        if (!isIOS_or_iPadOS) {
           // For Android/Desktop, wait for beforeinstallprompt event
           // Don't show immediately, wait for the event
         } else {
-          // For iOS, show instructional modal immediately
-          console.log('PWA Install: Showing iOS install prompt');
+          // For iOS/iPadOS, show instructional modal immediately
+          console.log('PWA Install: Showing iOS/iPadOS install prompt');
           setShowPrompt(true);
         }
       }, 0); // Show immediately on visit
@@ -101,7 +113,7 @@ export default function InstallPrompt({ onInstallSuccess }: InstallPromptProps) 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
-  }, [isIOS]);
+  }, []);
 
   // Auto-show prompt when deferredPrompt is available (Android/Desktop)
   useEffect(() => {
