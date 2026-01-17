@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Book, Brain, ChevronRight, Users, Target, Moon, Sun, Globe } from 'lucide-react';
+import { Book, Brain, ChevronRight, Users, Target, Moon, Sun, Globe, Smartphone } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { getJoinedGroups, getKhatmahReadingStats, getJoinedMemorizationGroups, getSurahMemorizationStats, getCurrentKhatmah, calculateKhatmahMilestonesForGroup } from '../utils/localStorage';
@@ -7,6 +7,7 @@ import { getSurahByNumber } from '../utils/surahs';
 import ProfileMenu from './ProfileMenu';
 import { getTranslations, getStoredLanguage, setStoredLanguage, type Language } from '../utils/translations';
 import Logo from './Logo';
+import { useState, useEffect } from 'react';
 
 interface HomePageProps {
   isAuthenticated: boolean;
@@ -18,10 +19,45 @@ export default function HomePage({ isAuthenticated, onSignOut, onToggleDarkMode 
   const language = getStoredLanguage();
   const t = getTranslations(language);
   
+  const [showInstallButton, setShowInstallButton] = useState(false);
+  const [isTablet, setIsTablet] = useState(false);
+  
   const toggleLanguage = () => {
     const newLanguage: Language = language === 'en' ? 'ar' : 'en';
     setStoredLanguage(newLanguage);
     window.location.reload();
+  };
+
+  // Check if app is installed and if device is a tablet
+  useEffect(() => {
+    // Check if already installed (standalone mode)
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches 
+      || (window.navigator as any).standalone 
+      || document.referrer.includes('android-app://');
+    
+    // Detect tablet (screen width between 768px and 1024px)
+    const checkIfTablet = () => {
+      const width = window.innerWidth;
+      return width >= 768 && width <= 1024;
+    };
+    
+    setIsTablet(checkIfTablet());
+    setShowInstallButton(!isStandalone);
+    
+    // Listen for resize to update tablet detection
+    const handleResize = () => {
+      setIsTablet(checkIfTablet());
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const handleInstallClick = () => {
+    // Trigger the global PWA install prompt
+    if ((window as any).showPWAInstallPrompt) {
+      (window as any).showPWAInstallPrompt();
+    }
   };
 
   // Calculate Reading (Khatmah) Stats
@@ -88,6 +124,20 @@ export default function HomePage({ isAuthenticated, onSignOut, onToggleDarkMode 
             <span className="text-2xl text-emerald-900 dark:text-emerald-100">{t.appName}</span>
           </div>
           <div className="flex gap-2 items-center">
+            {/* Install Button - Show on tablets when app not installed */}
+            {showInstallButton && isTablet && (
+              <Button 
+                variant="outline"
+                className="border-emerald-600 dark:border-emerald-500 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900 gap-2"
+                onClick={handleInstallClick}
+              >
+                <Smartphone className="w-4 h-4" />
+                <span className="text-sm font-medium">
+                  {language === 'ar' ? 'تثبيت التطبيق' : 'Install App'}
+                </span>
+              </Button>
+            )}
+            
             {/* Language Toggle */}
             <Button 
               variant="outline" 
@@ -113,6 +163,7 @@ export default function HomePage({ isAuthenticated, onSignOut, onToggleDarkMode 
                 )}
               </Button>
             )}
+            
             <ProfileMenu isAuthenticated={isAuthenticated} onSignOut={onSignOut} />
           </div>
         </div>
