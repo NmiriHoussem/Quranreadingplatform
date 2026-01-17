@@ -68,10 +68,10 @@ export default function InstallPrompt({ onInstallSuccess }: InstallPromptProps) 
           // For Android/Desktop, wait for beforeinstallprompt event
           // Don't show immediately, wait for the event
         } else {
-          // For iOS, show instructional modal after 30 seconds
+          // For iOS, show instructional modal immediately
           setShowPrompt(true);
         }
-      }, 30000); // 30 seconds
+      }, 0); // Show immediately on first visit
 
       return () => clearTimeout(timer);
     } else if (dismissedAt) {
@@ -99,7 +99,7 @@ export default function InstallPrompt({ onInstallSuccess }: InstallPromptProps) 
       if (!dismissed && neverShowAgain !== 'true') {
         const timer = setTimeout(() => {
           setShowPrompt(true);
-        }, 30000); // 30 seconds after page load
+        }, 0); // Show immediately when deferredPrompt is available
         
         return () => clearTimeout(timer);
       }
