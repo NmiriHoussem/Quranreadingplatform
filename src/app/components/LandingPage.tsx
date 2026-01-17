@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { Book, Target, Users, TrendingUp, Languages } from 'lucide-react';
+import { Book, Target, Users, TrendingUp, Languages, Download } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { getTranslations, getStoredLanguage, setStoredLanguage, Language } from '../utils/translations';
@@ -31,6 +31,13 @@ export default function LandingPage({ isAuthenticated = false, onSignOut }: Land
     setStoredLanguage(newLang);
   };
 
+  const handleInstallClick = () => {
+    // Trigger the global PWA install prompt
+    if ((window as any).showPWAInstallPrompt) {
+      (window as any).showPWAInstallPrompt();
+    }
+  };
+
   const isRTL = language === 'ar';
   
   // Spiritual Arabic fonts
@@ -50,6 +57,15 @@ export default function LandingPage({ isAuthenticated = false, onSignOut }: Land
             </span>
           </div>
           <div className="flex gap-3">
+            <Button 
+              variant="ghost" 
+              className="text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900"
+              onClick={handleInstallClick}
+              title={language === 'ar' ? 'تثبيت التطبيق' : 'Install App'}
+            >
+              <Download className="w-5 h-5 mr-2" />
+              <span className="hidden sm:inline">{language === 'ar' ? 'تثبيت' : 'Install'}</span>
+            </Button>
             <Button 
               variant="ghost" 
               className="text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900"
