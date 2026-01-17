@@ -177,7 +177,7 @@ export default function MemorizationDashboard({ isAuthenticated, onSignOut, onTo
                 )}
               </Button>
             )}
-            <ProfileMenu isAuthenticated={isAuthenticated} onSignOut={onSignOut} />
+            <ProfileMenu isAuthenticated={isAuthenticated} onSignOut={onSignOut} mode="memorization" />
           </div>
         </div>
       </header>

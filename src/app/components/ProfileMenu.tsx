@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { User, Settings, HelpCircle, LogOut, LogIn, CheckCircle2, Globe, BookOpen, Type, Download, Shield } from 'lucide-react';
+import { User, Settings, HelpCircle, LogOut, LogIn, CheckCircle2, Globe, BookOpen, Type, Download, Shield, Smartphone } from 'lucide-react';
 import { Button } from './ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from './ui/sheet';
 import { Separator } from './ui/separator';
@@ -12,15 +12,17 @@ const ADMIN_EMAIL = 'houssem.addin@gmail.com';
 interface ProfileMenuProps {
   isAuthenticated: boolean;
   onSignOut: () => void;
+  mode?: 'reading' | 'memorization'; // Add mode prop to determine color scheme
 }
 
-export default function ProfileMenu({ isAuthenticated, onSignOut }: ProfileMenuProps) {
+export default function ProfileMenu({ isAuthenticated, onSignOut, mode = 'reading' }: ProfileMenuProps) {
   const language = getStoredLanguage();
   const t = getTranslations(language);
   const [userName, setUserName] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [mushafMode, setMushafMode] = useState<MushafViewMode>('mushaf');
   const [isOpen, setIsOpen] = useState(false);
+  const [showInstallButton, setShowInstallButton] = useState(false);
   
   useEffect(() => {
     if (isAuthenticated) {
@@ -42,6 +44,14 @@ export default function ProfileMenu({ isAuthenticated, onSignOut }: ProfileMenuP
     // Load mushaf view mode preference
     const currentMode = getMushafViewMode();
     setMushafMode(currentMode);
+    
+    // Check if app is already installed (standalone mode)
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches 
+      || (window.navigator as any).standalone 
+      || document.referrer.includes('android-app://');
+    
+    // Show install button only if NOT installed
+    setShowInstallButton(!isStandalone);
   }, [isAuthenticated]);
   
   // Get first letter of name for avatar
@@ -50,12 +60,51 @@ export default function ProfileMenu({ isAuthenticated, onSignOut }: ProfileMenuP
   // Check if user is admin
   const isAdmin = userEmail === ADMIN_EMAIL;
   
+  // Color scheme based on mode
+  const colors = mode === 'memorization' ? {
+    border: 'border-purple-500 dark:border-purple-400',
+    borderHover: 'hover:border-purple-600 dark:hover:border-purple-300',
+    borderUnauthenticated: 'border-purple-200 dark:border-purple-700',
+    borderHoverUnauthenticated: 'hover:border-purple-400 dark:hover:border-purple-500',
+    bg: 'bg-purple-100 dark:bg-purple-900',
+    text: 'text-purple-700 dark:text-purple-300',
+    badgeBg: 'bg-purple-500',
+    checkmark: 'text-purple-600 dark:text-purple-400',
+    buttonBorder: 'border-purple-600 dark:border-purple-500',
+    buttonText: 'text-purple-600 dark:text-purple-400',
+    buttonHover: 'hover:bg-purple-50 dark:hover:bg-purple-900',
+    buttonActive: 'bg-purple-600 hover:bg-purple-700',
+    iconColor: 'text-purple-600 dark:text-purple-400',
+  } : {
+    border: 'border-emerald-500 dark:border-emerald-400',
+    borderHover: 'hover:border-emerald-600 dark:hover:border-emerald-300',
+    borderUnauthenticated: 'border-emerald-200 dark:border-emerald-700',
+    borderHoverUnauthenticated: 'hover:border-emerald-400 dark:hover:border-emerald-500',
+    bg: 'bg-emerald-100 dark:bg-emerald-900',
+    text: 'text-emerald-700 dark:text-emerald-300',
+    badgeBg: 'bg-emerald-500',
+    checkmark: 'text-emerald-600 dark:text-emerald-400',
+    buttonBorder: 'border-emerald-600 dark:border-emerald-500',
+    buttonText: 'text-emerald-600 dark:text-emerald-400',
+    buttonHover: 'hover:bg-emerald-50 dark:hover:bg-emerald-900',
+    buttonActive: 'bg-emerald-600 hover:bg-emerald-700',
+    iconColor: 'text-emerald-600 dark:text-emerald-400',
+  };
+  
   const handleMushafModeChange = async (mode: MushafViewMode) => {
     setMushafMode(mode);
     await setMushafViewMode(mode);
     
     // Trigger a custom event to notify other components
     window.dispatchEvent(new CustomEvent('mushafModeChanged', { detail: { mode } }));
+  };
+  
+  const handleInstallClick = () => {
+    setIsOpen(false);
+    // Trigger the global PWA install prompt
+    if ((window as any).showPWAInstallPrompt) {
+      (window as any).showPWAInstallPrompt();
+    }
   };
   
   return (
@@ -66,23 +115,23 @@ export default function ProfileMenu({ isAuthenticated, onSignOut }: ProfileMenuP
           size="icon"
           className={`relative rounded-full border-2 h-11 w-11 md:h-10 md:w-10 ${
             isAuthenticated 
-              ? 'border-emerald-500 dark:border-emerald-400 hover:border-emerald-600 dark:hover:border-emerald-300 bg-emerald-100 dark:bg-emerald-900' 
-              : 'border-emerald-200 dark:border-emerald-700 hover:border-emerald-400 dark:hover:border-emerald-500'
+              ? `${colors.border} ${colors.borderHover} ${colors.bg}` 
+              : `${colors.borderUnauthenticated} ${colors.borderHoverUnauthenticated}`
           }`}
         >
           {isAuthenticated ? (
             <>
               {/* Avatar with first letter */}
-              <span className="text-emerald-700 dark:text-emerald-300 font-semibold">
+              <span className={colors.text + ' font-semibold'}>
                 {avatarLetter}
               </span>
-              {/* Green checkmark badge */}
-              <span className="absolute -top-1 -right-1 bg-emerald-500 rounded-full p-0.5">
+              {/* Checkmark badge */}
+              <span className={`absolute -top-1 -right-1 ${colors.badgeBg} rounded-full p-0.5`}>
                 <CheckCircle2 className="w-3.5 h-3.5 text-white" />
               </span>
             </>
           ) : (
-            <User className="w-6 h-6 md:w-5 md:h-5 text-emerald-600 dark:text-emerald-400" />
+            <User className={`w-6 h-6 md:w-5 md:h-5 ${colors.iconColor}`} />
           )}
         </Button>
       </SheetTrigger>
@@ -172,6 +221,18 @@ export default function ProfileMenu({ isAuthenticated, onSignOut }: ProfileMenuP
               {language === 'ar' ? 'تحميل القرآن' : 'Download Quran'}
             </Button>
           </Link>
+          
+          {/* Install App Button - Only visible if not installed */}
+          {showInstallButton && (
+            <Button
+              variant="outline"
+              className="w-full justify-start border-violet-600 dark:border-violet-500 text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900"
+              onClick={handleInstallClick}
+            >
+              <Smartphone className="w-5 h-5 mr-3" />
+              {language === 'ar' ? 'تثبيت التطبيق' : 'Install App'}
+            </Button>
+          )}
           
           <Link to="/settings" onClick={() => setIsOpen(false)}>
             <Button variant="ghost" className="w-full justify-start hover:bg-emerald-50 dark:hover:bg-emerald-900">

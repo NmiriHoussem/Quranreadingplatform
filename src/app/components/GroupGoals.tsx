@@ -51,6 +51,9 @@ export default function GroupGoals({ isAuthenticated, onSignOut, onToggleDarkMod
   const urlTab = searchParams.get('tab');
   const initialTab = urlTab === 'discover' ? 'discover' : 'my-groups';
   
+  // Check if specific surah is requested
+  const targetSurah = searchParams.get('surah');
+  
   const [filterType, setFilterType] = useState<'all' | 'memorization' | 'reading'>(initialFilter);
   const [showKhatmahWarning, setShowKhatmahWarning] = useState(false);
   const [pendingKhatmahGroup, setPendingKhatmahGroup] = useState<string | null>(null);
@@ -234,6 +237,24 @@ export default function GroupGoals({ isAuthenticated, onSignOut, onToggleDarkMod
     }
   }, []);
 
+  // Scroll to target surah if specified in URL
+  useEffect(() => {
+    if (targetSurah) {
+      // Wait a bit for the page to render
+      setTimeout(() => {
+        const targetCard = document.querySelector(`[data-surah="${targetSurah}"]`);
+        if (targetCard) {
+          targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // Add a highlight animation
+          targetCard.classList.add('ring-4', 'ring-amber-400', 'dark:ring-amber-500');
+          setTimeout(() => {
+            targetCard.classList.remove('ring-4', 'ring-amber-400', 'dark:ring-amber-500');
+          }, 2000);
+        }
+      }, 300);
+    }
+  }, [targetSurah]);
+
   return (
     <div className={`min-h-screen ${colorScheme.gradient}`}>
       {/* Header */}
@@ -357,10 +378,15 @@ export default function GroupGoals({ isAuthenticated, onSignOut, onToggleDarkMod
               const isJoined = joinedGroups.includes(group.id);
               // Check if surah is fully memorized
               const isMemorized = group.type === 'memorization' && 'isFullyMemorized' in group && group.isFullyMemorized;
+              // Get surah number if this is a memorization group
+              const surahNumber = group.type === 'memorization' && 'surahNumber' in group ? group.surahNumber : null;
               
               return (
                 <Link key={group.id} to={`/groups/${group.id}`} className="block mb-6">
-                  <Card className={`p-6 ${colorScheme.cardBorder} ${isJoined ? `ring-2 ${urlFilter === 'memorization' ? 'ring-purple-400 dark:ring-purple-500' : 'ring-emerald-400 dark:ring-emerald-500'} shadow-lg` : ''} transition-all hover:shadow-lg cursor-pointer`}>
+                  <Card 
+                    data-surah={surahNumber || undefined}
+                    className={`p-6 ${colorScheme.cardBorder} ${isJoined ? `ring-2 ${urlFilter === 'memorization' ? 'ring-purple-400 dark:ring-purple-500' : 'ring-emerald-400 dark:ring-emerald-500'} shadow-lg` : ''} transition-all hover:shadow-lg cursor-pointer`}
+                  >
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">

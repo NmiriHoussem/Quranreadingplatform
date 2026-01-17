@@ -1,13 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Book, ChevronLeft, ChevronRight, Home, Menu, BookOpen, Brain, Loader2, Play, Pause, RotateCcw, X, Moon, Sun, ArrowLeft } from 'lucide-react';
+import { Book, ChevronLeft, ChevronRight, Home, Menu, BookOpen, Brain, Loader2, Play, Pause, RotateCcw, X, Moon, Sun, ArrowLeft, AudioLines, Check, Plus, Minus, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Checkbox } from './ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { getVersesByPage, getVersesByChapter, getChapter, getChapters, Verse, Chapter, RECITERS, getVerseAudioUrl, getMushafPageImageUrl } from '../../services/quranApi';
 import { motion, AnimatePresence } from 'motion/react';
-import { markAyahAsMemorized, unmarkAyahAsMemorized, isAyahMemorized, getLastMemorizedAyah, markPageAsMemorized as markPageAyahsAsMemorized, unmarkPageAsMemorized, isPageMemorized } from '../utils/localStorage';
+import { markAyahAsMemorized, unmarkAyahAsMemorized, isAyahMemorized, getLastMemorizedAyah, markPageAsMemorized as markPageAyahsAsMemorized, unmarkPageAsMemorized, isPageMemorized, getJoinedMemorizationGroups } from '../utils/localStorage';
 import { getStoredLanguage, getTranslations, type Language } from '../utils/translations';
 
 interface QuranReaderProps {
@@ -107,6 +107,8 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
   const [repeatCounts, setRepeatCounts] = useState<Record<string, number>>({});
   const [globalRepeatCount, setGlobalRepeatCount] = useState(1); // For page/range modes
   const [perAyahRepeatCount, setPerAyahRepeatCount] = useState(1); // Repeat each ayah in range mode
+  const [isReciterSheetOpen, setIsReciterSheetOpen] = useState(false); // Bottom sheet for reciter selection
+  const [isRepeatSheetExpanded, setIsRepeatSheetExpanded] = useState(true); // Control repeat bottom sheet expand/collapse
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const currentRepeatRef = useRef<number>(0);
   const playingVerseRef = useRef<string | null>(null);
@@ -453,11 +455,21 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
         setCurrentPage(chapter.pages[0]);
       }
     } else {
-      // In memorization mode: load the entire surah
-      // Use chapter_number if available, fallback to id
+      // In memorization mode: check if user is enrolled in this surah's group
       const chapterNum = chapter.chapter_number || chapter.id;
-      console.log('Memorization mode: setting chapter to', chapterNum);
-      setCurrentChapter(chapterNum);
+      const memorizationGroups = getJoinedMemorizationGroups();
+      const isEnrolled = memorizationGroups.includes(`surah-${chapterNum}`);
+      
+      if (isEnrolled) {
+        // User is enrolled: navigate directly to memorization view
+        console.log('Memorization mode: user enrolled, setting chapter to', chapterNum);
+        setCurrentChapter(chapterNum);
+      } else {
+        // User is NOT enrolled: navigate to groups page for this surah
+        console.log('Memorization mode: user not enrolled, redirecting to groups page');
+        window.location.href = `/groups?filter=memorization&tab=discover&surah=${chapterNum}`;
+        return;
+      }
     }
     
     // Scroll to top when selecting new chapter
@@ -745,15 +757,15 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
     const swipeDistance = touchEndX.current - touchStartX.current;
     const minSwipeDistance = 50; // Minimum distance for a swipe to be recognized
 
-    // Swipe left (drag to left) = next page (like turning page forward)
-    if (swipeDistance < -minSwipeDistance && currentPage < 604) {
+    // Swipe right (drag to right) = next page (like turning page forward)
+    if (swipeDistance > minSwipeDistance && currentPage < 604) {
       setCurrentPage(prev => prev + 1);
       setSlideDirection('left');
       setShowSwipeIndicator(true);
       setTimeout(() => setShowSwipeIndicator(false), 1000);
     }
-    // Swipe right (drag to right) = previous page (like turning page backward)
-    else if (swipeDistance > minSwipeDistance && currentPage > 1) {
+    // Swipe left (drag to left) = previous page (like turning page backward)
+    else if (swipeDistance < -minSwipeDistance && currentPage > 1) {
       // Don't auto-mark when going backward - user might be reviewing
       setCurrentPage(prev => prev - 1);
       setSlideDirection('right');
@@ -871,7 +883,7 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-4 md:py-6 max-w-5xl">
+      <div className={`container mx-auto px-4 py-4 md:py-6 max-w-5xl ${mode === 'memorization' && (memorizationMode === 'page' || memorizationMode === 'range') ? 'pb-32 md:pb-6' : ''}`}>
         {/* Mode Toggle */}
         <div className="flex justify-between items-center mb-4">
           {mode === 'reading' ? (
@@ -939,24 +951,37 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
 
           {/* Reciter Selection - Only show in memorization mode */}
           {mode === 'memorization' && (
-            <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-violet-950 border border-violet-200 dark:border-violet-700 rounded-lg">
-              <label className="text-sm text-violet-700 dark:text-violet-300 whitespace-nowrap hidden md:inline">{t.reciter}:</label>
-              <select 
-                value={selectedReciter}
-                onChange={(e) => setSelectedReciter(Number(e.target.value))}
-                className="px-2 md:px-3 py-1 border border-violet-200 dark:border-violet-700 rounded text-sm text-violet-900 dark:text-violet-100 dark:bg-violet-900 focus:outline-none focus:ring-2 focus:ring-violet-500 max-w-[200px] truncate"
-                style={{ 
-                  textOverflow: 'ellipsis',
-                  overflow: 'hidden',
-                  whiteSpace: 'nowrap'
-                }}
+            <div className="flex items-center gap-2">
+              {/* Desktop: Full label + dropdown */}
+              <div className="hidden md:flex items-center gap-2 px-3 py-2 bg-white dark:bg-violet-950 border border-violet-200 dark:border-violet-700 rounded-lg">
+                <label className="text-sm text-violet-700 dark:text-violet-300 whitespace-nowrap">{t.reciter}:</label>
+                <select 
+                  value={selectedReciter}
+                  onChange={(e) => setSelectedReciter(Number(e.target.value))}
+                  className="px-3 py-1 border border-violet-200 dark:border-violet-700 rounded text-sm text-violet-900 dark:text-violet-100 dark:bg-violet-900 focus:outline-none focus:ring-2 focus:ring-violet-500 max-w-[200px] truncate"
+                  style={{ 
+                    textOverflow: 'ellipsis',
+                    overflow: 'hidden',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  {RECITERS.map(reciter => (
+                    <option key={reciter.id} value={reciter.id} className="truncate">
+                      {reciter.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              {/* Mobile: Icon button that opens bottom sheet */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsReciterSheetOpen(true)}
+                className="md:hidden h-11 w-11 rounded-full bg-white dark:bg-violet-950 border-2 border-violet-200 dark:border-violet-700 hover:bg-violet-50 dark:hover:bg-violet-900 text-violet-600 dark:text-violet-400"
               >
-                {RECITERS.map(reciter => (
-                  <option key={reciter.id} value={reciter.id} className="truncate">
-                    {reciter.name}
-                  </option>
-                ))}
-              </select>
+                <AudioLines className="w-5 h-5" />
+              </Button>
             </div>
           )}
         </div>
@@ -1308,9 +1333,9 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
                   </div>
                 </div>
 
-                {/* Range Controls - Only show in range mode */}
+                {/* Range Controls - Only show in range mode, hidden on mobile */}
                 {memorizationMode === 'range' && (
-                  <Card className="p-4 mb-4 border-violet-200 dark:border-violet-700 bg-violet-50/50 dark:bg-violet-900/30">
+                  <Card className="hidden md:block p-4 mb-4 border-violet-200 dark:border-violet-700 bg-violet-50/50 dark:bg-violet-900/30">
                     {/* Mobile: 2-column grid layout, Desktop: row layout */}
                     <div className="grid grid-cols-2 md:flex md:flex-row gap-3 md:gap-4 md:items-end">
                       <div className="md:flex-1">
@@ -1513,8 +1538,8 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
                       </label>
                     </div>
                     
-                    {/* Repetition Controls */}
-                    <Card className="p-4 mb-4 border-violet-200 dark:border-violet-700 bg-violet-50/50 dark:bg-violet-900/30">
+                    {/* Repetition Controls - Desktop Version (hidden on mobile) */}
+                    <Card className="hidden md:block p-4 mb-4 border-violet-200 dark:border-violet-700 bg-violet-50/50 dark:bg-violet-900/30">
                       <div className="grid grid-cols-2 md:flex md:flex-row gap-3 md:gap-4 md:items-end">
                         <div className="md:flex-1">
                           <label className="text-sm text-violet-700 dark:text-violet-300 mb-1 block">{t.repeatRange}</label>
@@ -1839,6 +1864,386 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
           </>
         )}
       </AnimatePresence>
+
+      {/* Mobile Reciter Selection Bottom Sheet */}
+      <AnimatePresence>
+        {isReciterSheetOpen && (
+          <>
+            {/* Overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 bg-black/50 z-50 md:hidden"
+              onClick={() => setIsReciterSheetOpen(false)}
+            />
+            
+            {/* Bottom Sheet */}
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 rounded-t-3xl shadow-2xl z-50 md:hidden max-h-[70vh] overflow-hidden"
+            >
+              {/* Handle Bar */}
+              <div className="flex justify-center pt-3 pb-2">
+                <div className="w-12 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full" />
+              </div>
+              
+              {/* Header */}
+              <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  {language === 'ar' ? 'اختر القارئ' : 'Select Reciter'}
+                </h3>
+              </div>
+              
+              {/* Reciter List */}
+              <div className="overflow-y-auto max-h-[calc(70vh-120px)]">
+                {RECITERS.map((reciter) => (
+                  <button
+                    key={reciter.id}
+                    onClick={() => {
+                      setSelectedReciter(reciter.id);
+                      setIsReciterSheetOpen(false);
+                    }}
+                    className={`w-full px-6 py-4 flex items-center justify-between text-left transition-colors ${
+                      selectedReciter === reciter.id
+                        ? 'bg-purple-50 dark:bg-purple-900/30'
+                        : 'hover:bg-gray-50 dark:hover:bg-gray-800'
+                    }`}
+                  >
+                    <span className={`text-base ${
+                      selectedReciter === reciter.id
+                        ? 'text-purple-700 dark:text-purple-300 font-semibold'
+                        : 'text-gray-900 dark:text-gray-100'
+                    }`}>
+                      {reciter.name}
+                    </span>
+                    {selectedReciter === reciter.id && (
+                      <Check className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Mobile Repeat Controls Bottom Sheet - Fixed at bottom, only on mobile in page/range mode */}
+      {mode === 'memorization' && (memorizationMode === 'page' || memorizationMode === 'range') && (
+        <div className="md:hidden fixed bottom-0 left-0 right-0 z-40">
+          <motion.div
+            initial={false}
+            animate={{ 
+              y: isRepeatSheetExpanded ? 0 : 'calc(100% - 72px)'
+            }}
+            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            className="bg-white dark:bg-violet-950 border-t-2 border-violet-200 dark:border-violet-700 shadow-2xl rounded-t-3xl overflow-hidden"
+          >
+            {/* Collapsed Mini Player */}
+            <div 
+              onClick={() => setIsRepeatSheetExpanded(!isRepeatSheetExpanded)}
+              className="px-4 py-4 flex items-center justify-between cursor-pointer active:bg-violet-50 dark:active:bg-violet-900/50 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <Button
+                  size="icon"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    playSequence();
+                  }}
+                  className={`h-12 w-12 rounded-full shadow-lg ${
+                    isPlayingSequence
+                      ? 'bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-700'
+                      : 'bg-violet-600 hover:bg-violet-700 dark:bg-violet-500 dark:hover:bg-violet-600'
+                  }`}
+                >
+                  {isPlayingSequence ? (
+                    <Pause className="w-5 h-5 text-white" />
+                  ) : (
+                    <Play className="w-5 h-5 text-white" />
+                  )}
+                </Button>
+                
+                <div>
+                  <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                    {language === 'ar' ? 'وضع التكرار' : 'Repeat Mode'}
+                  </div>
+                  {isPlayingSequence ? (
+                    <div className="text-xs text-amber-600 dark:text-amber-400">
+                      {language === 'ar' 
+                        ? `الدورة ${sequenceRepeatCount + 1} من ${globalRepeatCount}`
+                        : `Cycle ${sequenceRepeatCount + 1} of ${globalRepeatCount}`}
+                    </div>
+                  ) : (
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                      {memorizationMode === 'range' && (
+                        <span>{language === 'ar' ? `${rangeStartAyah}-${rangeEndAyah}` : `${rangeStartAyah}-${rangeEndAyah}`} • </span>
+                      )}
+                      {globalRepeatCount}× {language === 'ar' ? 'المقطع' : 'Range'} • {perAyahRepeatCount}× {language === 'ar' ? 'الآية' : 'Ayah'}
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsRepeatSheetExpanded(!isRepeatSheetExpanded);
+                }}
+                className="text-gray-600 dark:text-gray-400"
+              >
+                {isRepeatSheetExpanded ? (
+                  <ChevronDown className="w-5 h-5" />
+                ) : (
+                  <ChevronUp className="w-5 h-5" />
+                )}
+              </Button>
+            </div>
+
+            {/* Expanded Controls */}
+            <AnimatePresence>
+              {isRepeatSheetExpanded && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="px-4 pb-6 pt-2 border-t border-violet-100 dark:border-violet-800"
+                >
+                  {/* Handle Bar */}
+                  <div className="flex justify-center -mt-1 mb-4">
+                    <div className="w-12 h-1 bg-gray-300 dark:bg-gray-600 rounded-full" />
+                  </div>
+
+                  {/* Range Mode: From/To Ayah Selectors */}
+                  {memorizationMode === 'range' && (
+                    <div className="mb-5">
+                      <label className="text-sm font-medium text-violet-700 dark:text-violet-300 mb-2 block">
+                        {language === 'ar' ? 'اختر المقطع' : 'Select Range'}
+                      </label>
+                      
+                      <div className="grid grid-cols-2 gap-3">
+                        {/* From Ayah */}
+                        <div>
+                          <label className="text-xs text-gray-600 dark:text-gray-400 mb-1.5 block">
+                            {t.startAyah}
+                          </label>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="icon"
+                              variant="outline"
+                              onClick={() => setRangeStartAyah(Math.max(1, rangeStartAyah - 1))}
+                              disabled={rangeStartAyah <= 1}
+                              className="h-10 w-10 rounded-lg border-2 border-violet-300 dark:border-violet-600 disabled:opacity-40 shrink-0"
+                            >
+                              <Minus className="w-4 h-4" />
+                            </Button>
+                            
+                            <div className="flex-1 text-center bg-violet-50 dark:bg-violet-900/50 rounded-lg py-2">
+                              <div className="text-xl font-bold text-violet-900 dark:text-violet-100">
+                                {rangeStartAyah}
+                              </div>
+                            </div>
+                            
+                            <Button
+                              size="icon"
+                              variant="outline"
+                              onClick={() => setRangeStartAyah(Math.min(rangeEndAyah, rangeStartAyah + 1))}
+                              disabled={rangeStartAyah >= rangeEndAyah}
+                              className="h-10 w-10 rounded-lg border-2 border-violet-300 dark:border-violet-600 disabled:opacity-40 shrink-0"
+                            >
+                              <Plus className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+
+                        {/* To Ayah */}
+                        <div>
+                          <label className="text-xs text-gray-600 dark:text-gray-400 mb-1.5 block">
+                            {t.endAyah}
+                          </label>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="icon"
+                              variant="outline"
+                              onClick={() => setRangeEndAyah(Math.max(rangeStartAyah, rangeEndAyah - 1))}
+                              disabled={rangeEndAyah <= rangeStartAyah}
+                              className="h-10 w-10 rounded-lg border-2 border-violet-300 dark:border-violet-600 disabled:opacity-40 shrink-0"
+                            >
+                              <Minus className="w-4 h-4" />
+                            </Button>
+                            
+                            <div className="flex-1 text-center bg-violet-50 dark:bg-violet-900/50 rounded-lg py-2">
+                              <div className="text-xl font-bold text-violet-900 dark:text-violet-100">
+                                {rangeEndAyah}
+                              </div>
+                            </div>
+                            
+                            <Button
+                              size="icon"
+                              variant="outline"
+                              onClick={() => setRangeEndAyah(Math.min(chapterInfo?.verses_count || 286, rangeEndAyah + 1))}
+                              disabled={rangeEndAyah >= (chapterInfo?.verses_count || 286)}
+                              className="h-10 w-10 rounded-lg border-2 border-violet-300 dark:border-violet-600 disabled:opacity-40 shrink-0"
+                            >
+                              <Plus className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Visual indicator showing selected range */}
+                      <div className="mt-3 p-2.5 bg-violet-100 dark:bg-violet-900/30 rounded-lg text-center">
+                        <div className="text-xs text-violet-600 dark:text-violet-400 font-medium">
+                          {language === 'ar' 
+                            ? `${rangeEndAyah - rangeStartAyah + 1} آية`
+                            : `${rangeEndAyah - rangeStartAyah + 1} verses`}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Range Repeat Control */}
+                  <div className="mb-5">
+                    <label className="text-sm font-medium text-violet-700 dark:text-violet-300 mb-2 block">
+                      {t.repeatRange}
+                    </label>
+                    
+                    {/* Quick Presets */}
+                    <div className="flex gap-2 mb-3">
+                      {[1, 3, 5, 7].map((preset) => (
+                        <button
+                          key={preset}
+                          onClick={() => setGlobalRepeatCount(preset)}
+                          className={`flex-1 py-2.5 rounded-lg font-semibold text-sm transition-all active:scale-95 ${
+                            globalRepeatCount === preset
+                              ? 'bg-violet-600 dark:bg-violet-500 text-white shadow-lg'
+                              : 'bg-violet-100 dark:bg-violet-900/50 text-violet-700 dark:text-violet-300 hover:bg-violet-200 dark:hover:bg-violet-800'
+                          }`}
+                        >
+                          {preset}×
+                        </button>
+                      ))}
+                    </div>
+                    
+                    {/* Stepper */}
+                    <div className="flex items-center gap-3">
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        onClick={() => setGlobalRepeatCount(Math.max(1, globalRepeatCount - 1))}
+                        disabled={globalRepeatCount <= 1}
+                        className="h-12 w-12 rounded-full border-2 border-violet-300 dark:border-violet-600 disabled:opacity-40"
+                      >
+                        <Minus className="w-5 h-5" />
+                      </Button>
+                      
+                      <div className="flex-1 text-center">
+                        <div className="text-3xl font-bold text-violet-900 dark:text-violet-100">
+                          {globalRepeatCount}
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          {language === 'ar' ? 'مرات' : 'times'}
+                        </div>
+                      </div>
+                      
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        onClick={() => setGlobalRepeatCount(Math.min(10, globalRepeatCount + 1))}
+                        disabled={globalRepeatCount >= 10}
+                        className="h-12 w-12 rounded-full border-2 border-violet-300 dark:border-violet-600 disabled:opacity-40"
+                      >
+                        <Plus className="w-5 h-5" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Per Ayah Repeat Control */}
+                  <div className="mb-5">
+                    <label className="text-sm font-medium text-violet-700 dark:text-violet-300 mb-2 block">
+                      {t.repeatEachAyah}
+                    </label>
+                    
+                    {/* Quick Presets */}
+                    <div className="flex gap-2 mb-3">
+                      {[1, 3, 5, 7].map((preset) => (
+                        <button
+                          key={preset}
+                          onClick={() => setPerAyahRepeatCount(preset)}
+                          className={`flex-1 py-2.5 rounded-lg font-semibold text-sm transition-all active:scale-95 ${
+                            perAyahRepeatCount === preset
+                              ? 'bg-violet-600 dark:bg-violet-500 text-white shadow-lg'
+                              : 'bg-violet-100 dark:bg-violet-900/50 text-violet-700 dark:text-violet-300 hover:bg-violet-200 dark:hover:bg-violet-800'
+                          }`}
+                        >
+                          {preset}×
+                        </button>
+                      ))}
+                    </div>
+                    
+                    {/* Stepper */}
+                    <div className="flex items-center gap-3">
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        onClick={() => setPerAyahRepeatCount(Math.max(1, perAyahRepeatCount - 1))}
+                        disabled={perAyahRepeatCount <= 1}
+                        className="h-12 w-12 rounded-full border-2 border-violet-300 dark:border-violet-600 disabled:opacity-40"
+                      >
+                        <Minus className="w-5 h-5" />
+                      </Button>
+                      
+                      <div className="flex-1 text-center">
+                        <div className="text-3xl font-bold text-violet-900 dark:text-violet-100">
+                          {perAyahRepeatCount}
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          {language === 'ar' ? 'مرات' : 'times'}
+                        </div>
+                      </div>
+                      
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        onClick={() => setPerAyahRepeatCount(Math.min(10, perAyahRepeatCount + 1))}
+                        disabled={perAyahRepeatCount >= 10}
+                        className="h-12 w-12 rounded-full border-2 border-violet-300 dark:border-violet-600 disabled:opacity-40"
+                      >
+                        <Plus className="w-5 h-5" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Progress Indicator */}
+                  {isPlayingSequence && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl p-3 text-center"
+                    >
+                      <div className="text-xs text-amber-700 dark:text-amber-300 font-medium mb-1">
+                        {language === 'ar' ? 'جاري التشغيل' : 'Now Playing'}
+                      </div>
+                      <div className="text-sm text-amber-900 dark:text-amber-100">
+                        {language === 'ar' 
+                          ? `الآية ${verses.find(v => v.verse_key === playingVerse)?.verse_number || currentSequenceIndex + 1} (${currentAyahRepeatCount + 1}/${perAyahRepeatCount})`
+                          : `Ayah ${verses.find(v => v.verse_key === playingVerse)?.verse_number || currentSequenceIndex + 1} (${currentAyahRepeatCount + 1}/${perAyahRepeatCount})`}
+                      </div>
+                    </motion.div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }

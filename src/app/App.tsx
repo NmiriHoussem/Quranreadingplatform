@@ -14,6 +14,7 @@ import Settings from './components/Settings';
 import HelpPage from './components/HelpPage';
 import DownloadQuran from './pages/DownloadQuran';
 import AdminPanel from './components/AdminPanel';
+import InstallPrompt from './components/InstallPrompt';
 import { useDarkMode } from './utils/useDarkMode';
 import { getCurrentSession, signOut as authSignOut, refreshSession } from '../services/authService';
 import { loadProgressFromServer, autoSyncProgress } from '../services/syncService';
@@ -234,6 +235,9 @@ function App() {
           element={<AdminPanel isDarkMode={isDarkMode} />} 
         />
       </Routes>
+      
+      {/* PWA Install Prompt - Global */}
+      <InstallPrompt />
     </Router>
   );
 }
