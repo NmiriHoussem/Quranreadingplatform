@@ -282,16 +282,6 @@ export default function HomePage({ isAuthenticated, onSignOut, onToggleDarkMode 
                 {/* Stats */}
                 {memorizationCount > 0 ? (
                   <div className="space-y-3 mb-6">
-                    {/* Joined Circles Count */}
-                    <div className="flex items-center gap-2 text-sm text-purple-600 dark:text-purple-400">
-                      <Users className="w-4 h-4" />
-                      <span>
-                        {memorizationCount} {language === 'ar' 
-                          ? (memorizationCount === 1 ? 'حلقة حفظ نشطة' : 'حلقات حفظ نشطة')
-                          : (memorizationCount === 1 ? 'Memorization Circle' : 'Memorization Circles')}
-                      </span>
-                    </div>
-                    
                     {/* Memorization Progress Text */}
                     <div className="text-purple-900 dark:text-purple-100 font-medium">
                       {language === 'ar' 
@@ -308,7 +298,7 @@ export default function HomePage({ isAuthenticated, onSignOut, onToggleDarkMode 
                     <div className="w-full bg-purple-100 dark:bg-purple-900 rounded-full h-2">
                       <div 
                         className="bg-purple-600 dark:bg-purple-500 h-2 rounded-full transition-all duration-500"
-                        style={{ width: `${memorizationProgress}%` }}
+                        style={{ width: `${Math.round((totalMemorized / 6236) * 100)}%` }}
                       />
                     </div>
                   </div>
