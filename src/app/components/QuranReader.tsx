@@ -722,6 +722,9 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
   const getFilteredVerses = (): Verse[] => {
     if (memorizationMode === 'ayah') {
       return verses;
+    } else if (memorizationMode === 'page') {
+      // Page mode: return all verses on the page (already fetched for this page)
+      return verses;
     } else {
       // Range mode: filter verses by start and end ayah
       return verses.filter(v => 
