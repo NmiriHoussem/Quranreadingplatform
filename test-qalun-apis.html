@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Qalun Audio API Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+        .result {
+            background: #ecf0f1;
+            padding: 15px;
+            margin-top: 10px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        .error {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        audio {
+            width: 100%;
+            margin-top: 10px;
+        }
+        .reciter-card {
+            background: #f8f9fa;
+            padding: 10px;
+            margin: 10px 0;
+            border-left: 4px solid #3498db;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎵 Qalun Audio API Research</h1>
+    
+    <!-- Test 1: mp3quran.net -->
+    <div class="test-section">
+        <h2>Test 1: mp3quran.net API</h2>
+        <p>Testing if mp3quran.net has Qalun reciters</p>
+        <button onclick="testMp3Quran()">Test mp3quran.net Reciters</button>
+        <div id="mp3quran-result" class="result"></div>
+    </div>
+
+    <!-- Test 2: Quran.com -->
+    <div class="test-section">
+        <h2>Test 2: Quran.com Recitations API</h2>
+        <p>Testing Quran.com for Qalun recitations</p>
+        <button onclick="testQuranCom()">Test Quran.com Recitations</button>
+        <div id="qurancom-result" class="result"></div>
+    </div>
+
+    <!-- Test 3: Audio Playback -->
+    <div class="test-section">
+        <h2>Test 3: Audio Playback Test</h2>
+        <p>Testing actual audio file URLs</p>
+        <button onclick="testAudioPlayback()">Test Audio URLs</button>
+        <div id="audio-result" class="result"></div>
+        <div id="audio-players"></div>
+    </div>
+
+    <script>
+        // Test 1: mp3quran.net
+        async function testMp3Quran() {
+            const resultDiv = document.getElementById('mp3quran-result');
+            resultDiv.innerHTML = 'Loading...';
+            
+            try {
+                // Test Arabic endpoint
+                const response = await fetch('https://mp3quran.net/api/v3/reciters?language=ar');
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `<span class="success">✅ SUCCESS</span>\n\n`;
+                resultDiv.innerHTML += `Total reciters: ${data.reciters ? data.reciters.length : 0}\n\n`;
+                
+                // Look for Qalun reciters
+                if (data.reciters) {
+                    const qalunReciters = data.reciters.filter(r => 
+                        r.name?.includes('قالون') || 
+                        r.name?.includes('Qalun') ||
+                        r.rewaya?.includes('قالون')
+                    );
+                    
+                    resultDiv.innerHTML += `<span class="success">Found ${qalunReciters.length} Qalun reciters!</span>\n\n`;
+                    
+                    qalunReciters.forEach(r => {
+                        resultDiv.innerHTML += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+                        resultDiv.innerHTML += `Name: ${r.name}\n`;
+                        resultDiv.innerHTML += `ID: ${r.id}\n`;
+                        resultDiv.innerHTML += `Server: ${r.server}\n`;
+                        resultDiv.innerHTML += `Rewaya: ${r.rewaya || 'N/A'}\n`;
+                        resultDiv.innerHTML += `Moshaf: ${JSON.stringify(r.moshaf, null, 2)}\n\n`;
+                    });
+                    
+                    // Show first 5 regular reciters for reference
+                    resultDiv.innerHTML += `\n\n📋 First 5 reciters (for reference):\n`;
+                    data.reciters.slice(0, 5).forEach(r => {
+                        resultDiv.innerHTML += `\n• ${r.name} (ID: ${r.id}) - Rewaya: ${r.rewaya || 'حفص'}\n`;
+                    });
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">❌ ERROR</span>\n\n${error.message}`;
+            }
+        }
+
+        // Test 2: Quran.com
+        async function testQuranCom() {
+            const resultDiv = document.getElementById('qurancom-result');
+            resultDiv.innerHTML = 'Loading...';
+            
+            try {
+                const response = await fetch('https://api.quran.com/api/v4/resources/recitations');
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `<span class="success">✅ SUCCESS</span>\n\n`;
+                resultDiv.innerHTML += `Total recitations: ${data.recitations ? data.recitations.length : 0}\n\n`;
+                
+                // Look for Qalun or different styles
+                if (data.recitations) {
+                    const qalunRecitations = data.recitations.filter(r => 
+                        r.reciter_name?.toLowerCase().includes('qalun') ||
+                        r.reciter_name?.toLowerCase().includes('قالون') ||
+                        r.style?.toLowerCase().includes('qalun')
+                    );
+                    
+                    resultDiv.innerHTML += `<span class="success">Found ${qalunRecitations.length} Qalun recitations</span>\n\n`;
+                    
+                    if (qalunRecitations.length > 0) {
+                        qalunRecitations.forEach(r => {
+                            resultDiv.innerHTML += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+                            resultDiv.innerHTML += `Reciter: ${r.reciter_name}\n`;
+                            resultDiv.innerHTML += `ID: ${r.id}\n`;
+                            resultDiv.innerHTML += `Style: ${r.style || 'N/A'}\n`;
+                            resultDiv.innerHTML += JSON.stringify(r, null, 2) + '\n\n';
+                        });
+                    }
+                    
+                    // Show all recitations
+                    resultDiv.innerHTML += `\n\n📋 All recitations:\n`;
+                    data.recitations.forEach(r => {
+                        resultDiv.innerHTML += `\n• ${r.reciter_name} (ID: ${r.id}) - ${r.style || 'Mujawwad'}\n`;
+                    });
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">❌ ERROR</span>\n\n${error.message}`;
+            }
+        }
+
+        // Test 3: Audio Playback
+        async function testAudioPlayback() {
+            const resultDiv = document.getElementById('audio-result');
+            const playersDiv = document.getElementById('audio-players');
+            resultDiv.innerHTML = 'Testing audio URLs...\n\n';
+            playersDiv.innerHTML = '';
+            
+            // Test URLs to try
+            const testUrls = [
+                // mp3quran.net examples (will update based on API results)
+                { 
+                    name: 'mp3quran.net - Nabil Ar-Rifai (Qalun attempt)',
+                    url: 'https://server8.mp3quran.net/nbl_rw/001.mp3' // Al-Fatiha
+                },
+                { 
+                    name: 'mp3quran.net - Server 11 test',
+                    url: 'https://server11.mp3quran.net/sds/001.mp3' // Al-Fatiha
+                },
+                // EveryAyah for comparison
+                { 
+                    name: 'EveryAyah - Mishari (Hafs) - for comparison',
+                    url: 'https://www.versebyversequran.com/data/Alafasy_64kbps/001001.mp3'
+                }
+            ];
+            
+            for (const test of testUrls) {
+                resultDiv.innerHTML += `Testing: ${test.name}\n`;
+                resultDiv.innerHTML += `URL: ${test.url}\n`;
+                
+                try {
+                    const response = await fetch(test.url, { method: 'HEAD' });
+                    
+                    if (response.ok) {
+                        resultDiv.innerHTML += `<span class="success">✅ Available (${response.headers.get('content-type')})</span>\n\n`;
+                        
+                        // Add audio player
+                        const audioDiv = document.createElement('div');
+                        audioDiv.className = 'reciter-card';
+                        audioDiv.innerHTML = `
+                            <strong>${test.name}</strong><br>
+                            <audio controls src="${test.url}"></audio>
+                        `;
+                        playersDiv.appendChild(audioDiv);
+                    } else {
+                        resultDiv.innerHTML += `<span class="error">❌ Not found (${response.status})</span>\n\n`;
+                    }
+                } catch (error) {
+                    resultDiv.innerHTML += `<span class="error">❌ Error: ${error.message}</span>\n\n`;
+                }
+            }
+        }
+
+        // Auto-run tests on load
+        window.addEventListener('load', () => {
+            console.log('Page loaded. Click buttons to test APIs.');
+        });
+    </script>
+</body>
+</html>

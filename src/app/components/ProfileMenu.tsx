@@ -148,16 +148,16 @@ export default function ProfileMenu({ isAuthenticated, onSignOut, mode = 'readin
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span>{userName || 'My Account'}</span>
+                    <span>{userName || t.myAccount}</span>
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                   </div>
                   <p className="text-xs text-emerald-600 dark:text-emerald-400 font-normal mt-0.5">
-                    Connected
+                    {t.connected}
                   </p>
                 </div>
               </div>
             ) : (
-              'Guest Mode'
+              t.guestMode
             )}
           </SheetTitle>
           <SheetDescription className="sr-only">
@@ -171,7 +171,7 @@ export default function ProfileMenu({ isAuthenticated, onSignOut, mode = 'readin
               <Link to="/auth" onClick={() => setIsOpen(false)}>
                 <Button variant="outline" className="w-full justify-start border-emerald-600 dark:border-emerald-500 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900">
                   <LogIn className="w-5 h-5 mr-3" />
-                  Sign In / Sign Up
+                  {t.signInSignUp}
                 </Button>
               </Link>
               <Separator className="my-4" />
@@ -244,7 +244,7 @@ export default function ProfileMenu({ isAuthenticated, onSignOut, mode = 'readin
           <Link to="/help" onClick={() => setIsOpen(false)}>
             <Button variant="ghost" className="w-full justify-start hover:bg-emerald-50 dark:hover:bg-emerald-900">
               <HelpCircle className="w-5 h-5 mr-3" />
-              Help & About
+              {t.helpAndAbout}
             </Button>
           </Link>
           
@@ -280,7 +280,7 @@ export default function ProfileMenu({ isAuthenticated, onSignOut, mode = 'readin
                 }}
               >
                 <LogOut className="w-5 h-5 mr-3" />
-                Sign Out
+                {t.signOut}
               </Button>
             </>
           )}

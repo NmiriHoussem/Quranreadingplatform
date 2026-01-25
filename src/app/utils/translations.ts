@@ -184,6 +184,9 @@ export interface Translations {
   signingIn: string;
   alreadyHaveAccount: string;
   dontHaveAccount: string;
+  connected: string;
+  myAccount: string;
+  helpAndAbout: string;
   
   // Help & Info
   whatIsQuranCircle: string;
@@ -497,6 +500,9 @@ export const translations: Record<Language, Translations> = {
     signingIn: 'Signing In',
     alreadyHaveAccount: 'Already have an account?',
     dontHaveAccount: "Don't have an account?",
+    connected: 'Connected',
+    myAccount: 'My Account',
+    helpAndAbout: 'Help & About',
     
     // Help & Info
     whatIsQuranCircle: 'What is Quran Circle?',
@@ -754,7 +760,7 @@ export const translations: Record<Language, Translations> = {
     lastMemorized: 'آخر ما حفظته',
     ayah: 'آية',
     markEntireSurahMemorized: 'وضع علامة على سورة كاملة كمحفوظة',
-    surahCompleted: 'السورة مكتملة',
+    surahCompleted: 'السورة مكتم��ة',
     progressUpdatesAuto: 'تحديثات التقدم تلقائية',
     aboutThisGroup: 'عن هذه المجموعة',
     joinGroupDesc: 'انضم إلى مجموعة لتتبع تقدمك ومشاركة الأهداف مع الآخرين.',
@@ -833,6 +839,9 @@ export const translations: Record<Language, Translations> = {
     signingIn: 'تسجيل الدخول',
     alreadyHaveAccount: 'لديك حساب بالفعل؟',
     dontHaveAccount: "ليس لديك حساب؟",
+    connected: 'متصل',
+    myAccount: 'حسابي',
+    helpAndAbout: 'المساعدة والمزيد',
     
     // Help & Info
     whatIsQuranCircle: 'ما هي حلقة القرآن؟',
@@ -869,7 +878,7 @@ export const translations: Record<Language, Translations> = {
     // Dashboard
     greeting: 'مرحبا',
     guest: 'ضيف',
-    guestMode: 'الوضع الضيفي',
+    guestMode: 'وضع الضيف',
     guestModeDesc: 'أنت تشاهد كضيف حالياً. لحفظ تقدمك، قم بالتسجيل أو الدخول.',
     guestModeLink: 'إنشاء حساب',
     progressSyncing: 'مزامنة التقدم',
