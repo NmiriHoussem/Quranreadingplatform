@@ -165,7 +165,7 @@ export default function ProfileMenu({ isAuthenticated, onSignOut, mode = 'readin
           </SheetDescription>
         </SheetHeader>
 
-        <div className="mt-6 space-y-2">
+        <div className="px-4 mt-6 space-y-2">
           {!isAuthenticated && (
             <>
               <Link to="/auth" onClick={() => setIsOpen(false)}>
@@ -194,9 +194,9 @@ export default function ProfileMenu({ isAuthenticated, onSignOut, mode = 'readin
                   variant={mushafMode === 'mushaf' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => handleMushafModeChange('mushaf')}
-                  className={mushafMode === 'mushaf' ? 'bg-emerald-600 hover:bg-emerald-700' : 'border-emerald-600 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900'}
+                  className={`${mushafMode === 'mushaf' ? 'bg-emerald-600 hover:bg-emerald-700' : 'border-emerald-600 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900'} whitespace-nowrap text-xs`}
                 >
-                  <BookOpen className="w-4 h-4 mr-2" />
+                  <BookOpen className="w-4 h-4 mr-1.5" />
                   {language === 'ar' ? 'مصحف المدينة' : 'Madinah Mushaf'}
                 </Button>
                 
@@ -204,9 +204,9 @@ export default function ProfileMenu({ isAuthenticated, onSignOut, mode = 'readin
                   variant={mushafMode === 'text' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => handleMushafModeChange('text')}
-                  className={mushafMode === 'text' ? 'bg-emerald-600 hover:bg-emerald-700' : 'border-emerald-600 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900'}
+                  className={`${mushafMode === 'text' ? 'bg-emerald-600 hover:bg-emerald-700' : 'border-emerald-600 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900'} whitespace-nowrap text-xs`}
                 >
-                  <Type className="w-4 h-4 mr-2" />
+                  <Type className="w-4 h-4 mr-1.5" />
                   {t.mushafTextMode}
                 </Button>
               </div>
