@@ -44,7 +44,7 @@ export default function ReadingDashboard({ isAuthenticated, onSignOut, onToggleD
   const todayMilestone = currentKhatmahMilestones.find(m => !m.completed);
   const todayMilestoneNumber = todayMilestone 
     ? currentKhatmahMilestones.findIndex(m => !m.completed) + 1 
-    : 0;
+    : currentKhatmahMilestones.length > 0 ? currentKhatmahMilestones.length : 0;
   
   // Calculate today's milestone progress by counting pages within the milestone range
   let todayMilestonePagesRead = 0;
@@ -163,96 +163,98 @@ export default function ReadingDashboard({ isAuthenticated, onSignOut, onToggleD
         )}
 
         {/* Today's Milestone Progress - Only Current Milestone */}
-        <Card className="p-6 mb-8 border-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/50">
-          <h2 className="text-xl text-emerald-900 dark:text-emerald-100 mb-4" dir={language === 'ar' ? 'rtl' : 'ltr'}>
-            {language === 'ar' ? `ورد اليوم ${todayMilestoneNumber}` : `Day ${todayMilestoneNumber} Goal`}
-          </h2>
-          
-          {todayMilestone ? (
-            <>
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                {/* Pages Read in Current Milestone */}
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
-                    <Book className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+        {currentKhatmah && currentKhatmahMilestones.length > 0 && (
+          <Card className="p-6 mb-8 border-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/50">
+            <h2 className="text-xl text-emerald-900 dark:text-emerald-100 mb-4" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+              {language === 'ar' ? `ورد اليوم ${todayMilestoneNumber}` : `Day ${todayMilestoneNumber} Goal`}
+            </h2>
+            
+            {todayMilestone ? (
+              <>
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  {/* Pages Read in Current Milestone */}
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
+                      <Book className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <div>
+                      <div className="text-2xl text-emerald-900 dark:text-emerald-100">{todayMilestonePagesRead}</div>
+                      <div className="text-sm text-emerald-600 dark:text-emerald-400">
+                        {language === 'ar' ? 'صفحات مقروءة' : 'Pages Read'}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <div className="text-2xl text-emerald-900 dark:text-emerald-100">{todayMilestonePagesRead}</div>
-                    <div className="text-sm text-emerald-600 dark:text-emerald-400">
-                      {language === 'ar' ? 'صفحات مقروءة' : 'Pages Read'}
+
+                  {/* Pages Remaining in Current Milestone */}
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
+                      <Target className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <div>
+                      <div className="text-2xl text-emerald-900 dark:text-emerald-100">{pagesRemainingToday}</div>
+                      <div className="text-sm text-emerald-600 dark:text-emerald-400">
+                        {language === 'ar' ? 'صفحات متبقية' : 'Pages Remaining'}
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Pages Remaining in Current Milestone */}
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
-                    <Target className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
-                  </div>
-                  <div>
-                    <div className="text-2xl text-emerald-900 dark:text-emerald-100">{pagesRemainingToday}</div>
-                    <div className="text-sm text-emerald-600 dark:text-emerald-400">
-                      {language === 'ar' ? 'صفحات متبقية' : 'Pages Remaining'}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <div 
-                  className="text-sm text-emerald-600 dark:text-emerald-400"
-                  dir={language === 'ar' ? 'rtl' : 'ltr'}
-                >
-                  {pagesRemainingToday > 0 ? (
-                    language === 'ar' 
-                      ? `${pagesRemainingToday} صفحة متبقية لإكمال ورد اليوم ${todayMilestoneNumber}`
-                      : `${pagesRemainingToday} pages remaining to complete Day ${todayMilestoneNumber} goal`
-                  ) : (
-                    language === 'ar'
-                      ? `🎉 أكملت ورد اليوم ${todayMilestoneNumber}!`
-                      : `🎉 Day ${todayMilestoneNumber} goal completed!`
-                  )}
-                </div>
-                <div className="relative">
-                  {/* Animated gradient background */}
-                  <div className="absolute inset-0 rounded-full overflow-hidden bg-emerald-100 dark:bg-emerald-900/30">
-                    <div 
-                      className="h-full bg-gradient-to-r from-emerald-500 via-emerald-600 to-emerald-500 dark:from-emerald-400 dark:via-emerald-500 dark:to-emerald-400 transition-all duration-1000 ease-out relative"
-                      style={{ width: `${todayMilestoneProgress}%` }}
-                    >
-                      {/* Shimmer effect */}
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer" 
-                           style={{ 
-                             backgroundSize: '200% 100%',
-                             animation: 'shimmer 2s infinite'
-                           }} 
-                      />
-                      {/* Glow effect */}
-                      <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white/30 to-transparent" />
-                    </div>
-                  </div>
-                  {/* Progress percentage text */}
-                  <div className="relative h-3 flex items-center justify-end px-2">
-                    {todayMilestoneProgress > 15 && (
-                      <span className="text-xs text-white dark:text-white font-semibold drop-shadow-md">
-                        {Math.round(todayMilestoneProgress)}%
-                      </span>
+                <div className="space-y-2">
+                  <div 
+                    className="text-sm text-emerald-600 dark:text-emerald-400"
+                    dir={language === 'ar' ? 'rtl' : 'ltr'}
+                  >
+                    {pagesRemainingToday > 0 ? (
+                      language === 'ar' 
+                        ? `${pagesRemainingToday} صفحة متبقية لإكمال ورد اليوم ${todayMilestoneNumber}`
+                        : `${pagesRemainingToday} pages remaining to complete Day ${todayMilestoneNumber} goal`
+                    ) : (
+                      language === 'ar'
+                        ? `🎉 أكملت ورد اليوم ${todayMilestoneNumber}!`
+                        : `🎉 Day ${todayMilestoneNumber} goal completed!`
                     )}
                   </div>
+                  <div className="relative">
+                    {/* Animated gradient background */}
+                    <div className="absolute inset-0 rounded-full overflow-hidden bg-emerald-100 dark:bg-emerald-900/30">
+                      <div 
+                        className="h-full bg-gradient-to-r from-emerald-500 via-emerald-600 to-emerald-500 dark:from-emerald-400 dark:via-emerald-500 dark:to-emerald-400 transition-all duration-1000 ease-out relative"
+                        style={{ width: `${todayMilestoneProgress}%` }}
+                      >
+                        {/* Shimmer effect */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer" 
+                             style={{ 
+                               backgroundSize: '200% 100%',
+                               animation: 'shimmer 2s infinite'
+                             }} 
+                        />
+                        {/* Glow effect */}
+                        <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white/30 to-transparent" />
+                      </div>
+                    </div>
+                    {/* Progress percentage text */}
+                    <div className="relative h-3 flex items-center justify-end px-2">
+                      {todayMilestoneProgress > 15 && (
+                        <span className="text-xs text-white dark:text-white font-semibold drop-shadow-md">
+                          {Math.round(todayMilestoneProgress)}%
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
+              </>
+            ) : (
+              <div className="text-center py-4">
+                <p className="text-emerald-600 dark:text-emerald-400">
+                  {language === 'ar' 
+                    ? '🎉 أكملت جميع أيام الختمة!' 
+                    : '🎉 All milestones completed!'}
+                </p>
               </div>
-            </>
-          ) : (
-            <div className="text-center py-4">
-              <p className="text-emerald-600 dark:text-emerald-400">
-                {language === 'ar' 
-                  ? '🎉 أكملت جميع أيام الختمة!' 
-                  : '🎉 All milestones completed!'}
-              </p>
-            </div>
-          )}
-        </Card>
-
+            )}
+          </Card>
+        )}
+        
         {/* Khatmah Circles */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">

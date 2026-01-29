@@ -8,6 +8,7 @@ import ProfileMenu from './ProfileMenu';
 import { getTranslations, getStoredLanguage, setStoredLanguage, type Language } from '../utils/translations';
 import Logo from './Logo';
 import { useState, useEffect } from 'react';
+import { getHijriDate, getSpecialIslamicDay } from '../utils/hijriDate';
 
 interface HomePageProps {
   isAuthenticated: boolean;
@@ -114,6 +115,10 @@ export default function HomePage({ isAuthenticated, onSignOut, onToggleDarkMode 
   
   const memorizationProgress = totalAyahsGoal > 0 ? Math.round((totalMemorized / totalAyahsGoal) * 100) : 0;
 
+  // Get Hijri date
+  const hijriDate = getHijriDate(language);
+  const specialDay = getSpecialIslamicDay(language);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-emerald-50 to-white dark:from-emerald-950 dark:to-emerald-900">
       {/* Header */}
@@ -172,6 +177,21 @@ export default function HomePage({ isAuthenticated, onSignOut, onToggleDarkMode 
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Welcome Message */}
         <div className="text-center mb-12">
+          {/* Hijri Date */}
+          <div className="mb-5">
+            <p className="text-sm md:text-base text-emerald-600 dark:text-emerald-400 flex items-center justify-center gap-2">
+              <span className="text-lg">🌙</span>
+              <span>{hijriDate.formattedDate}</span>
+            </p>
+            {/* Special Day Indicator */}
+            {specialDay && (
+              <p className="text-xs md:text-sm text-emerald-700 dark:text-emerald-300 mt-1 font-medium">
+                ✨ {specialDay}
+              </p>
+            )}
+          </div>
+          
+          {/* Greeting */}
           <h1 className="text-4xl md:text-5xl text-emerald-900 dark:text-emerald-100 mb-3">
             {language === 'ar' ? 'السلام عليكم' : 'As-salāmu ʿalaykum'}
           </h1>
