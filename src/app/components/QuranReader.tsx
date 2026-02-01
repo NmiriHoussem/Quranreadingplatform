@@ -294,15 +294,20 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
     setError(null);
     try {
       const data = await getVersesByPage(memorizationPage);
-      setVerses(data.verses);
       
-      // Get chapter info for the first verse on the page
-      if (data.verses.length > 0) {
-        const chapterNumber = parseInt(data.verses[0].verse_key.split(':')[0]);
-        const chapter = await getChapter(chapterNumber);
+      // CRITICAL FIX: Filter verses to only show those from the current surah
+      // This prevents showing ayahs from other surahs on shared pages
+      const filteredVerses = data.verses.filter(verse => {
+        const verseChapter = parseInt(verse.verse_key.split(':')[0]);
+        return verseChapter === currentChapter;
+      });
+      
+      setVerses(filteredVerses);
+      
+      // Get chapter info for the current chapter (not the first verse on page)
+      if (currentChapter >= 1 && currentChapter <= 114) {
+        const chapter = await getChapter(currentChapter);
         setChapterInfo(chapter);
-        // Update currentChapter to stay in sync with the page
-        setCurrentChapter(chapterNumber);
       }
       
     } catch (err) {
@@ -311,7 +316,7 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
     } finally {
       setLoading(false);
     }
-  }, [memorizationPage]);
+  }, [memorizationPage, currentChapter]);
 
   const fetchChapterVerses = useCallback(async () => {
     console.log('fetchChapterVerses called with currentChapter:', currentChapter);
@@ -659,7 +664,11 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
 
     const rangeVerses = getFilteredVerses();
     if (rangeVerses.length === 0) {
-      console.error('No verses in range');
+      console.error('No verses in range. Verses:', verses, 'Mode:', memorizationMode, 'Current chapter:', currentChapter);
+      // Show user-friendly error
+      alert(language === 'ar' 
+        ? 'لا توجد آيات لتشغيلها. الرجاء الانتظار حتى يتم تحميل الآيات.' 
+        : 'No verses to play. Please wait for verses to load.');
       return;
     }
 
@@ -1427,6 +1436,7 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
                     {/* Play Button - Full width on mobile */}
                     <Button
                       onClick={playSequence}
+                      disabled={loading || verses.length === 0}
                       className={`w-full mt-3 ${
                         isPlayingSequence
                           ? 'bg-amber-600 hover:bg-amber-700'
@@ -1442,6 +1452,7 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
                         <>
                           <Play className="w-4 h-4 mr-2" />
                           {t.playRange}
+                          {loading && ' (Loading...)'}
                         </>
                       )}
                     </Button>
@@ -1592,6 +1603,7 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
                       
                       <Button
                         onClick={playSequence}
+                        disabled={loading || verses.length === 0}
                         className={`w-full mt-3 ${
                           isPlayingSequence
                             ? 'bg-amber-600 hover:bg-amber-700'
@@ -1975,6 +1987,7 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
               <div className="flex items-center gap-3">
                 <Button
                   size="icon"
+                  disabled={loading || verses.length === 0}
                   onClick={(e) => {
                     e.stopPropagation();
                     playSequence();
