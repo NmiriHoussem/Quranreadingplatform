@@ -1,16 +1,19 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Upload, Save, Eye, X } from 'lucide-react';
+import { ArrowLeft, Upload, Save, Eye, X, Image as ImageIcon } from 'lucide-react';
 import { getStoredUser } from '../../services/authService';
 import { updateLogo, getLogo } from '../utils/logoStorage';
 import { getTranslations, getStoredLanguage } from '../utils/translations';
 import Logo from './Logo';
+import SEOAdmin from './admin/SEOAdmin';
 
 const ADMIN_EMAIL = 'houssem.addin@gmail.com';
 
 interface AdminPanelProps {
   isDarkMode: boolean;
 }
+
+type AdminTab = 'logo' | 'seo';
 
 export default function AdminPanel({ isDarkMode }: AdminPanelProps) {
   const navigate = useNavigate();
@@ -19,6 +22,7 @@ export default function AdminPanel({ isDarkMode }: AdminPanelProps) {
   const t = getTranslations(language);
   const isRtl = language === 'ar';
   
+  const [activeTab, setActiveTab] = useState<AdminTab>('logo');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [currentLogoUrl, setCurrentLogoUrl] = useState<string | null>(null);
@@ -162,144 +166,179 @@ export default function AdminPanel({ isDarkMode }: AdminPanelProps) {
 
       {/* Content */}
       <div className="max-w-6xl mx-auto px-4 py-8">
-        {/* Design Settings Section */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <div className="mb-6">
-            <h2 className="text-xl font-bold mb-2">
-              {isRtl ? 'إعدادات التصميم' : 'Design Settings'}
-            </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              {isRtl 
-                ? 'رفع شعار مخصص للتطبيق (SVG أو PNG)' 
-                : 'Upload a custom logo for the application (SVG or PNG)'}
-            </p>
+        {/* Tab Navigation */}
+        <div className="mb-6">
+          <div className="flex items-center gap-2 bg-gray-200 dark:bg-gray-700 p-1 rounded-lg w-fit">
+            <button
+              onClick={() => setActiveTab('logo')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                activeTab === 'logo' 
+                  ? 'bg-emerald-600 text-white shadow-sm' 
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+              }`}
+            >
+              <Upload className="w-4 h-4" />
+              <span>{isRtl ? 'شعار التطبيق' : 'App Logo'}</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('seo')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                activeTab === 'seo' 
+                  ? 'bg-emerald-600 text-white shadow-sm' 
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+              }`}
+            >
+              <ImageIcon className="w-4 h-4" />
+              <span>{isRtl ? 'تحسين محركات البحث' : 'SEO'}</span>
+            </button>
           </div>
+        </div>
 
-          {/* Upload Area */}
-          <div className="space-y-6">
-            {/* Current Logo Display */}
-            {currentLogoUrl && !previewUrl && (
-              <div>
-                <label className="block text-sm font-medium mb-3">
-                  {isRtl ? 'الشعار الحالي' : 'Current Logo'}
-                </label>
-                <div className="border-2 border-gray-300 dark:border-gray-600 rounded-lg p-8 bg-white dark:bg-gray-800">
-                  <div className="flex flex-col items-center gap-4">
-                    <Logo className="w-32 h-32 text-emerald-600 dark:text-emerald-400" />
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {isRtl 
-                        ? 'هذا هو الشعار المستخدم حاليًا في التطبيق' 
-                        : 'This is the logo currently used in the app'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            {/* File Input */}
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                {isRtl ? 'تحميل الشعار' : 'Upload Logo'}
-              </label>
-              <div className="flex items-center gap-3">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".svg,.png,image/svg+xml,image/png"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                  id="logo-upload"
-                />
-                <label
-                  htmlFor="logo-upload"
-                  className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 cursor-pointer transition-colors"
-                >
-                  <Upload className="w-4 h-4" />
-                  <span>{isRtl ? 'اختيار ملف' : 'Choose File'}</span>
-                </label>
-                {selectedFile && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">
-                      {selectedFile.name}
-                    </span>
-                    <button
-                      onClick={handleClear}
-                      className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
-                      title={isRtl ? 'إزالة' : 'Clear'}
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                )}
-              </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+        {/* Design Settings Section */}
+        {activeTab === 'logo' && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <div className="mb-6">
+              <h2 className="text-xl font-bold mb-2">
+                {isRtl ? 'إعدادات التصميم' : 'Design Settings'}
+              </h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
                 {isRtl 
-                  ? 'الحد الأقصى لحجم الملف: 2 ميجابايت. الأنواع المدعومة: SVG، PNG' 
-                  : 'Max file size: 2MB. Supported types: SVG, PNG'}
+                  ? 'رفع شعار مخصص للتطبيق (SVG أو PNG)' 
+                  : 'Upload a custom logo for the application (SVG or PNG)'}
               </p>
             </div>
 
-            {/* Error Message */}
-            {errorMessage && (
-              <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                <p className="text-sm text-red-600 dark:text-red-400">
-                  {errorMessage}
-                </p>
-              </div>
-            )}
-
-            {/* Success Message */}
-            {uploadSuccess && (
-              <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                <p className="text-sm text-green-600 dark:text-green-400">
-                  {isRtl 
-                    ? '✅ تم رفع الشعار بنجاح! يتم تحديث الصفحة...' 
-                    : '✅ Logo uploaded successfully! Refreshing page...'}
-                </p>
-              </div>
-            )}
-
-            {/* Preview */}
-            {previewUrl && (
-              <div>
-                <label className="block text-sm font-medium mb-3">
-                  <Eye className="w-4 h-4 inline mr-2" />
-                  {isRtl ? 'معاينة' : 'Preview'}
-                </label>
-                <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 bg-gray-50 dark:bg-gray-900">
-                  <div className="flex flex-col items-center gap-4">
-                    <img
-                      src={previewUrl}
-                      alt="Logo Preview"
-                      className="max-w-[200px] max-h-[200px] object-contain"
-                    />
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {isRtl 
-                        ? 'سيظهر الشعار بهذا الشكل في التطبيق' 
-                        : 'This is how the logo will appear in the app'}
-                    </p>
+            {/* Upload Area */}
+            <div className="space-y-6">
+              {/* Current Logo Display */}
+              {currentLogoUrl && !previewUrl && (
+                <div>
+                  <label className="block text-sm font-medium mb-3">
+                    {isRtl ? 'الشعار الحالي' : 'Current Logo'}
+                  </label>
+                  <div className="border-2 border-gray-300 dark:border-gray-600 rounded-lg p-8 bg-white dark:bg-gray-800">
+                    <div className="flex flex-col items-center gap-4">
+                      <Logo className="w-32 h-32 text-emerald-600 dark:text-emerald-400" />
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {isRtl 
+                          ? 'هذا هو الشعار المستخدم حاليًا في التطبيق' 
+                          : 'This is the logo currently used in the app'}
+                      </p>
+                    </div>
                   </div>
                 </div>
+              )}
+              
+              {/* File Input */}
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  {isRtl ? 'تحميل الشعار' : 'Upload Logo'}
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".svg,.png,image/svg+xml,image/png"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    id="logo-upload"
+                  />
+                  <label
+                    htmlFor="logo-upload"
+                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 cursor-pointer transition-colors"
+                  >
+                    <Upload className="w-4 h-4" />
+                    <span>{isRtl ? 'اختيار ملف' : 'Choose File'}</span>
+                  </label>
+                  {selectedFile && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                        {selectedFile.name}
+                      </span>
+                      <button
+                        onClick={handleClear}
+                        className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                        title={isRtl ? 'إزالة' : 'Clear'}
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                  {isRtl 
+                    ? 'الحد الأقصى لحجم الملف: 2 ميجابايت. الأنواع المدعومة: SVG، PNG' 
+                    : 'Max file size: 2MB. Supported types: SVG, PNG'}
+                </p>
               </div>
-            )}
 
-            {/* Upload Button */}
-            {previewUrl && !uploadSuccess && (
-              <button
-                onClick={handleUpload}
-                disabled={isUploading}
-                className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                <Save className="w-4 h-4" />
-                <span>
-                  {isUploading 
-                    ? (isRtl ? 'جاري الرفع...' : 'Uploading...') 
-                    : (isRtl ? 'حفظ الشعار' : 'Save Logo')}
-                </span>
-              </button>
-            )}
+              {/* Error Message */}
+              {errorMessage && (
+                <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                  <p className="text-sm text-red-600 dark:text-red-400">
+                    {errorMessage}
+                  </p>
+                </div>
+              )}
+
+              {/* Success Message */}
+              {uploadSuccess && (
+                <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                  <p className="text-sm text-green-600 dark:text-green-400">
+                    {isRtl 
+                      ? '✅ تم رفع الشعار بنجاح! يتم تحديث الصفحة...' 
+                      : '✅ Logo uploaded successfully! Refreshing page...'}
+                  </p>
+                </div>
+              )}
+
+              {/* Preview */}
+              {previewUrl && (
+                <div>
+                  <label className="block text-sm font-medium mb-3">
+                    <Eye className="w-4 h-4 inline mr-2" />
+                    {isRtl ? 'معاينة' : 'Preview'}
+                  </label>
+                  <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 bg-gray-50 dark:bg-gray-900">
+                    <div className="flex flex-col items-center gap-4">
+                      <img
+                        src={previewUrl}
+                        alt="Logo Preview"
+                        className="max-w-[200px] max-h-[200px] object-contain"
+                      />
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {isRtl 
+                          ? 'سيظهر الشعار بهذا الشكل في التطبيق' 
+                          : 'This is how the logo will appear in the app'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Upload Button */}
+              {previewUrl && !uploadSuccess && (
+                <button
+                  onClick={handleUpload}
+                  disabled={isUploading}
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>
+                    {isUploading 
+                      ? (isRtl ? 'جاري الرفع...' : 'Uploading...') 
+                      : (isRtl ? 'حفظ الشعار' : 'Save Logo')}
+                  </span>
+                </button>
+              )}
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* SEO Settings Section */}
+        {activeTab === 'seo' && (
+          <SEOAdmin isDarkMode={isDarkMode} />
+        )}
 
         {/* Additional Info */}
         <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">

@@ -2,17 +2,38 @@
 
 ## What Changed
 
-Your Quran Circle app now uses the beautiful Arabic image you provided as the social media sharing thumbnail!
+Your Quran Circle app is now configured to use a custom social media sharing thumbnail!
 
-### The Image
-**"رحلتك الشخصية مع القرآن"** (Your Personal Journey with the Quran)
+### The Image Setup
+The app expects an image file at: **`/public/og-image.png`**
 
-- Beautiful emerald green gradient background
-- Arabic calligraphy
-- Descriptive tagline
-- Call-to-action button: "ابدأ رحلتك" (Start Your Journey)
+This will be used for all social sharing:
+- Facebook, LinkedIn, WhatsApp, Twitter/X, Telegram, Discord, etc.
 
-## Technical Implementation
+## 🚨 ACTION REQUIRED: Upload Your Image
+
+To use your beautiful Arabic image **"رحلتك الشخصية مع القرآن"** (Your Personal Journey with the Quran):
+
+### Step 1: Prepare Your Image
+- **Dimensions**: 1200 x 630 pixels (optimal for all social platforms)
+- **Format**: PNG or JPG
+- **File name**: `og-image.png`
+
+### Step 2: Upload to GitHub
+
+1. Go to your GitHub repository
+2. Navigate to `/public/` folder
+3. Delete or replace the existing `og-image.png` file
+4. Upload your beautiful Arabic image as `og-image.png`
+5. Commit the change
+
+### Step 3: Deploy to Vercel
+
+Once you push the new `og-image.png` to GitHub, Vercel will automatically:
+- Build and deploy your site
+- Serve the new image for social sharing
+
+## Technical Implementation (Already Done)
 
 ### Files Created/Modified:
 

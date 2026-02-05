@@ -1,27 +1,27 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import LandingPage from './components/LandingPage';
-import Auth from './components/Auth';
-import Dashboard from './components/Dashboard';
+import AuthPage from './components/AuthPage';
 import HomePage from './components/HomePage';
+import Dashboard from './components/Dashboard';
 import ReadingDashboard from './components/ReadingDashboard';
 import MemorizationDashboard from './components/MemorizationDashboard';
-import QuranReader from './components/QuranReader';
-import KhatmahReader from './components/KhatmahReader';
 import GroupGoals from './components/GroupGoals';
 import GroupGoalDetail from './components/GroupGoalDetail';
+import QuranReader from './components/QuranReader';
+import KhatmahReader from './components/KhatmahReader';
 import Settings from './components/Settings';
 import HelpPage from './components/HelpPage';
-import DownloadQuran from './pages/DownloadQuran';
 import AdminPanel from './components/AdminPanel';
+import DownloadQuran from './pages/DownloadQuran';
 import InstallPrompt from './components/InstallPrompt';
 import { useDarkMode } from './utils/useDarkMode';
-import { getCurrentSession, signOut as authSignOut, refreshSession } from '../services/authService';
-import { loadProgressFromServer, autoSyncProgress } from '../services/syncService';
+import { getStoredLanguage, getTranslations } from './utils/translations';
+import { initializeLogo } from './utils/logoStorage';
 import { setSyncTrigger } from './utils/localStorage';
-import { getTranslations, getStoredLanguage } from './utils/translations';
-import { initializeLogo, getCachedLogo } from './utils/logoStorage';
-import { socialShareImage, socialShareImageWidth, socialShareImageHeight } from './utils/socialShareImage';
+import { getCurrentSession, signOut as authSignOut } from '../services/authService';
+import { loadProgressFromServer, autoSyncProgress } from '../services/syncService';
+import { fetchSocialShareImageUrl, socialShareImageWidth, socialShareImageHeight } from './utils/socialShareImage';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -62,6 +62,15 @@ function App() {
       document.head.appendChild(meta);
     }
     
+    // Fetch and update social share image
+    const updateSocialShareImage = async () => {
+      const imageUrl = await fetchSocialShareImageUrl();
+      if (imageUrl) {
+        updateOrCreateMetaTag('og:image', imageUrl);
+        updateOrCreateTwitterTag('twitter:image', imageUrl);
+      }
+    };
+    
     // Update Open Graph tags for social sharing
     const updateOrCreateMetaTag = (property: string, content: string) => {
       let metaTag = document.querySelector(`meta[property="${property}"]`);
@@ -78,7 +87,6 @@ function App() {
     updateOrCreateMetaTag('og:title', t.appName);
     updateOrCreateMetaTag('og:description', t.metaDescription);
     updateOrCreateMetaTag('og:type', 'website');
-    updateOrCreateMetaTag('og:image', socialShareImage);
     updateOrCreateMetaTag('og:image:width', String(socialShareImageWidth));
     updateOrCreateMetaTag('og:image:height', String(socialShareImageHeight));
     updateOrCreateMetaTag('og:url', window.location.href);
@@ -99,7 +107,9 @@ function App() {
     updateOrCreateTwitterTag('twitter:card', 'summary_large_image');
     updateOrCreateTwitterTag('twitter:title', t.appName);
     updateOrCreateTwitterTag('twitter:description', t.metaDescription);
-    updateOrCreateTwitterTag('twitter:image', socialShareImage);
+    
+    // Fetch and update social share image
+    updateSocialShareImage();
   }, []);
   
   // Set up sync trigger for localStorage changes
@@ -167,7 +177,7 @@ function App() {
         {/* Auth */}
         <Route 
           path="/auth" 
-          element={<Auth onAuthSuccess={handleAuth} />} 
+          element={<AuthPage onAuthSuccess={handleAuth} />} 
         />
         
         {/* Legacy /dashboard route - redirect to /home */}
