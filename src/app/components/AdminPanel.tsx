@@ -46,6 +46,7 @@ export default function AdminPanel({ isDarkMode }: AdminPanelProps) {
 
   // Check if user is admin
   if (!user || user.email !== ADMIN_EMAIL) {
+    console.log('Admin check:', { user, ADMIN_EMAIL, isAdmin: user?.email === ADMIN_EMAIL });
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="text-center">
@@ -57,6 +58,9 @@ export default function AdminPanel({ isDarkMode }: AdminPanelProps) {
             {isRtl 
               ? 'ليس لديك صلاحية الوصول إلى لوحة الإدارة' 
               : 'You do not have permission to access the admin panel'}
+          </p>
+          <p className="text-sm text-gray-500 dark:text-gray-500 mb-6">
+            {user ? `Logged in as: ${user.email}` : 'Not logged in'}
           </p>
           <button
             onClick={() => navigate('/')}
