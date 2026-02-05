@@ -98,8 +98,7 @@ export default function SEOAdmin({ isDarkMode }: SEOAdminProps) {
         .from('seo-images')
         .upload(filePath, file, {
           cacheControl: '3600',
-          upsert: false,
-          contentType: file.type // Explicitly set content type
+          upsert: false
         });
 
       if (uploadError) throw uploadError;
