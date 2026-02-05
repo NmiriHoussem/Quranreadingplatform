@@ -21,6 +21,7 @@ import { loadProgressFromServer, autoSyncProgress } from '../services/syncServic
 import { setSyncTrigger } from './utils/localStorage';
 import { getTranslations, getStoredLanguage } from './utils/translations';
 import { initializeLogo, getCachedLogo } from './utils/logoStorage';
+import { socialShareImage, socialShareImageWidth, socialShareImageHeight } from './utils/socialShareImage';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -77,9 +78,9 @@ function App() {
     updateOrCreateMetaTag('og:title', t.appName);
     updateOrCreateMetaTag('og:description', t.metaDescription);
     updateOrCreateMetaTag('og:type', 'website');
-    updateOrCreateMetaTag('og:image', `${window.location.origin}/pwa-192x192.png`);
-    updateOrCreateMetaTag('og:image:width', '192');
-    updateOrCreateMetaTag('og:image:height', '192');
+    updateOrCreateMetaTag('og:image', socialShareImage);
+    updateOrCreateMetaTag('og:image:width', String(socialShareImageWidth));
+    updateOrCreateMetaTag('og:image:height', String(socialShareImageHeight));
     updateOrCreateMetaTag('og:url', window.location.href);
     
     // Twitter Card tags
@@ -98,7 +99,7 @@ function App() {
     updateOrCreateTwitterTag('twitter:card', 'summary_large_image');
     updateOrCreateTwitterTag('twitter:title', t.appName);
     updateOrCreateTwitterTag('twitter:description', t.metaDescription);
-    updateOrCreateTwitterTag('twitter:image', `${window.location.origin}/pwa-192x192.png`);
+    updateOrCreateTwitterTag('twitter:image', socialShareImage);
   }, []);
   
   // Set up sync trigger for localStorage changes

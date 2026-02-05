@@ -25,7 +25,13 @@ The following meta tags are automatically added to every page:
 
 ## Current Preview Image
 
-Currently using: `/pwa-192x192.png` (192x192 pixels)
+The beautiful Arabic social sharing image that says:
+**"رحلتك الشخصية مع القرآن"** (Your Personal Journey with the Quran)
+
+- **Location**: `figma:asset/fca118bead01eae15bd06d96732cadcb0b4241ac.png`
+- **Used via**: `/src/app/utils/socialShareImage.ts`
+- **Dimensions**: 1200 x 630 pixels (optimal for all social platforms)
+- **Features**: Beautiful emerald green background with Arabic calligraphy and call-to-action button
 
 ## How to Improve the Preview Image
 
