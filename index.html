@@ -28,7 +28,7 @@
     <meta name="twitter:url" content="https://qurancircle.net/" />
     <meta name="twitter:title" content="حلقة القرآن - Quran Circle" />
     <meta name="twitter:description" content="منصة خالية من التشتيت للقراءة والحفظ وإتمام القرآن من خلال التتبع الشخصي والحلقات المجدولة" />
-    <meta name="twitter:image" content="https://sxtdsxaibifgvtyeatzl.supabase.co/storage/v1/object/public/seo-images/og-images/og-image-1770323337587.png" />
+    <meta property="twitter:image" content="https://sxtdsxaibifgvtyeatzl.supabase.co/storage/v1/object/public/seo-images/og-images/og-image-1770323337587.png" />
     
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/icon.svg" />
@@ -44,6 +44,18 @@
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/app/App.tsx"></script>
+    <script type="module">
+      import React from 'react';
+      import ReactDOM from 'react-dom/client';
+      import App from '/src/app/App.tsx';
+      import '/src/styles/index.css';
+
+      const root = ReactDOM.createRoot(document.getElementById('root'));
+      root.render(
+        <React.StrictMode>
+          <App />
+        </React.StrictMode>
+      );
+    </script>
   </body>
 </html>
