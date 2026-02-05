@@ -769,30 +769,46 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
     const swipeDistance = touchEndX.current - touchStartX.current;
     const minSwipeDistance = 50; // Minimum distance for a swipe to be recognized
 
-    // In memorization by-page mode, restrict navigation to current surah's pages only
-    let minPage = 1;
-    let maxPage = 604;
-    
+    // Handle memorization page mode separately
     if (mode === 'memorization' && memorizationMode === 'page' && chapterInfo?.pages) {
       const surahPages = chapterInfo.pages;
-      minPage = surahPages[0];
-      maxPage = surahPages[surahPages.length - 1];
+      const minPage = surahPages[0];
+      const maxPage = surahPages[surahPages.length - 1];
+      
+      // Swipe right (drag to right) = previous page (going backward in the Mushaf)
+      if (swipeDistance > minSwipeDistance && memorizationPage > minPage) {
+        setMemorizationPage(prev => prev - 1);
+        setSlideDirection('right');
+        setShowSwipeIndicator(true);
+        setTimeout(() => setShowSwipeIndicator(false), 1000);
+      }
+      // Swipe left (drag to left) = next page (going forward in the Mushaf)
+      else if (swipeDistance < -minSwipeDistance && memorizationPage < maxPage) {
+        setMemorizationPage(prev => prev + 1);
+        setSlideDirection('left');
+        setShowSwipeIndicator(true);
+        setTimeout(() => setShowSwipeIndicator(false), 1000);
+      }
     }
-
-    // Swipe right (drag to right) = next page (like turning page forward)
-    if (swipeDistance > minSwipeDistance && currentPage < maxPage) {
-      setCurrentPage(prev => prev + 1);
-      setSlideDirection('left');
-      setShowSwipeIndicator(true);
-      setTimeout(() => setShowSwipeIndicator(false), 1000);
-    }
-    // Swipe left (drag to left) = previous page (like turning page backward)
-    else if (swipeDistance < -minSwipeDistance && currentPage > minPage) {
-      // Don't auto-mark when going backward - user might be reviewing
-      setCurrentPage(prev => prev - 1);
-      setSlideDirection('right');
-      setShowSwipeIndicator(true);
-      setTimeout(() => setShowSwipeIndicator(false), 1000);
+    // Handle reading mode
+    else if (mode === 'reading') {
+      const minPage = 1;
+      const maxPage = 604;
+      
+      // Swipe right (drag to right) = previous page (going backward in the Mushaf)
+      if (swipeDistance > minSwipeDistance && currentPage > minPage) {
+        setCurrentPage(prev => prev - 1);
+        setSlideDirection('right');
+        setShowSwipeIndicator(true);
+        setTimeout(() => setShowSwipeIndicator(false), 1000);
+      }
+      // Swipe left (drag to left) = next page (going forward in the Mushaf)
+      else if (swipeDistance < -minSwipeDistance && currentPage < maxPage) {
+        setCurrentPage(prev => prev + 1);
+        setSlideDirection('left');
+        setShowSwipeIndicator(true);
+        setTimeout(() => setShowSwipeIndicator(false), 1000);
+      }
     }
 
     // Reset
