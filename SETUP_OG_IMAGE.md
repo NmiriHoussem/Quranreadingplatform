@@ -30,19 +30,15 @@ CREATE POLICY "SEO settings are publicly readable"
   TO public
   USING (true);
 
--- Policy: Only authenticated admins can update SEO settings
-DROP POLICY IF EXISTS "Only admins can update SEO settings" ON public.seo_settings;
-CREATE POLICY "Only admins can update SEO settings"
+-- Policy: Only authenticated users can update SEO settings
+-- (Admin check is done at the app level based on email)
+DROP POLICY IF EXISTS "Only authenticated users can update SEO settings" ON public.seo_settings;
+CREATE POLICY "Only authenticated users can update SEO settings"
   ON public.seo_settings
   FOR ALL
   TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.user_profiles
-      WHERE user_profiles.user_id = auth.uid()
-      AND user_profiles.role = 'admin'
-    )
-  );
+  USING (true)
+  WITH CHECK (true);
 
 -- Insert default og_image row if it doesn't exist
 INSERT INTO public.seo_settings (setting_key, setting_value, image_url)
@@ -72,9 +68,9 @@ Then run this SQL to set up storage policies:
 -- Storage policies for seo-images bucket
 -- Drop existing policies first
 DROP POLICY IF EXISTS "SEO images are publicly readable" ON storage.objects;
-DROP POLICY IF EXISTS "Admins can upload SEO images" ON storage.objects;
-DROP POLICY IF EXISTS "Admins can update SEO images" ON storage.objects;
-DROP POLICY IF EXISTS "Admins can delete SEO images" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated users can upload SEO images" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated users can update SEO images" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated users can delete SEO images" ON storage.objects;
 
 -- Policy: Everyone can read from seo-images bucket
 CREATE POLICY "SEO images are publicly readable"
@@ -82,44 +78,24 @@ CREATE POLICY "SEO images are publicly readable"
   TO public
   USING (bucket_id = 'seo-images');
 
--- Policy: Authenticated admins can upload to seo-images bucket
-CREATE POLICY "Admins can upload SEO images"
+-- Policy: Authenticated users can upload to seo-images bucket
+-- (Admin check is done at the app level based on email)
+CREATE POLICY "Authenticated users can upload SEO images"
   ON storage.objects FOR INSERT
   TO authenticated
-  WITH CHECK (
-    bucket_id = 'seo-images' AND
-    EXISTS (
-      SELECT 1 FROM public.user_profiles
-      WHERE user_profiles.user_id = auth.uid()
-      AND user_profiles.role = 'admin'
-    )
-  );
+  WITH CHECK (bucket_id = 'seo-images');
 
--- Policy: Authenticated admins can update SEO images
-CREATE POLICY "Admins can update SEO images"
+-- Policy: Authenticated users can update SEO images
+CREATE POLICY "Authenticated users can update SEO images"
   ON storage.objects FOR UPDATE
   TO authenticated
-  USING (
-    bucket_id = 'seo-images' AND
-    EXISTS (
-      SELECT 1 FROM public.user_profiles
-      WHERE user_profiles.user_id = auth.uid()
-      AND user_profiles.role = 'admin'
-    )
-  );
+  USING (bucket_id = 'seo-images');
 
--- Policy: Authenticated admins can delete SEO images
-CREATE POLICY "Admins can delete SEO images"
+-- Policy: Authenticated users can delete SEO images
+CREATE POLICY "Authenticated users can delete SEO images"
   ON storage.objects FOR DELETE
   TO authenticated
-  USING (
-    bucket_id = 'seo-images' AND
-    EXISTS (
-      SELECT 1 FROM public.user_profiles
-      WHERE user_profiles.user_id = auth.uid()
-      AND user_profiles.role = 'admin'
-    )
-  );
+  USING (bucket_id = 'seo-images');
 ```
 
 ## Step 4: Verify Setup

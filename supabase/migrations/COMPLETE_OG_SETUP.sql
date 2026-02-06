@@ -1,4 +1,9 @@
--- Create seo_settings table if it doesn't exist
+-- ============================================
+-- Complete OG Image Setup (All-in-One)
+-- Run this in Supabase SQL Editor
+-- ============================================
+
+-- 1. Create seo_settings table
 CREATE TABLE IF NOT EXISTS public.seo_settings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   setting_key TEXT UNIQUE NOT NULL,
@@ -8,20 +13,20 @@ CREATE TABLE IF NOT EXISTS public.seo_settings (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Enable RLS
+-- 2. Enable RLS on seo_settings
 ALTER TABLE public.seo_settings ENABLE ROW LEVEL SECURITY;
 
--- Policy: Everyone can read SEO settings (needed for OG image endpoint)
+-- 3. Drop old policies if they exist
 DROP POLICY IF EXISTS "SEO settings are publicly readable" ON public.seo_settings;
+DROP POLICY IF EXISTS "Only authenticated users can update SEO settings" ON public.seo_settings;
+
+-- 4. Create new policies for seo_settings
 CREATE POLICY "SEO settings are publicly readable"
   ON public.seo_settings
   FOR SELECT
   TO public
   USING (true);
 
--- Policy: Only authenticated users can update SEO settings
--- (Admin check is done at the app level based on email)
-DROP POLICY IF EXISTS "Only authenticated users can update SEO settings" ON public.seo_settings;
 CREATE POLICY "Only authenticated users can update SEO settings"
   ON public.seo_settings
   FOR ALL
@@ -29,44 +34,46 @@ CREATE POLICY "Only authenticated users can update SEO settings"
   USING (true)
   WITH CHECK (true);
 
--- Insert default og_image row if it doesn't exist
+-- 5. Insert default og_image row
 INSERT INTO public.seo_settings (setting_key, setting_value, image_url)
 VALUES ('og_image', NULL, NULL)
 ON CONFLICT (setting_key) DO NOTHING;
 
--- Create storage bucket for SEO images if it doesn't exist
+-- 6. Create storage bucket for SEO images
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('seo-images', 'seo-images', true)
 ON CONFLICT (id) DO UPDATE SET public = true;
 
--- Storage policies for seo-images bucket
--- Drop existing policies first
+-- 7. Drop old storage policies if they exist
 DROP POLICY IF EXISTS "SEO images are publicly readable" ON storage.objects;
 DROP POLICY IF EXISTS "Authenticated users can upload SEO images" ON storage.objects;
 DROP POLICY IF EXISTS "Authenticated users can update SEO images" ON storage.objects;
 DROP POLICY IF EXISTS "Authenticated users can delete SEO images" ON storage.objects;
 
--- Policy: Everyone can read from seo-images bucket
+-- 8. Create storage policies
 CREATE POLICY "SEO images are publicly readable"
   ON storage.objects FOR SELECT
   TO public
   USING (bucket_id = 'seo-images');
 
--- Policy: Authenticated users can upload to seo-images bucket
--- (Admin check is done at the app level based on email)
 CREATE POLICY "Authenticated users can upload SEO images"
   ON storage.objects FOR INSERT
   TO authenticated
   WITH CHECK (bucket_id = 'seo-images');
 
--- Policy: Authenticated users can update SEO images
 CREATE POLICY "Authenticated users can update SEO images"
   ON storage.objects FOR UPDATE
   TO authenticated
   USING (bucket_id = 'seo-images');
 
--- Policy: Authenticated users can delete SEO images
 CREATE POLICY "Authenticated users can delete SEO images"
   ON storage.objects FOR DELETE
   TO authenticated
   USING (bucket_id = 'seo-images');
+
+-- 9. Verify setup
+SELECT 
+  'Setup complete!' as status,
+  COUNT(*) as seo_settings_rows
+FROM public.seo_settings
+WHERE setting_key = 'og_image';
