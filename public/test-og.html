@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OG Image Test - Quran Circle</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      padding: 2rem;
+      background: #f3f4f6;
+      color: #111827;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      padding: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #059669;
+      margin-bottom: 0.5rem;
+    }
+    h2 {
+      color: #047857;
+      margin: 2rem 0 1rem;
+      padding-top: 2rem;
+      border-top: 1px solid #e5e7eb;
+    }
+    h2:first-of-type {
+      border-top: none;
+      padding-top: 0;
+    }
+    .status {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      margin-left: 0.5rem;
+    }
+    .status.success {
+      background: #d1fae5;
+      color: #065f46;
+    }
+    .status.error {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+    .status.loading {
+      background: #fef3c7;
+      color: #92400e;
+    }
+    .test-section {
+      margin: 1rem 0;
+      padding: 1rem;
+      background: #f9fafb;
+      border-radius: 8px;
+      border-left: 4px solid #e5e7eb;
+    }
+    .test-section.success {
+      border-left-color: #10b981;
+      background: #ecfdf5;
+    }
+    .test-section.error {
+      border-left-color: #ef4444;
+      background: #fef2f2;
+    }
+    button {
+      background: #059669;
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background: #047857;
+    }
+    button:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+    }
+    pre {
+      background: #1f2937;
+      color: #f3f4f6;
+      padding: 1rem;
+      border-radius: 6px;
+      overflow-x: auto;
+      font-size: 0.875rem;
+      margin: 1rem 0;
+    }
+    .image-preview {
+      margin: 1rem 0;
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #f9fafb;
+    }
+    .image-preview img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    .url-display {
+      font-family: monospace;
+      background: #f3f4f6;
+      padding: 0.5rem;
+      border-radius: 4px;
+      word-break: break-all;
+      margin: 0.5rem 0;
+    }
+    .links {
+      display: flex;
+      gap: 1rem;
+      margin: 1rem 0;
+      flex-wrap: wrap;
+    }
+    .links a {
+      color: #059669;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .links a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🧪 OG Image Diagnostic Tool</h1>
+    <p>Test and debug your Open Graph (social sharing) image setup</p>
+
+    <h2>1. Edge Function Test <span class="status loading" id="edge-status">Testing...</span></h2>
+    <div class="test-section" id="edge-test">
+      <p>Testing <code>/api/og-image-test</code> endpoint...</p>
+      <button onclick="testEdgeFunction()">Run Test</button>
+      <div id="edge-result"></div>
+    </div>
+
+    <h2>2. Image Preview</h2>
+    <div class="test-section">
+      <p>Preview of your current OG image:</p>
+      <div class="links">
+        <a href="/api/og-image" target="_blank">Open Edge Function Image</a>
+        <a href="/og-image.png" target="_blank">Open Static Fallback</a>
+      </div>
+      <div class="image-preview">
+        <img src="/api/og-image" alt="OG Image" id="og-preview" 
+             onerror="this.src='/og-image.png'; this.onerror=null;">
+      </div>
+    </div>
+
+    <h2>3. Social Media Scrapers</h2>
+    <div class="test-section">
+      <p>Force social media platforms to re-fetch your metadata:</p>
+      <div class="links">
+        <a href="https://www.linkedin.com/post-inspector/" target="_blank">🔗 LinkedIn Post Inspector</a>
+        <a href="https://developers.facebook.com/tools/debug/" target="_blank">📘 Facebook Debugger</a>
+        <a href="https://cards-dev.twitter.com/validator" target="_blank">🐦 Twitter Card Validator</a>
+      </div>
+      <div style="margin-top: 1rem; padding: 1rem; background: #fef3c7; border-radius: 6px;">
+        <strong>📝 Your URL:</strong>
+        <div class="url-display" id="site-url">Loading...</div>
+        <small>Copy this URL and paste it into the validators above</small>
+      </div>
+    </div>
+
+    <h2>4. Metadata Preview</h2>
+    <div class="test-section">
+      <p>Current Open Graph meta tags on this site:</p>
+      <div id="meta-tags"></div>
+    </div>
+
+    <h2>5. Quick Fixes</h2>
+    <div class="test-section">
+      <h3 style="margin-bottom: 0.5rem;">Common Issues:</h3>
+      <ul style="margin-left: 1.5rem;">
+        <li><strong>Image shows "No image found":</strong> Social media platforms cache metadata for 24-48 hours. Use the validators above to force a refresh.</li>
+        <li><strong>Image loads slowly:</strong> Check your Supabase Storage bucket is in a nearby region.</li>
+        <li><strong>Image doesn't load at all:</strong> Verify the Supabase Storage bucket <code>seo-images</code> is set to PUBLIC.</li>
+        <li><strong>Edge function returns 302:</strong> Database doesn't have the image URL, or the URL is invalid.</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    // Set site URL
+    document.getElementById('site-url').textContent = window.location.origin;
+
+    // Test edge function on load
+    window.addEventListener('load', () => {
+      testEdgeFunction();
+      loadMetaTags();
+    });
+
+    async function testEdgeFunction() {
+      const statusEl = document.getElementById('edge-status');
+      const resultEl = document.getElementById('edge-result');
+      const sectionEl = document.getElementById('edge-test');
+      
+      statusEl.textContent = 'Testing...';
+      statusEl.className = 'status loading';
+      resultEl.innerHTML = '<p>Loading...</p>';
+      
+      try {
+        const response = await fetch('/api/og-image-test');
+        const data = await response.json();
+        
+        if (response.ok && data.databaseQuery && !data.databaseQuery.hasError) {
+          statusEl.textContent = 'Success';
+          statusEl.className = 'status success';
+          sectionEl.className = 'test-section success';
+        } else {
+          statusEl.textContent = 'Issues Found';
+          statusEl.className = 'status error';
+          sectionEl.className = 'test-section error';
+        }
+        
+        resultEl.innerHTML = `
+          <h4>Test Results:</h4>
+          <pre>${JSON.stringify(data, null, 2)}</pre>
+          ${data.imageUrl ? `
+            <p><strong>Image URL:</strong></p>
+            <div class="url-display">${data.imageUrl}</div>
+            <a href="${data.imageUrl}" target="_blank" style="color: #059669; font-weight: 600;">Open Image Directly</a>
+          ` : '<p style="color: #dc2626;"><strong>⚠️ No image URL found in database</strong></p>'}
+        `;
+      } catch (error) {
+        statusEl.textContent = 'Error';
+        statusEl.className = 'status error';
+        sectionEl.className = 'test-section error';
+        resultEl.innerHTML = `<p style="color: #dc2626;">Error: ${error.message}</p>`;
+      }
+    }
+
+    function loadMetaTags() {
+      const metaTagsEl = document.getElementById('meta-tags');
+      const tags = [
+        { property: 'og:title', tag: 'property' },
+        { property: 'og:description', tag: 'property' },
+        { property: 'og:image', tag: 'property' },
+        { property: 'og:url', tag: 'property' },
+        { name: 'twitter:card', tag: 'name' },
+        { name: 'twitter:image', tag: 'name' }
+      ];
+      
+      let html = '<ul style="margin-left: 1.5rem; line-height: 1.8;">';
+      tags.forEach(({ property, name, tag }) => {
+        const selector = tag === 'property' ? `meta[property="${property}"]` : `meta[name="${name}"]`;
+        const el = document.querySelector(selector);
+        const value = el ? el.getAttribute('content') : 'Not found';
+        const attr = property || name;
+        html += `<li><code>${attr}</code>: ${value}</li>`;
+      });
+      html += '</ul>';
+      
+      metaTagsEl.innerHTML = html;
+    }
+  </script>
+</body>
+</html>
