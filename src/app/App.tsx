@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import LandingPage from './components/LandingPage';
-import AuthPage from './components/AuthPage';
+import Auth from './components/Auth';
 import HomePage from './components/HomePage';
 import Dashboard from './components/Dashboard';
 import ReadingDashboard from './components/ReadingDashboard';
@@ -177,7 +177,7 @@ function App() {
         {/* Auth */}
         <Route 
           path="/auth" 
-          element={<AuthPage onAuthSuccess={handleAuth} />} 
+          element={<Auth onAuthSuccess={handleAuth} />} 
         />
         
         {/* Legacy /dashboard route - redirect to /home */}
