@@ -11,11 +11,5 @@
       "source": "/og-image.png",
       "destination": "/api/og-image"
     }
-  ],
-  "routes": [
-    {
-      "src": "/make-server-bf07b5b1/(.*)",
-      "dest": "/supabase/functions/server/index.tsx"
-    }
   ]
 }
