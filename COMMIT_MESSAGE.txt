@@ -1,0 +1,30 @@
+feat: Update OG image fallback to use app logo
+
+- Updated edge function fallback to render Quran Circle app logo
+- Created static SVG fallback file (/public/og-image.svg)
+- Enhanced diagnostic and testing tools
+- Improved response headers for better browser compatibility
+- Added visual preview page for OG image
+
+Changes:
+✅ /api/og-image.ts - Logo-based fallback with Islamic patterns
+✅ /api/og-image-test.ts - Better headers
+✅ /public/og-image.svg - NEW: Static fallback matching edge function
+✅ /public/test-og.html - Updated fallback reference
+✅ /public/test-endpoints.html - NEW: Enhanced diagnostics
+✅ /public/preview-og-fallback.html - NEW: Visual preview
+
+Documentation:
+✅ /OG_IMAGE_FALLBACK_UPDATE.md - Technical details
+✅ /OG_IMAGE_BLANK_PAGE_EXPLANATION.md - Browser behavior explanation
+✅ /DEPLOY_OG_IMAGE_LOGO.md - Deployment guide
+✅ /QUICKFIX_OG_IMAGE.md - Updated with new info
+
+The fallback now features:
+- App's Quran book icon (scaled to fit)
+- Islamic decorative patterns (circles, calligraphy, star)
+- Bilingual text (Arabic + English)
+- Brand gradient background (#059669 → #047857)
+- Perfect 1200×630 OG image dimensions
+
+No database migration needed - frontend only changes.

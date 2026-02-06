@@ -1,0 +1,36 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background gradient -->
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#059669;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#047857;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#grad)" />
+  
+  <!-- App Icon/Logo (centered, scaled) -->
+  <g transform="translate(425, 65)">
+    <!-- Book/Quran Shape -->
+    <path d="M64 16C64 7.16344 71.1634 0 80 0H270C278.837 0 286 7.16344 286 16V334C286 342.837 278.837 350 270 350H80C71.1634 350 64 342.837 64 334V16Z" fill="white"/>
+    
+    <!-- Book Spine -->
+    <rect x="72" y="0" width="6" height="350" fill="#047857" opacity="0.3"/>
+    
+    <!-- Decorative Islamic Pattern -->
+    <circle cx="175" cy="95" r="35" stroke="#059669" stroke-width="3" fill="none"/>
+    <circle cx="175" cy="95" r="24" stroke="#059669" stroke-width="2" fill="none"/>
+    
+    <!-- Arabic Text Style Decoration -->
+    <path d="M120 175 Q175 160 230 175" stroke="#059669" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M120 200 Q175 185 230 200" stroke="#059669" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M120 225 Q175 210 230 225" stroke="#059669" stroke-width="3" fill="none" stroke-linecap="round"/>
+    
+    <!-- Star/Islamic ornament -->
+    <path d="M175 270 L180 283 L194 283 L183 291 L188 304 L175 296 L162 304 L167 291 L156 283 L170 283 Z" fill="#059669"/>
+  </g>
+  
+  <!-- App Name -->
+  <text x="600" y="480" text-anchor="middle" fill="white" font-size="64" font-family="Arial, sans-serif" font-weight="bold">حلقة القرآن</text>
+  <text x="600" y="540" text-anchor="middle" fill="white" font-size="42" font-family="Arial, sans-serif">Quran Circle</text>
+  <text x="600" y="590" text-anchor="middle" fill="#d1fae5" font-size="24" font-family="Arial, sans-serif">رحلتك الشخصية مع القرآن الكريم</text>
+</svg>

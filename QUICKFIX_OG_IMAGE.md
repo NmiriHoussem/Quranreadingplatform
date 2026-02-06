@@ -23,7 +23,7 @@
 ### Step 3: Test
 
 1. Visit: https://qurancircle.net/api/og-image
-   - Should show a green branded SVG with "حلقة القرآن"
+   - Should show a green branded image with the Quran Circle logo and "حلقة القرآن"
    
 2. Visit: https://qurancircle.net/api/og-image-test
    - Should show JSON (not an error)
