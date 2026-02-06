@@ -2,7 +2,8 @@
 
 ## The Problem
 - `/api/og-image` shows blank page
-- Error: `relation "public.user_profiles" does not exist`
+- `/api/og-image-test` shows blank page  
+- Error in database: `relation "public.user_profiles" does not exist`
 
 ## The Solution (3 Steps - 2 Minutes)
 
@@ -26,6 +27,12 @@
    
 2. Visit: https://qurancircle.net/api/og-image-test
    - Should show JSON (not an error)
+
+3. **Better test:** Visit https://qurancircle.net/test-endpoints.html
+   - This page tests both endpoints with detailed diagnostics
+   - Shows exactly what's being returned
+
+> **Note:** Some browsers may show a "blank page" when visiting API endpoints directly because they don't know how to render raw responses. The endpoints are working correctly if the test page shows the image! Social media crawlers will fetch the image properly.
 
 ## What Changed?
 

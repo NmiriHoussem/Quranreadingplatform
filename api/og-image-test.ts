@@ -61,7 +61,9 @@ export default async function handler(request: Request) {
     return new Response(JSON.stringify(debugInfo, null, 2), {
       status: 200,
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/json; charset=utf-8',
+        'Access-Control-Allow-Origin': '*',
+        'Cache-Control': 'no-cache',
       },
     });
   } catch (error: any) {
@@ -72,7 +74,8 @@ export default async function handler(request: Request) {
     }, null, 2), {
       status: 500,
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/json; charset=utf-8',
+        'Access-Control-Allow-Origin': '*',
       },
     });
   }

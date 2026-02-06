@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test OG Image Endpoints</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+    
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 16px;
+      padding: 40px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    
+    h1 {
+      color: #2d3748;
+      margin-bottom: 10px;
+      font-size: 32px;
+    }
+    
+    .subtitle {
+      color: #718096;
+      margin-bottom: 30px;
+      font-size: 16px;
+    }
+    
+    .test-section {
+      margin-bottom: 30px;
+      padding: 20px;
+      background: #f7fafc;
+      border-radius: 12px;
+      border-left: 4px solid #667eea;
+    }
+    
+    h2 {
+      color: #2d3748;
+      margin-bottom: 15px;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .status {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    
+    .status.success {
+      background: #c6f6d5;
+      color: #22543d;
+    }
+    
+    .status.error {
+      background: #fed7d7;
+      color: #742a2a;
+    }
+    
+    .status.loading {
+      background: #feebc8;
+      color: #7c2d12;
+    }
+    
+    button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      margin-top: 10px;
+    }
+    
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+    
+    button:active {
+      transform: translateY(0);
+    }
+    
+    .result {
+      margin-top: 15px;
+      padding: 15px;
+      background: white;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+    }
+    
+    pre {
+      background: #2d3748;
+      color: #68d391;
+      padding: 15px;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    
+    .image-container {
+      margin-top: 15px;
+      padding: 20px;
+      background: white;
+      border-radius: 8px;
+      border: 2px dashed #cbd5e0;
+      text-align: center;
+    }
+    
+    .image-container img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    .endpoint-url {
+      background: #edf2f7;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      color: #2d3748;
+      display: inline-block;
+      margin: 10px 0;
+    }
+    
+    .info {
+      background: #bee3f8;
+      border-left: 4px solid #3182ce;
+      padding: 12px 16px;
+      border-radius: 6px;
+      margin: 15px 0;
+      color: #2c5282;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🧪 Endpoint Testing Tool</h1>
+    <p class="subtitle">Direct test of /api/og-image and /api/og-image-test endpoints</p>
+    
+    <!-- Test 1: /api/og-image-test (JSON) -->
+    <div class="test-section">
+      <h2>
+        1. Test JSON Endpoint 
+        <span class="status loading" id="json-status">Not tested</span>
+      </h2>
+      <p>Endpoint: <span class="endpoint-url">/api/og-image-test</span></p>
+      <button onclick="testJSON()">Test JSON Endpoint</button>
+      <div id="json-result"></div>
+    </div>
+    
+    <!-- Test 2: /api/og-image (Image) -->
+    <div class="test-section">
+      <h2>
+        2. Test Image Endpoint 
+        <span class="status loading" id="image-status">Not tested</span>
+      </h2>
+      <p>Endpoint: <span class="endpoint-url">/api/og-image</span></p>
+      <button onclick="testImage()">Test Image Endpoint</button>
+      <div id="image-result"></div>
+    </div>
+    
+    <!-- Test 3: Direct Image Display -->
+    <div class="test-section">
+      <h2>3. Direct Image Display</h2>
+      <p>Embedding the image using &lt;img&gt; tag:</p>
+      <div class="image-container">
+        <img src="/api/og-image" alt="OG Image" id="direct-image" onload="imageLoaded()" onerror="imageError()">
+      </div>
+      <div id="image-info" class="info" style="display:none;"></div>
+    </div>
+  </div>
+
+  <script>
+    // Test JSON endpoint
+    async function testJSON() {
+      const statusEl = document.getElementById('json-status');
+      const resultEl = document.getElementById('json-result');
+      
+      statusEl.textContent = 'Testing...';
+      statusEl.className = 'status loading';
+      resultEl.innerHTML = '<p style="color: #718096;">Loading...</p>';
+      
+      try {
+        const response = await fetch('/api/og-image-test');
+        const text = await response.text();
+        
+        console.log('Response status:', response.status);
+        console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+        console.log('Response text:', text);
+        
+        if (response.ok) {
+          statusEl.textContent = 'Success';
+          statusEl.className = 'status success';
+          
+          try {
+            const data = JSON.parse(text);
+            resultEl.innerHTML = `
+              <div class="result">
+                <strong>✅ Response received successfully!</strong><br><br>
+                <strong>Status:</strong> ${response.status} ${response.statusText}<br>
+                <strong>Content-Type:</strong> ${response.headers.get('Content-Type')}<br><br>
+                <strong>Data:</strong>
+                <pre>${JSON.stringify(data, null, 2)}</pre>
+              </div>
+            `;
+          } catch (e) {
+            resultEl.innerHTML = `
+              <div class="result">
+                <strong>⚠️ Got response but not valid JSON</strong><br><br>
+                <strong>Status:</strong> ${response.status}<br>
+                <strong>Raw Text:</strong>
+                <pre>${text}</pre>
+              </div>
+            `;
+          }
+        } else {
+          statusEl.textContent = 'Error';
+          statusEl.className = 'status error';
+          resultEl.innerHTML = `
+            <div class="result">
+              <strong>❌ HTTP Error: ${response.status} ${response.statusText}</strong><br><br>
+              <pre>${text}</pre>
+            </div>
+          `;
+        }
+      } catch (error) {
+        statusEl.textContent = 'Error';
+        statusEl.className = 'status error';
+        resultEl.innerHTML = `
+          <div class="result">
+            <strong>❌ Request failed</strong><br><br>
+            <strong>Error:</strong> ${error.message}
+          </div>
+        `;
+      }
+    }
+    
+    // Test Image endpoint
+    async function testImage() {
+      const statusEl = document.getElementById('image-status');
+      const resultEl = document.getElementById('image-result');
+      
+      statusEl.textContent = 'Testing...';
+      statusEl.className = 'status loading';
+      resultEl.innerHTML = '<p style="color: #718096;">Loading...</p>';
+      
+      try {
+        const response = await fetch('/api/og-image');
+        
+        console.log('Image response status:', response.status);
+        console.log('Image response headers:', Object.fromEntries(response.headers.entries()));
+        
+        const contentType = response.headers.get('Content-Type');
+        const contentLength = response.headers.get('Content-Length');
+        
+        if (response.ok) {
+          statusEl.textContent = 'Success';
+          statusEl.className = 'status success';
+          
+          const blob = await response.blob();
+          const url = URL.createObjectURL(blob);
+          
+          resultEl.innerHTML = `
+            <div class="result">
+              <strong>✅ Image fetched successfully!</strong><br><br>
+              <strong>Status:</strong> ${response.status} ${response.statusText}<br>
+              <strong>Content-Type:</strong> ${contentType}<br>
+              <strong>Size:</strong> ${blob.size} bytes<br><br>
+              <div class="image-container">
+                <img src="${url}" alt="Fetched Image">
+              </div>
+            </div>
+          `;
+        } else {
+          statusEl.textContent = 'Error';
+          statusEl.className = 'status error';
+          const text = await response.text();
+          resultEl.innerHTML = `
+            <div class="result">
+              <strong>❌ HTTP Error: ${response.status} ${response.statusText}</strong><br><br>
+              <pre>${text}</pre>
+            </div>
+          `;
+        }
+      } catch (error) {
+        statusEl.textContent = 'Error';
+        statusEl.className = 'status error';
+        resultEl.innerHTML = `
+          <div class="result">
+            <strong>❌ Request failed</strong><br><br>
+            <strong>Error:</strong> ${error.message}
+          </div>
+        `;
+      }
+    }
+    
+    // Image loaded successfully
+    function imageLoaded() {
+      const infoEl = document.getElementById('image-info');
+      const img = document.getElementById('direct-image');
+      infoEl.style.display = 'block';
+      infoEl.style.background = '#c6f6d5';
+      infoEl.style.borderColor = '#38a169';
+      infoEl.style.color = '#22543d';
+      infoEl.innerHTML = `
+        ✅ <strong>Image loaded successfully!</strong><br>
+        Dimensions: ${img.naturalWidth} × ${img.naturalHeight} pixels
+      `;
+    }
+    
+    // Image failed to load
+    function imageError() {
+      const infoEl = document.getElementById('image-info');
+      infoEl.style.display = 'block';
+      infoEl.style.background = '#fed7d7';
+      infoEl.style.borderColor = '#e53e3e';
+      infoEl.style.color = '#742a2a';
+      infoEl.innerHTML = '❌ <strong>Image failed to load</strong> - Check browser console for errors';
+    }
+  </script>
+</body>
+</html>

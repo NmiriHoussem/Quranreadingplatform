@@ -8,26 +8,27 @@ export default async function handler(request: Request) {
   // Helper function to return fallback image
   const getFallback = () => {
     // Return a simple SVG as fallback
-    const svg = `
-      <svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" style="stop-color:#059669;stop-opacity:1" />
-            <stop offset="100%" style="stop-color:#047857;stop-opacity:1" />
-          </linearGradient>
-        </defs>
-        <rect width="1200" height="630" fill="url(#grad)" />
-        <text x="600" y="280" text-anchor="middle" fill="white" font-size="72" font-family="Arial, sans-serif" font-weight="bold">حلقة القرآن</text>
-        <text x="600" y="360" text-anchor="middle" fill="white" font-size="48" font-family="Arial, sans-serif">Quran Circle</text>
-        <text x="600" y="420" text-anchor="middle" fill="#d1fae5" font-size="28" font-family="Arial, sans-serif">قراءة وحفظ القرآن الكريم معاً</text>
-      </svg>
-    `;
+    const svg = `<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#059669;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#047857;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#grad)" />
+  <text x="600" y="280" text-anchor="middle" fill="white" font-size="72" font-family="Arial, sans-serif" font-weight="bold">حلقة القرآن</text>
+  <text x="600" y="360" text-anchor="middle" fill="white" font-size="48" font-family="Arial, sans-serif">Quran Circle</text>
+  <text x="600" y="420" text-anchor="middle" fill="#d1fae5" font-size="28" font-family="Arial, sans-serif">رحلتك الشخصية مع القرآن الكريم</text>
+  <text x="600" y="460" text-anchor="middle" fill="#d1fae5" font-size="24" font-family="Arial, sans-serif">اقرأ واحفظ القرآن معاً</text>
+</svg>`;
     
     return new Response(svg, {
       status: 200,
       headers: {
-        'Content-Type': 'image/svg+xml',
+        'Content-Type': 'image/svg+xml; charset=utf-8',
         'Cache-Control': 'public, max-age=3600',
+        'Access-Control-Allow-Origin': '*',
+        'X-Content-Type-Options': 'nosniff',
       },
     });
   };
