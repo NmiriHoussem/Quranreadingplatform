@@ -2,11 +2,12 @@
 
 ## ✅ What Was Done
 
-1. **Created `/index.html`** - Static HTML with all required meta tags
+1. **Updated `/index.html`** - Static HTML with all required meta tags
    - Added `og:description` tag ✅
    - Added `og:image` tag ✅
    - Added Twitter Card tags ✅
    - Added PWA meta tags ✅
+   - **Updated domain to qurancircle.net** ✅
 
 2. **Created `/src/main.tsx`** - React entry point for Vite
 

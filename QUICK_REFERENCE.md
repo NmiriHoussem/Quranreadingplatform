@@ -1,85 +1,87 @@
-# 📋 Quick Reference - Copy & Paste Values
+# Quick Reference: Dynamic OG Image
 
-## For Your Settings Panel (Screenshot)
+## Admin Workflow (No Changes Needed!)
 
-### **Title Field:**
-```
-Quran Circle
-```
+1. Log in to admin panel: `https://qurancircle.net/admin`
+2. Click "إعدادات SEO" (SEO Settings)
+3. Upload new image (PNG/JPG, 1200x630px, <2MB)
+4. Done! ✅
 
-### **Description Field:**
-```
-Join anonymous Quran circles for reading and memorization. Track your progress privately, build consistent habits, and stay motivated through shared goals.
-```
+**The image is now live at:** `https://qurancircle.net/og-image.png`
 
----
+## Testing
 
-## Arabic Versions
+```bash
+# Check if image is accessible
+curl -I https://qurancircle.net/og-image.png
 
-### **Title (Arabic):**
-```
-حلقة القرآن
-```
+# Download current image
+curl https://qurancircle.net/og-image.png > current-og-image.png
 
-### **Description (Arabic):**
-```
-انضم إلى حلقات القرآن المجهولة للقراءة والحفظ. تتبع تقدمك بشكل خاص، وابنِ عادات ثابتة، وحافظ على تحفيزك من خلال الأهداف المشتركة.
+# Test with LinkedIn
+# Visit: https://www.linkedin.com/post-inspector/
 ```
 
----
+## Technical Details
 
-## 📱 One-Liner Taglines (Various Uses)
+| Aspect | Value |
+|--------|-------|
+| **URL** | `https://qurancircle.net/og-image.png` |
+| **Powered by** | Vercel Edge Function |
+| **Source** | Supabase Storage (`seo-images` bucket) |
+| **Cache** | 1 hour (CDN) |
+| **Fallback** | `/public/og-image.png` (static) |
+| **Update time** | Immediate (for new visitors) |
+| **Cost** | Free (Vercel + Supabase free tiers) |
 
-**Ultra Short (for logos/headers):**
-```
-EN: Your private Quran circle
-AR: حلقتك الخاصة للقرآن
-```
+## Files Modified
 
-**Social Media Bio (150 chars):**
 ```
-EN: Read & memorize the Quran with anonymous circle support. Track privately, grow spiritually. Privacy-first. Distraction-free.
-AR: اقرأ واحفظ القرآن مع دعم الحلقات المجهولة. تتبع بشكل خاص، انمُ روحيًا. الخصوصية أولاً. خالٍ من التشتيت.
-```
-
-**App Store Short Description:**
-```
-EN: A distraction-free platform for Quran reading and memorization with anonymous circle support
-AR: منصة خالية من التشتيت لقراءة وحفظ القرآن مع دعم الحلقات المجهولة
+/api/og-image.ts          ← NEW: Edge function
+/vercel.json              ← UPDATED: Added rewrite rule
+/index.html               ← UPDATED: Points to qurancircle.net domain
 ```
 
----
+## Deployment
 
-## ✅ What's Already Done
+```bash
+git add .
+git commit -m "Add dynamic OG image support"
+git push
+```
 
-1. ✅ Translations file updated with 120+ strings
-2. ✅ Landing page shows "Quran Circle" branding
-3. ✅ Browser automatically detects Arabic/English language
-4. ✅ Document title updates dynamically
-5. ✅ Meta tags created for SEO
-6. ✅ Open Graph tags for social media
-7. ✅ Twitter Card tags for Twitter sharing
+Wait 2-3 minutes for Vercel deployment to complete.
 
----
+## Verification Checklist
 
-## 🎯 Brand Identity Summary
+After deployment:
 
-**Name:** Quran Circle / حلقة القرآن  
-**Tagline:** Your private Quran circle / حلقتك الخاصة للقرآن  
-**Tone:** Spiritual, calm, privacy-focused, distraction-free  
-**Key Terms:** Circles (not groups), Anonymous, Private, Goals  
+- [ ] Visit `https://qurancircle.net/og-image.png` in browser (should show image)
+- [ ] Upload new image via admin panel
+- [ ] Refresh `https://qurancircle.net/og-image.png` (should show new image)
+- [ ] Test with LinkedIn Post Inspector
+- [ ] Test with Facebook Debugger
+- [ ] Check Vercel logs for any errors
 
----
+## Troubleshooting
 
-## 📄 Documentation Files Created
+**Image not updating?**
+- Wait 1 hour (cache)
+- Check Supabase `seo_settings` table
+- Check Vercel function logs: `vercel logs --function=api/og-image`
 
-1. `/BRAND_GUIDE.md` - Complete brand voice & terminology
-2. `/TAGLINE_OPTIONS.md` - 10+ tagline variations
-3. `/CIRCLE_TERMINOLOGY_UPDATES.md` - Code update checklist
-4. `/LANGUAGE_DETECTION.md` - How auto-detection works
-5. `/SEO_SETTINGS.md` - Complete SEO setup guide
-6. `/QUICK_REFERENCE.md` - This file!
+**404 error?**
+- Verify deployment succeeded
+- Check `/vercel.json` has rewrite rule
+- Test edge function directly: `curl https://qurancircle.net/api/og-image`
 
----
+**Fallback to static image?**
+- Check Supabase connection
+- Verify `seo_settings` table exists
+- Check environment variables in Vercel
 
-**Quick Answer:** Just copy the Title and Description from the top of this file into your settings panel! 🚀
+## Support
+
+Full documentation: `/DYNAMIC_OG_IMAGE_COMPLETE.md`
+Analysis: `/ANALYSIS_DYNAMIC_OG_IMAGE.md`
+Testing script: `/test-og-image.sh`
