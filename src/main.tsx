@@ -2,10 +2,6 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './app/App';
 import './styles/index.css';
-
-// Service worker registration - only works when built with VitePWA plugin
-// Commenting out for Figma Make compatibility
-/*
 import { registerSW } from 'virtual:pwa-register';
 
 // Register the service worker for PWA functionality
@@ -24,7 +20,6 @@ const updateSW = registerSW({
     console.error('Service Worker registration error:', error);
   }
 });
-*/
 
 const root = document.getElementById('root');
 if (!root) throw new Error('Root element not found');

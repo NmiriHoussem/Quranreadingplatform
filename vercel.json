@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npm run build",
+  "buildCommand": "vite build --config vite.config.pwa.ts",
   "outputDirectory": "dist",
   "framework": "vite",
   "env": {
