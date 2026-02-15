@@ -102,7 +102,7 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
   const [error, setError] = useState<string | null>(null);
   
   // Audio state
-  const [selectedReciter, setSelectedReciter] = useState(7); // Default: Mishari Rashid al-Afasy
+  const [selectedReciter, setSelectedReciter] = useState(6); // Default: Saad Al-Ghamadi (Hafs)
   const [playingVerse, setPlayingVerse] = useState<string | null>(null);
   const [repeatCounts, setRepeatCounts] = useState<Record<string, number>>({});
   const [globalRepeatCount, setGlobalRepeatCount] = useState(1); // For page/range modes
@@ -446,6 +446,16 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
         setChaptersLoading(false);
       }
     }
+    
+    // Scroll to current chapter after drawer opens
+    setTimeout(() => {
+      if (currentChapter) {
+        const chapterElement = document.getElementById(`chapter-${currentChapter}`);
+        if (chapterElement) {
+          chapterElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }
+    }, 300); // Wait for drawer animation to complete
   };
 
   const selectChapter = (chapter: Chapter) => {
@@ -1011,14 +1021,19 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
                 </select>
               </div>
               
-              {/* Mobile: Icon button that opens bottom sheet */}
+              {/* Mobile: Button with label and reciter name */}
               <Button
                 variant="ghost"
-                size="icon"
                 onClick={() => setIsReciterSheetOpen(true)}
-                className="md:hidden h-11 w-11 rounded-full bg-white dark:bg-violet-950 border-2 border-violet-200 dark:border-violet-700 hover:bg-violet-50 dark:hover:bg-violet-900 text-violet-600 dark:text-violet-400"
+                className="md:hidden flex items-center gap-2 px-3 py-2 h-auto bg-white dark:bg-violet-950 border-2 border-violet-200 dark:border-violet-700 hover:bg-violet-50 dark:hover:bg-violet-900 text-violet-600 dark:text-violet-400 rounded-lg"
               >
-                <AudioLines className="w-5 h-5" />
+                <AudioLines className="w-4 h-4 shrink-0" />
+                <div className="flex flex-col items-start min-w-0">
+                  <span className="text-xs text-violet-500 dark:text-violet-400 leading-none">{t.reciter}</span>
+                  <span className="text-sm text-violet-900 dark:text-violet-100 leading-tight truncate max-w-[120px]">
+                    {RECITERS.find(r => r.id === selectedReciter)?.name}
+                  </span>
+                </div>
               </Button>
             </div>
           )}
@@ -1656,7 +1671,7 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
                         touchEndX.current = e.touches[0].clientX;
                       }}
                       onTouchEnd={() => {
-                        const diff = touchStartX.current - touchEndX.current;
+                        const diff = touchEndX.current - touchStartX.current;
                         const threshold = 50;
                         
                         const minPageInSurah = chapterInfo?.pages ? chapterInfo.pages[0] : 1;
@@ -1664,12 +1679,12 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
                         
                         if (Math.abs(diff) > threshold) {
                           if (diff > 0) {
-                            // Swiped left - go to next page
+                            // Swiped right - go to next page
                             if (memorizationPage < maxPageInSurah) {
                               setMemorizationPage(memorizationPage + 1);
                             }
                           } else {
-                            // Swiped right - go to previous page
+                            // Swiped left - go to previous page
                             if (memorizationPage > minPageInSurah) {
                               setMemorizationPage(memorizationPage - 1);
                             }
@@ -1870,45 +1885,61 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
                   </div>
                 ) : (
                   <div className="p-2">
-                    {allChapters.map(chapter => (
-                      <motion.button
-                        key={chapter.id}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => selectChapter(chapter)}
-                        className={`w-full text-left p-4 mb-2 rounded-lg border-2 transition-all ${ 
-                          currentChapter === chapter.chapter_number 
-                            ? 'bg-emerald-50 border-emerald-600' 
-                            : 'bg-white border-emerald-100 hover:border-emerald-300 hover:bg-emerald-50/50'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            {/* Number Badge */}
-                            <div className="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0">
-                              {chapter.chapter_number}
+                    {allChapters.map(chapter => {
+                      const isCurrentChapter = currentChapter === chapter.chapter_number;
+                      return (
+                        <motion.button
+                          key={chapter.id}
+                          id={`chapter-${chapter.chapter_number}`}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => selectChapter(chapter)}
+                          className={`w-full text-left p-4 mb-2 rounded-lg border-2 transition-all ${ 
+                            isCurrentChapter
+                              ? 'bg-emerald-100 border-emerald-600 ring-2 ring-emerald-500 dark:bg-emerald-800 dark:border-emerald-400 dark:ring-emerald-400' 
+                              : 'bg-white border-emerald-100 hover:border-emerald-300 hover:bg-emerald-50/50 dark:bg-emerald-950 dark:border-emerald-800 dark:hover:border-emerald-600 dark:hover:bg-emerald-900'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              {/* Number Badge */}
+                              <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+                                isCurrentChapter 
+                                  ? 'bg-emerald-700 text-white dark:bg-emerald-500' 
+                                  : 'bg-emerald-600 text-white dark:bg-emerald-700'
+                              }`}>
+                                {chapter.chapter_number}
+                              </div>
+                              
+                              {/* Surah Info */}
+                              <div>
+                                <div className={`${
+                                  isCurrentChapter 
+                                    ? 'font-semibold text-emerald-900 dark:text-emerald-200' 
+                                    : 'text-emerald-900 dark:text-emerald-100'
+                                }`}>
+                                  {language === 'ar' ? chapter.name_arabic : chapter.name_simple}
+                                </div>
+                                <div className="text-xs text-emerald-600 dark:text-emerald-400">
+                                  {t.surahMeanings[chapter.chapter_number - 1]} • {chapter.verses_count} {language === 'ar' ? 'آية' : 'Ayahs'}
+                                </div>
+                              </div>
                             </div>
                             
-                            {/* Surah Info */}
-                            <div>
-                              <div className="text-emerald-900">
-                                {language === 'ar' ? chapter.name_arabic : chapter.name_simple}
-                              </div>
-                              <div className="text-xs text-emerald-600">
-                                {t.surahMeanings[chapter.chapter_number - 1]} • {chapter.verses_count} {language === 'ar' ? 'آية' : 'Ayahs'}
+                            {/* Arabic Name */}
+                            <div className="text-right">
+                              <div className={`text-2xl ${
+                                isCurrentChapter 
+                                  ? 'text-emerald-700 dark:text-emerald-300' 
+                                  : 'text-emerald-900 dark:text-emerald-200'
+                              }`}>{chapter.name_arabic}</div>
+                              <div className="text-xs text-emerald-600 dark:text-emerald-400">
+                                {chapter.revelation_place === 'makkah' ? (language === 'ar' ? 'مكية' : 'Meccan') : (language === 'ar' ? 'مدنية' : 'Medinan')}
                               </div>
                             </div>
                           </div>
-                          
-                          {/* Arabic Name */}
-                          <div className="text-right">
-                            <div className="text-2xl text-emerald-900">{chapter.name_arabic}</div>
-                            <div className="text-xs text-emerald-600">
-                              {chapter.revelation_place === 'makkah' ? (language === 'ar' ? 'مكية' : 'Meccan') : (language === 'ar' ? 'مدنية' : 'Medinan')}
-                            </div>
-                          </div>
-                        </div>
-                      </motion.button>
-                    ))}
+                        </motion.button>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -2099,6 +2130,7 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
                           <label className="text-xs text-gray-600 dark:text-gray-400 mb-1.5 block">
                             {t.startAyah}
                           </label>
+                          
                           <div className="flex items-center gap-2">
                             <Button
                               size="icon"
@@ -2110,11 +2142,31 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
                               <Minus className="w-4 h-4" />
                             </Button>
                             
-                            <div className="flex-1 text-center bg-violet-50 dark:bg-violet-900/50 rounded-lg py-2">
-                              <div className="text-xl font-bold text-violet-900 dark:text-violet-100">
-                                {rangeStartAyah}
-                              </div>
-                            </div>
+                            {/* Clickable dropdown in center */}
+                            <Select
+                              value={rangeStartAyah.toString()}
+                              onValueChange={(value) => {
+                                const newStart = parseInt(value);
+                                if (newStart <= rangeEndAyah) {
+                                  setRangeStartAyah(newStart);
+                                }
+                              }}
+                            >
+                              <SelectTrigger className="flex-1 h-10 border-2 border-violet-300 dark:border-violet-600 bg-violet-50 dark:bg-violet-900/50 text-violet-900 dark:text-violet-100">
+                                <SelectValue>
+                                  <div className="text-xl font-bold">
+                                    {rangeStartAyah}
+                                  </div>
+                                </SelectValue>
+                              </SelectTrigger>
+                              <SelectContent className="max-h-60">
+                                {Array.from({ length: rangeEndAyah }, (_, i) => i + 1).map((num) => (
+                                  <SelectItem key={num} value={num.toString()}>
+                                    {language === 'ar' ? `الآية ${num}` : `Ayah ${num}`}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                             
                             <Button
                               size="icon"
@@ -2133,6 +2185,7 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
                           <label className="text-xs text-gray-600 dark:text-gray-400 mb-1.5 block">
                             {t.endAyah}
                           </label>
+                          
                           <div className="flex items-center gap-2">
                             <Button
                               size="icon"
@@ -2144,11 +2197,31 @@ export default function QuranReader({ isAuthenticated, onSignOut, onToggleDarkMo
                               <Minus className="w-4 h-4" />
                             </Button>
                             
-                            <div className="flex-1 text-center bg-violet-50 dark:bg-violet-900/50 rounded-lg py-2">
-                              <div className="text-xl font-bold text-violet-900 dark:text-violet-100">
-                                {rangeEndAyah}
-                              </div>
-                            </div>
+                            {/* Clickable dropdown in center */}
+                            <Select
+                              value={rangeEndAyah.toString()}
+                              onValueChange={(value) => {
+                                const newEnd = parseInt(value);
+                                if (newEnd >= rangeStartAyah) {
+                                  setRangeEndAyah(newEnd);
+                                }
+                              }}
+                            >
+                              <SelectTrigger className="flex-1 h-10 border-2 border-violet-300 dark:border-violet-600 bg-violet-50 dark:bg-violet-900/50 text-violet-900 dark:text-violet-100">
+                                <SelectValue>
+                                  <div className="text-xl font-bold">
+                                    {rangeEndAyah}
+                                  </div>
+                                </SelectValue>
+                              </SelectTrigger>
+                              <SelectContent className="max-h-60">
+                                {Array.from({ length: (chapterInfo?.verses_count || 286) - rangeStartAyah + 1 }, (_, i) => i + rangeStartAyah).map((num) => (
+                                  <SelectItem key={num} value={num.toString()}>
+                                    {language === 'ar' ? `الآية ${num}` : `Ayah ${num}`}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                             
                             <Button
                               size="icon"

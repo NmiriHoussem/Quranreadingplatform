@@ -8,18 +8,23 @@ import { getVersesByPage, getChapter, getChapters, getMushafPageImageUrl, Verse,
 import { motion } from 'motion/react';
 import { 
   isMemberOfGroup, 
-  calculateKhatmahMilestonesForGroup, 
-  isKhatmahPageRead, 
-  markKhatmahPageAsRead,
-  getKhatmahReadingStats
+  isPrivateKhatmahPageRead, 
+  markPrivateKhatmahPageAsRead,
+  getPrivateKhatmahReadingStats,
+  getPrivateKhatmahProgressData,
+  calculatePrivateKhatmahMilestones,
+  getUserData,
+  restorePrivateKhatmahProgressFromDB
 } from '../utils/localStorage';
+import { syncMemberProgress } from '../../services/privateKhatmahService';
+import { getPrivateKhatmahById, loadProgressFromDatabase } from '../../services/privateKhatmahService';
 import { updatePresence, getActiveReaders } from '../../services/presenceService';
 import { getOrCreateSessionId } from '../utils/sessionId';
 import { projectId, publicAnonKey } from '../../../utils/supabase/info';
 import { getTranslations, getStoredLanguage } from '../utils/translations';
 import { getMushafViewMode, setMushafViewMode, type MushafViewMode } from '../../services/preferenceService';
 
-interface KhatmahReaderProps {
+interface PrivateKhatmahReaderProps {
   isAuthenticated: boolean;
   onSignOut: () => void;
   onToggleDarkMode?: () => void;
@@ -35,20 +40,22 @@ interface Milestone {
   description: string;
 }
 
-export default function KhatmahReader({ isAuthenticated, onSignOut, onToggleDarkMode }: KhatmahReaderProps) {
+export default function PrivateKhatmahReader({ isAuthenticated, onSignOut, onToggleDarkMode }: PrivateKhatmahReaderProps) {
   const { groupId } = useParams<{ groupId: string }>();
   const navigate = useNavigate();
+  const translations = getTranslations(getStoredLanguage());
+  const language = getStoredLanguage();
   
   const [currentPage, setCurrentPage] = useState(() => {
-    // Load saved page for this specific khatmah
-    const savedPage = localStorage.getItem(`khatmah-${groupId}-currentPage`);
+    // Load saved page - SHARED across all private khatmahs
+    const savedPage = localStorage.getItem(`private-khatmah-currentPage`);
     if (!savedPage || savedPage.trim() === '' || savedPage === 'undefined' || savedPage === 'null') {
-      localStorage.setItem(`khatmah-${groupId}-currentPage`, '1');
+      localStorage.setItem(`private-khatmah-currentPage`, '1');
       return 1;
     }
     const page = parseInt(savedPage, 10);
     if (isNaN(page) || page < 1 || page > 604) {
-      localStorage.setItem(`khatmah-${groupId}-currentPage`, '1');
+      localStorage.setItem(`private-khatmah-currentPage`, '1');
       return 1;
     }
     return page;
@@ -62,6 +69,7 @@ export default function KhatmahReader({ isAuthenticated, onSignOut, onToggleDark
   const [currentDay, setCurrentDay] = useState(1);
   const [khatmahDays, setKhatmahDays] = useState(0);
   const [khatmahTitle, setKhatmahTitle] = useState('');
+  const [khatmahName, setKhatmahName] = useState('');
 
   // Touch/swipe state
   const touchStartX = useRef<number>(0);
@@ -119,26 +127,67 @@ export default function KhatmahReader({ isAuthenticated, onSignOut, onToggleDark
 
   // Check authentication and membership
   useEffect(() => {
-    // Check if user has joined this khatmah group
+    // Check if user has joined this private khatmah group
     if (!groupId || !isMemberOfGroup(groupId)) {
-      navigate(`/groups/${groupId}`);
+      navigate(`/reading`);
       return;
     }
 
-    // Initialize khatmah data
-    if (groupId.startsWith('khatmah-')) {
-      const days = parseInt(groupId.split('-')[1]);
-      setKhatmahDays(days);
-      setKhatmahTitle(language === 'ar' ? `تحدي ختمة ${days} ${days === 1 ? translations.day : translations.days}` : `${days}-${translations.day} ${translations.khatmah} Challenge`);
+    // Load private khatmah data from Supabase
+    const loadKhatmahData = async () => {
+      if (!groupId) return;
+      
+      // Get current local progress before loading from database
+      const localProgressBeforeLoad = getPrivateKhatmahProgressData();
+      const hasLocalProgress = Object.keys(localProgressBeforeLoad.pagesRead || {}).length > 0;
+      
+      console.log('📊 Local progress before DB load:', {
+        pagesCount: Object.keys(localProgressBeforeLoad.pagesRead || {}).length,
+        percentComplete: localProgressBeforeLoad.percentComplete
+      });
+      
+      // Load progress from database FIRST
+      const { progress, error: progressError } = await loadProgressFromDatabase(groupId);
+      const hasDbProgress = progress && Object.keys(progress.pagesRead || {}).length > 0;
+      
+      if (progress && !progressError && hasDbProgress) {
+        console.log('📥 Loading progress from database...');
+        restorePrivateKhatmahProgressFromDB(progress);
+      } else if (progressError) {
+        console.warn('⚠️ Could not load progress from database:', progressError);
+      } else if (hasLocalProgress && !hasDbProgress) {
+        // Database has no progress, but localStorage does - sync local to database
+        console.log('📤 Database has no progress, syncing local progress to database...');
+        await syncMemberProgress(groupId, localProgressBeforeLoad);
+      }
+      
+      const { khatmah, error } = await getPrivateKhatmahById(groupId);
+      
+      if (error || !khatmah) {
+        console.error('Failed to load private khatmah:', error);
+        // Remove from localStorage if khatmah doesn't exist
+        const data = getUserData();
+        data.groups = data.groups.filter(id => id !== groupId);
+        localStorage.setItem('quranCircleUserData', JSON.stringify(data));
+        // Navigate back to reading dashboard
+        navigate(`/reading`);
+        return;
+      }
 
-      // Calculate milestones
-      const calculatedMilestones = calculateKhatmahMilestonesForGroup(groupId, days);
+      setKhatmahDays(khatmah.duration);
+      setKhatmahName(khatmah.name);
+      setKhatmahTitle(language === 'ar' ? khatmah.name : khatmah.name);
+
+      // Calculate milestones using UNIFIED private progress
+      const calculatedMilestones = calculatePrivateKhatmahMilestones(khatmah.duration);
       setMilestones(calculatedMilestones);
 
       // Find current day based on progress
       const completedDays = calculatedMilestones.filter(m => m.completed).length;
-      setCurrentDay(Math.min(completedDays + 1, days));
-    }
+      setCurrentDay(Math.min(completedDays + 1, khatmah.duration));
+    };
+
+    loadKhatmahData();
   }, [groupId, isAuthenticated, navigate]);
 
   // Fetch verses when page changes
@@ -151,10 +200,11 @@ export default function KhatmahReader({ isAuthenticated, onSignOut, onToggleDark
 
   // Save current page to localStorage whenever it changes
   useEffect(() => {
-    if (currentPage !== undefined && currentPage !== null && groupId) {
-      localStorage.setItem(`khatmah-${groupId}-currentPage`, currentPage.toString());
+    if (currentPage !== undefined && currentPage !== null) {
+      // SHARED across all private khatmahs
+      localStorage.setItem(`private-khatmah-currentPage`, currentPage.toString());
     }
-  }, [currentPage, groupId]);
+  }, [currentPage]);
 
   // Save night mode to localStorage whenever it changes
   useEffect(() => {
@@ -164,7 +214,8 @@ export default function KhatmahReader({ isAuthenticated, onSignOut, onToggleDark
   // Update page read status when current page changes
   useEffect(() => {
     if (groupId) {
-      setPageReadStatus(isKhatmahPageRead(groupId, currentPage));
+      // Use UNIFIED private progress
+      setPageReadStatus(isPrivateKhatmahPageRead(groupId, currentPage));
     }
   }, [currentPage, groupId]);
 
@@ -231,29 +282,52 @@ export default function KhatmahReader({ isAuthenticated, onSignOut, onToggleDark
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleMarkPageAsRead = () => {
+  const handleMarkPageAsRead = async () => {
     if (groupId) {
-      markKhatmahPageAsRead(groupId, currentPage);
+      // Mark in UNIFIED private progress (syncs across ALL private khatmahs)
+      markPrivateKhatmahPageAsRead(groupId, currentPage);
       setPageReadStatus(true);
       
+      // Sync to Supabase for display to other members
+      const progressData = getPrivateKhatmahProgressData();
+      console.log('📤 Syncing progress data:', {
+        pagesReadCount: Object.keys(progressData.pagesRead || {}).length,
+        percentComplete: progressData.percentComplete
+      });
+      await syncMemberProgress(groupId, progressData);
+      
       // Recalculate milestones to update progress
-      if (groupId.startsWith('khatmah-')) {
-        const days = parseInt(groupId.split('-')[1]);
-        const calculatedMilestones = calculateKhatmahMilestonesForGroup(groupId, days);
-        setMilestones(calculatedMilestones);
-        
-        // Update current day based on new progress
-        const completedDays = calculatedMilestones.filter(m => m.completed).length;
-        setCurrentDay(Math.min(completedDays + 1, days));
-      }
+      const calculatedMilestones = calculatePrivateKhatmahMilestones(khatmahDays);
+      setMilestones(calculatedMilestones);
+      
+      // Update current day based on new progress
+      const completedDays = calculatedMilestones.filter(m => m.completed).length;
+      setCurrentDay(Math.min(completedDays + 1, khatmahDays));
     }
   };
 
   // Auto-mark page as read if user spent 15+ seconds on it
-  const autoMarkPageIfTimeSpent = (pageNumber: number) => {
+  const autoMarkPageIfTimeSpent = async (pageNumber: number) => {
     const timeSpent = Date.now() - pageEntryTime.current;
-    if (timeSpent >= MIN_READ_TIME && !isKhatmahPageRead(groupId, pageNumber)) {
-      markKhatmahPageAsRead(groupId, pageNumber);
+    if (timeSpent >= MIN_READ_TIME && !isPrivateKhatmahPageRead(groupId, pageNumber)) {
+      markPrivateKhatmahPageAsRead(groupId, pageNumber);
+      
+      // Sync to Supabase
+      const progressData = getPrivateKhatmahProgressData();
+      console.log('📤 Auto-sync progress data:', {
+        pagesReadCount: Object.keys(progressData.pagesRead || {}).length,
+        percentComplete: progressData.percentComplete
+      });
+      await syncMemberProgress(groupId!, progressData);
+      
+      // Recalculate milestones to update progress UI
+      const calculatedMilestones = calculatePrivateKhatmahMilestones(khatmahDays);
+      setMilestones(calculatedMilestones);
+      
+      // Update current day based on new progress
+      const completedDays = calculatedMilestones.filter(m => m.completed).length;
+      setCurrentDay(Math.min(completedDays + 1, khatmahDays));
+      
       console.log(`Auto-marked page ${pageNumber} as read (spent ${Math.round(timeSpent / 1000)}s)`);
     }
   };
@@ -320,101 +394,15 @@ export default function KhatmahReader({ isAuthenticated, onSignOut, onToggleDark
     }
   }, [loading]);
 
-  // Presence tracking - update every 15 seconds if authenticated
-  useEffect(() => {
-    if (!groupId || !isAuthenticated) return;
-
-    // Update presence immediately
-    const sendPresence = async () => {
-      const result = await updatePresence(groupId);
-      if (result) {
-        const prevCount = activeReaders;
-        setActiveReaders(result.activeReadersExcludingSelf || 0);
-        
-        // Show animation if count increased
-        if (result.activeReadersExcludingSelf && result.activeReadersExcludingSelf > prevCount) {
-          setShowPresenceAnimation(true);
-          setTimeout(() => setShowPresenceAnimation(false), 3000);
-        }
-      }
-    };
-
-    sendPresence();
-
-    // Set up interval to update presence every 15 seconds
-    const presenceInterval = setInterval(sendPresence, 15000);
-
-    return () => clearInterval(presenceInterval);
-  }, [groupId, isAuthenticated]);
-
-  // Anonymous heartbeat tracking - "Reading with you now" feature
-  // Sends heartbeat every 3 minutes, shows banner if 2+ readers
-  useEffect(() => {
-    if (!groupId) return;
-
-    const sessionId = getOrCreateSessionId();
-    console.log('📖 [KHATMAH] Starting anonymous heartbeat tracking');
-
-    // Send heartbeat to server
-    const sendHeartbeat = async () => {
-      // Skip if offline
-      if (!navigator.onLine) {
-        console.log('📵 [HEARTBEAT] Offline - skipping heartbeat');
-        return;
-      }
-      
-      try {
-        const response = await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-bf07b5b1/khatmah/heartbeat`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${publicAnonKey}`,
-          },
-          body: JSON.stringify({ sessionId })
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          console.log('💓 [HEARTBEAT] Response:', data);
-          
-          // Update active readers count
-          // Only show if count >= 2 (at least one other person besides you)
-          if (data.count >= 2) {
-            setActiveReaders(data.count);
-          } else {
-            setActiveReaders(0); // Hide banner if less than 2
-          }
-        } else {
-          console.error('💓 [HEARTBEAT] Failed:', response.status, response.statusText);
-        }
-      } catch (error) {
-        console.error('💓 [HEARTBEAT] Error:', error);
-      }
-    };
-
-    // Send initial heartbeat
-    sendHeartbeat();
-
-    // Send heartbeat every 3 minutes (180 seconds)
-    const heartbeatInterval = setInterval(sendHeartbeat, 180000);
-
-    // Cleanup
-    return () => {
-      clearInterval(heartbeatInterval);
-    };
-  }, [groupId]);
-
-  // Calculate overall progress based on pages read
+  // Calculate overall progress based on UNIFIED private progress
   const calculateProgress = () => {
-    if (!groupId) return 0;
-    const stats = getKhatmahReadingStats(groupId);
+    const stats = getPrivateKhatmahReadingStats();
     return stats.percentComplete;
   };
 
-  // Get pages read count
+  // Get pages read count from UNIFIED private progress
   const getPagesRead = () => {
-    if (!groupId) return 0;
-    const stats = getKhatmahReadingStats(groupId);
+    const stats = getPrivateKhatmahReadingStats();
     return stats.pagesRead;
   };
 
@@ -437,7 +425,7 @@ export default function KhatmahReader({ isAuthenticated, onSignOut, onToggleDark
     // Count how many pages in TODAY'S milestone range have been marked as read
     let todayMilestonePagesRead = 0;
     for (let page = todayMilestoneStartPage; page <= todayMilestoneEndPage; page++) {
-      if (isKhatmahPageRead(groupId, page)) {
+      if (isPrivateKhatmahPageRead(groupId, page)) {
         todayMilestonePagesRead++;
       }
     }
@@ -459,27 +447,30 @@ export default function KhatmahReader({ isAuthenticated, onSignOut, onToggleDark
   // Get today's milestone details for display
   const todayMilestone = milestones.find(m => !m.completed);
 
-  const translations = getTranslations(getStoredLanguage());
-  const language = getStoredLanguage();
-
   return (
-    <div className={`min-h-screen ${nightMode ? 'bg-gradient-to-b from-gray-900 to-gray-800' : 'bg-gradient-to-b from-emerald-50 to-white dark:from-emerald-950 dark:to-emerald-900'}`}>
-      {/* Contextual Khatmah Header */}
-      <header className={`border-b border-emerald-100 dark:border-emerald-800 bg-white/80 dark:bg-emerald-950/80 backdrop-blur-sm sticky top-0 z-10 transition-transform duration-300 ${headerVisible ? 'translate-y-0' : '-translate-y-full'}`}>
+    <div className={`min-h-screen ${nightMode ? 'bg-gradient-to-b from-gray-900 to-gray-800' : 'bg-gradient-to-b from-purple-50 to-white dark:from-purple-950 dark:to-purple-900'}`}>
+      {/* Contextual Private Khatmah Header */}
+      <header className={`border-b border-purple-100 dark:border-purple-800 bg-white/80 dark:bg-purple-950/80 backdrop-blur-sm sticky top-0 z-10 transition-transform duration-300 ${headerVisible ? 'translate-y-0' : '-translate-y-full'}`}>
         <div className="container mx-auto px-4 py-3">
           <div className="flex justify-between items-center">
             {/* Back Arrow & Title */}
             <div className="flex items-center gap-2 min-w-0 flex-1">
-              <Link to="/reading-dashboard">
-                <Button variant="ghost" size="icon" className="hover:bg-emerald-50 dark:hover:bg-emerald-900 shrink-0">
-                  <ArrowLeft className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                </Button>
-              </Link>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="hover:bg-purple-50 dark:hover:bg-purple-900 shrink-0"
+                onClick={() => navigate(`/private-khatmah/${groupId}`)}
+              >
+                <ArrowLeft className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+              </Button>
               <div className="min-w-0 flex-1">
-                <div className="text-emerald-900 dark:text-emerald-100 font-medium text-sm md:text-base truncate">
-                  {khatmahTitle}
+                <div className="text-purple-900 dark:text-purple-100 font-medium text-sm md:text-base truncate flex items-center gap-2">
+                  <span className="text-xs bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded">
+                    {language === 'ar' ? 'خاصة' : 'Private'}
+                  </span>
+                  {khatmahName}
                 </div>
-                <div className="text-xs text-emerald-600 dark:text-emerald-400 truncate">
+                <div className="text-xs text-purple-600 dark:text-purple-400 truncate">
                   {language === 'ar' ? chapterInfo?.name_arabic : chapterInfo?.name_simple} - {chapterInfo && translations.surahMeanings[chapterInfo.chapter_number - 1]}
                 </div>
               </div>
@@ -488,11 +479,11 @@ export default function KhatmahReader({ isAuthenticated, onSignOut, onToggleDark
             {/* Current Day & Menu */}
             <div className="flex items-center gap-2 shrink-0">
               <div className="text-right">
-                <div className="text-sm text-emerald-900 dark:text-emerald-100 font-medium whitespace-nowrap">
+                <div className="text-sm text-purple-900 dark:text-purple-100 font-medium whitespace-nowrap">
                   {language === 'ar' ? `${translations.day} ${currentDay} ${translations.of} ${khatmahDays}` : `${translations.day} ${currentDay} ${translations.of} ${khatmahDays}`}
                 </div>
                 {todayMilestone && (
-                  <div className="text-xs text-emerald-600 dark:text-emerald-400 whitespace-nowrap hidden sm:block">
+                  <div className="text-xs text-purple-600 dark:text-purple-400 whitespace-nowrap hidden sm:block">
                     {language === 'ar' ? `${translations.pagesLabel} ${todayMilestone.startPage}-${todayMilestone.endPage}` : `${translations.pagesLabel} ${todayMilestone.startPage}-${todayMilestone.endPage}`}
                   </div>
                 )}
@@ -502,7 +493,7 @@ export default function KhatmahReader({ isAuthenticated, onSignOut, onToggleDark
               <Button 
                 variant="outline" 
                 size="icon"
-                className="border-emerald-600 dark:border-emerald-500 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900 shrink-0"
+                className="border-purple-600 dark:border-purple-500 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900 shrink-0"
                 onClick={async () => {
                   const newMode = viewMode === 'mushaf' ? 'text' : 'mushaf';
                   setViewMode(newMode);
@@ -521,7 +512,7 @@ export default function KhatmahReader({ isAuthenticated, onSignOut, onToggleDark
                 <Button 
                   variant="outline" 
                   size="icon"
-                  className="border-emerald-600 dark:border-emerald-500 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900 shrink-0"
+                  className="border-purple-600 dark:border-purple-500 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900 shrink-0"
                   onClick={onToggleDarkMode}
                 >
                   {document.documentElement.classList.contains('dark') ? (
@@ -531,7 +522,7 @@ export default function KhatmahReader({ isAuthenticated, onSignOut, onToggleDark
                   )}
                 </Button>
               )}
-              <Button variant="outline" size="icon" className="border-emerald-600 dark:border-emerald-500 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900 shrink-0" onClick={openDrawer}>
+              <Button variant="outline" size="icon" className="border-purple-600 dark:border-purple-500 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900 shrink-0" onClick={openDrawer}>
                 <Menu className="w-4 h-4" />
               </Button>
             </div>
@@ -540,7 +531,7 @@ export default function KhatmahReader({ isAuthenticated, onSignOut, onToggleDark
           {/* Progress Bar */}
           <div className="mt-2 space-y-2">
             <div 
-              className="text-xs text-emerald-600 dark:text-emerald-400"
+              className="text-xs text-purple-600 dark:text-purple-400"
               dir={language === 'ar' ? 'rtl' : 'ltr'}
             >
               {todayMilestoneProgress.isCompleted ? (
@@ -559,9 +550,9 @@ export default function KhatmahReader({ isAuthenticated, onSignOut, onToggleDark
             </div>
             <div className="relative">
               {/* Animated gradient background */}
-              <div className="absolute inset-0 rounded-full overflow-hidden bg-emerald-100 dark:bg-emerald-900/30">
+              <div className="absolute inset-0 rounded-full overflow-hidden bg-purple-100 dark:bg-purple-900/30">
                 <div 
-                  className="h-full bg-gradient-to-r from-emerald-500 via-emerald-600 to-emerald-500 dark:from-emerald-400 dark:via-emerald-500 dark:to-emerald-400 transition-all duration-1000 ease-out relative"
+                  className="h-full bg-gradient-to-r from-purple-500 via-purple-600 to-purple-500 dark:from-purple-400 dark:via-purple-500 dark:to-purple-400 transition-all duration-1000 ease-out relative"
                   style={{ width: `${todayMilestoneProgress.progress}%` }}
                 >
                   {/* Shimmer effect */}
@@ -589,47 +580,28 @@ export default function KhatmahReader({ isAuthenticated, onSignOut, onToggleDark
       </header>
 
       <div className="container mx-auto px-4 py-4 md:py-6 max-w-5xl">
-        {/* "Reading With You Now" Banner - Shows for everyone when 2+ readers */}
-        {activeReaders >= 2 && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            className="mb-4"
-          >
-            <div className="bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-900/30 dark:to-green-900/30 border border-emerald-200 dark:border-emerald-700 rounded-lg px-4 py-3">
-              <div className="flex items-center justify-center gap-2">
-                <Users className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                <p className="text-emerald-900 dark:text-emerald-100 text-sm md:text-base">
-                  <strong>{activeReaders} people</strong> reading with you now
-                </p>
-              </div>
-            </div>
-          </motion.div>
-        )}
-
         {/* Swipe Indicator */}
         {showSwipeIndicator && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="text-center text-sm text-emerald-600 dark:text-emerald-400 mb-4"
+            className="text-center text-sm text-purple-600 dark:text-purple-400 mb-4"
           >
             ← Swipe to navigate pages →
           </motion.div>
         )}
 
-        {/* Verses Display */}
+        {/* Verses Display - Same as public reader but with purple theme */}
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20">
-            <Loader2 className="w-12 h-12 text-emerald-600 dark:text-emerald-400 animate-spin mb-4" />
-            <p className="text-emerald-600 dark:text-emerald-400">Loading verses...</p>
+            <Loader2 className="w-12 h-12 text-purple-600 dark:text-purple-400 animate-spin mb-4" />
+            <p className="text-purple-600 dark:text-purple-400">Loading verses...</p>
           </div>
         ) : error ? (
           <div className="text-center py-20">
             <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
-            <Button onClick={fetchPageVerses} className="bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600">
+            <Button onClick={fetchPageVerses} className="bg-purple-600 hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-600">
               Retry
             </Button>
           </div>
@@ -644,10 +616,10 @@ export default function KhatmahReader({ isAuthenticated, onSignOut, onToggleDark
             onTouchEnd={handleTouchEnd}
           >
             <Card className={`${viewMode === 'mushaf' 
-              ? 'overflow-hidden p-0 gap-0 border-0 rounded-none bg-white dark:bg-emerald-950' 
-              : 'border-2 border-emerald-200 dark:border-emerald-700 bg-white dark:bg-emerald-950/50'}`}>
+              ? 'overflow-hidden p-0 gap-0 border-0 rounded-none bg-white dark:bg-purple-950' 
+              : 'border-2 border-purple-200 dark:border-purple-700 bg-white dark:bg-purple-950/50'}`}>
               {/* Decorative top border */}
-              <div className={`h-2 bg-gradient-to-r from-emerald-600 via-amber-500 to-emerald-600 dark:from-emerald-500 dark:via-amber-600 dark:to-emerald-500 ${viewMode === 'mushaf' ? '' : 'rounded-t-lg'}`}></div>
+              <div className={`h-2 bg-gradient-to-r from-purple-600 via-amber-500 to-purple-600 dark:from-purple-500 dark:via-amber-600 dark:to-purple-500 ${viewMode === 'mushaf' ? '' : 'rounded-t-lg'}`}></div>
               
               <div className={viewMode === 'mushaf' ? '' : 'p-4 md:p-6'}>
                 {/* Mushaf Image Mode */}
@@ -655,10 +627,10 @@ export default function KhatmahReader({ isAuthenticated, onSignOut, onToggleDark
                   <div className="relative min-h-[600px]">
                     {/* Loading overlay */}
                     {imageLoading && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-white/90 dark:bg-emerald-950/90 z-10 backdrop-blur-sm">
-                        <div className="flex flex-col items-center gap-4 bg-white dark:bg-emerald-900 rounded-full p-8 shadow-2xl border-4 border-emerald-500 dark:border-emerald-400">
-                          <Loader2 className="w-16 h-16 text-emerald-600 dark:text-emerald-400 animate-spin" />
-                          <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300 whitespace-nowrap">
+                      <div className="absolute inset-0 flex items-center justify-center bg-white/90 dark:bg-purple-950/90 z-10 backdrop-blur-sm">
+                        <div className="flex flex-col items-center gap-4 bg-white dark:bg-purple-900 rounded-full p-8 shadow-2xl border-4 border-purple-500 dark:border-purple-400">
+                          <Loader2 className="w-16 h-16 text-purple-600 dark:text-purple-400 animate-spin" />
+                          <p className="text-sm font-medium text-purple-700 dark:text-purple-300 whitespace-nowrap">
                             {language === 'ar' ? 'جاري التحميل...' : 'Loading...'}
                           </p>
                         </div>
@@ -673,183 +645,164 @@ export default function KhatmahReader({ isAuthenticated, onSignOut, onToggleDark
                     />
                   </div>
                 ) : (
-                  /* Text Mode */
-                  <>
-                    {/* Surah Header - show if page starts with a new surah */}
-                    {verses.length > 0 && verses[0].verse_number === 1 && (
-                      <div className="text-center mb-3 md:mb-4 pb-2 md:pb-3 border-b-2 border-emerald-200 dark:border-emerald-700">
-                        <div className="text-3xl md:text-4xl lg:text-5xl text-emerald-900 dark:text-emerald-100 mb-1 md:mb-2">{chapterInfo?.name_arabic}</div>
-                        <div className="text-xs md:text-sm text-emerald-600 dark:text-emerald-400">
-                          {chapterInfo?.revelation_place === 'makkah' ? 'مَكِّيَّةٌ' : 'مَدَنِيَّةٌ'}
-                        </div>
+                  /* Text Mode - Same structure as public reader */
+                  <div className="space-y-6">
+                    {verses.map((verse) => (
+                      <div key={verse.verse_key} className="space-y-2">
+                        <p className="text-2xl md:text-3xl text-right leading-loose font-arabic text-gray-800 dark:text-gray-200">
+                          {verse.text_uthmani}
+                        </p>
+                        {verse.translations && verse.translations.length > 0 && (
+                          <p className="text-sm md:text-base text-gray-600 dark:text-gray-400 leading-relaxed">
+                            {verse.translations[0].text}
+                          </p>
+                        )}
                       </div>
-                    )}
-
-                    {/* Bismillah - show for new surah (except Surah 9) */}
-                    {verses.length > 0 && verses[0].verse_number === 1 && parseInt(verses[0].verse_key.split(':')[0]) !== 9 && parseInt(verses[0].verse_key.split(':')[0]) !== 1 && (
-                      <div className="text-center mb-3 md:mb-4">
-                        <div className="text-2xl md:text-3xl lg:text-4xl text-emerald-800 dark:text-emerald-300 leading-loose">
-                          بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Continuous Ayahs (Mushaf style) */}
-                    <div className="text-right leading-loose">
-                      <p className="text-xl md:text-2xl lg:text-3xl text-gray-900 dark:text-gray-100" style={{ lineHeight: '2.2' }}>
-                        {verses.map((verse) => (
-                          <span key={verse.id} className="inline">
-                            {verse.text_uthmani}
-                            {' '}
-                            <span className="inline-flex items-center justify-center w-7 h-7 md:w-8 md:h-8 rounded-full border-2 border-emerald-600 dark:border-emerald-400 text-emerald-700 dark:text-emerald-300 text-xs md:text-sm mx-1">
-                              {verse.verse_number}
-                            </span>
-                            {' '}
-                          </span>
-                        ))}
-                      </p>
-                    </div>
-                  </>
-                )}
-
-                {/* Page Footer - Surah name - Only show in text mode */}
-                {viewMode !== 'mushaf' && (
-                  <div className="mt-4 md:mt-6 pt-2 md:pt-3 border-t-2 border-emerald-200 dark:border-emerald-700 text-center">
-                    <div className="text-sm md:text-base text-emerald-600 dark:text-emerald-400">
-                      {language === 'ar' ? chapterInfo?.name_arabic : chapterInfo?.name_simple}
-                    </div>
+                    ))}
                   </div>
                 )}
               </div>
-
-              {/* Decorative bottom border */}
-              <div className={`h-2 bg-gradient-to-r from-emerald-600 via-amber-500 to-emerald-600 dark:from-emerald-500 dark:via-amber-600 dark:to-emerald-500 ${viewMode === 'mushaf' ? '' : 'rounded-b-lg'}`}></div>
             </Card>
-
-            {/* Page Navigation - Moved Below Card */}
-            <div className="flex justify-between items-center my-6">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  autoMarkPageIfTimeSpent(currentPage);
-                  setCurrentPage(Math.min(604, currentPage + 1));
-                }}
-                onTouchEnd={(e) => e.stopPropagation()}
-                disabled={currentPage === 604 || loading}
-                className="border-emerald-600 dark:border-emerald-500 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900"
-              >
-                <ChevronLeft className="w-4 h-4 mr-1" />
-                {translations.next}
-              </Button>
-              
-              <div className="text-center">
-                <div className="text-emerald-900 dark:text-emerald-100">
-                  {language === 'ar' ? `${translations.page} ${currentPage} ${translations.of} 604` : `${translations.page} ${currentPage} ${translations.of} 604`}
-                </div>
-                {pageReadStatus && (
-                  <div className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center justify-center gap-1">
-                    <Check className="w-3 h-3" />
-                    {translations.completed}
-                  </div>
-                )}
-              </div>
-              
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  autoMarkPageIfTimeSpent(currentPage);
-                  setCurrentPage(Math.max(1, currentPage - 1));
-                }}
-                onTouchEnd={(e) => e.stopPropagation()}
-                disabled={currentPage === 1 || loading}
-                className="border-emerald-600 dark:border-emerald-500 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900"
-              >
-                {translations.previous}
-                <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
-            </div>
-
-            {/* Mark Page as Read Button */}
-            {!pageReadStatus && (
-              <div className="mt-4 text-center">
-                <Button
-                  type="button"
-                  onClick={handleMarkPageAsRead}
-                  onTouchEnd={(e) => e.stopPropagation()}
-                  className="bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600"
-                >
-                  <Check className="w-4 h-4 mr-2" />
-                  {translations.markPageAsComplete}
-                </Button>
-                <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-2">
-                  {language === 'ar' ? 'أو اقضِ 15+ ثانية على هذه الصفحة للإكمال التلقائي' : 'Or spend 15+ seconds on this page to auto-complete'}
-                </p>
-              </div>
-            )}
           </motion.div>
         )}
+
+        {/* Navigation & Mark as Read Buttons */}
+        <div className="mt-6 flex items-center justify-between gap-4 flex-row-reverse">
+          <Button
+            variant="outline"
+            onClick={async () => {
+              // Mark current page as read before navigating (user clicked, so they finished reading)
+              if (!isPrivateKhatmahPageRead(groupId, currentPage)) {
+                markPrivateKhatmahPageAsRead(groupId, currentPage);
+                
+                // Sync to Supabase
+                const progressData = getPrivateKhatmahProgressData();
+                await syncMemberProgress(groupId!, progressData);
+                
+                // Recalculate milestones to update progress UI
+                const calculatedMilestones = calculatePrivateKhatmahMilestones(khatmahDays);
+                setMilestones(calculatedMilestones);
+                
+                // Update current day based on new progress
+                const completedDays = calculatedMilestones.filter(m => m.completed).length;
+                setCurrentDay(Math.min(completedDays + 1, khatmahDays));
+              }
+              
+              setCurrentPage(prev => Math.max(1, prev - 1));
+            }}
+            disabled={currentPage === 1}
+            className="border-purple-600 dark:border-purple-500 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900 disabled:opacity-50"
+          >
+            {language === 'ar' ? 'السابقة' : 'Previous'}
+            <ChevronRight className="w-4 h-4 ml-1" />
+          </Button>
+
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-purple-600 dark:text-purple-400">
+              {language === 'ar' ? `صفحة ${currentPage} / 604` : `Page ${currentPage} / 604`}
+            </span>
+            <Button
+              onClick={handleMarkPageAsRead}
+              disabled={pageReadStatus}
+              className={`${pageReadStatus 
+                ? 'bg-green-600 hover:bg-green-700' 
+                : 'bg-purple-600 hover:bg-purple-700'} text-white`}
+            >
+              {pageReadStatus ? (
+                <>
+                  <Check className="w-4 h-4 mr-1" />
+                  {language === 'ar' ? 'تم' : 'Done'}
+                </>
+              ) : (
+                language === 'ar' ? 'اعتبرها مقروءة' : 'Mark as Read'
+              )}
+            </Button>
+          </div>
+
+          <Button
+            variant="outline"
+            onClick={async () => {
+              // Mark current page as read before navigating (user clicked, so they finished reading)
+              if (!isPrivateKhatmahPageRead(groupId, currentPage)) {
+                markPrivateKhatmahPageAsRead(groupId, currentPage);
+                
+                // Sync to Supabase
+                const progressData = getPrivateKhatmahProgressData();
+                await syncMemberProgress(groupId!, progressData);
+                
+                // Recalculate milestones to update progress UI
+                const calculatedMilestones = calculatePrivateKhatmahMilestones(khatmahDays);
+                setMilestones(calculatedMilestones);
+                
+                // Update current day based on new progress
+                const completedDays = calculatedMilestones.filter(m => m.completed).length;
+                setCurrentDay(Math.min(completedDays + 1, khatmahDays));
+              }
+              
+              setCurrentPage(prev => Math.min(604, prev + 1));
+            }}
+            disabled={currentPage === 604}
+            className="border-purple-600 dark:border-purple-500 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900 disabled:opacity-50"
+          >
+            <ChevronLeft className="w-4 h-4 mr-1" />
+            {language === 'ar' ? 'التالية' : 'Next'}
+          </Button>
+        </div>
       </div>
 
-      {/* Surah Drawer */}
+      {/* Drawer - Same as public reader */}
       {drawerOpen && (
-        <div className="fixed inset-0 bg-black/50 z-50" onClick={() => setDrawerOpen(false)}>
-          <motion.div
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
-            transition={{ type: 'spring', damping: 25 }}
-            className="absolute right-0 top-0 h-full w-full max-w-md bg-white dark:bg-emerald-950 shadow-xl overflow-y-auto"
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" onClick={() => setDrawerOpen(false)}>
+          <div 
+            className="absolute right-0 top-0 h-full w-80 bg-white dark:bg-purple-950 shadow-xl overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl text-emerald-900 dark:text-emerald-100">Surahs</h2>
+            <div className="p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-purple-900 dark:text-purple-100">
+                  {language === 'ar' ? 'السور' : 'Chapters'}
+                </h2>
                 <Button variant="ghost" size="icon" onClick={() => setDrawerOpen(false)}>
-                  <ChevronLeft className="w-5 h-5" />
+                  <ArrowLeft className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                 </Button>
               </div>
-              
+
               {chaptersLoading ? (
                 <div className="flex justify-center py-8">
-                  <Loader2 className="w-8 h-8 text-emerald-600 dark:text-emerald-400 animate-spin" />
+                  <Loader2 className="w-8 h-8 text-purple-600 dark:text-purple-400 animate-spin" />
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {allChapters.map((chapter) => {
-                    const isCurrentChapter = chapterInfo?.chapter_number === chapter.chapter_number;
-                    return (
-                      <button
-                        key={chapter.chapter_number}
-                        id={`chapter-${chapter.chapter_number}`}
-                        onClick={() => selectChapter(chapter)}
-                        className={`w-full text-left p-4 rounded-lg border transition-colors ${
-                          isCurrentChapter 
-                            ? 'border-emerald-500 dark:border-emerald-400 bg-emerald-100 dark:bg-emerald-800 ring-2 ring-emerald-500 dark:ring-emerald-400'
-                            : 'border-emerald-100 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-900'
-                        }`}
-                      >
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <div className={`${isCurrentChapter ? 'font-semibold text-emerald-700 dark:text-emerald-300' : 'text-emerald-900 dark:text-emerald-100'}`}>
-                              {chapter.chapter_number}. {chapter.name_simple}
-                            </div>
-                            <div className="text-sm text-emerald-600 dark:text-emerald-400">
-                              {chapter.translated_name?.name}
-                            </div>
+                  {allChapters.map((chapter) => (
+                    <button
+                      key={chapter.id}
+                      id={`chapter-${chapter.chapter_number}`}
+                      onClick={() => selectChapter(chapter)}
+                      className={`w-full text-left p-3 rounded-lg border transition-colors ${
+                        chapterInfo?.id === chapter.id
+                          ? 'bg-purple-50 dark:bg-purple-900 border-purple-500 dark:border-purple-400'
+                          : 'bg-white dark:bg-purple-900/30 border-purple-200 dark:border-purple-700 hover:border-purple-400 dark:hover:border-purple-500'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="font-semibold text-purple-900 dark:text-purple-100">
+                            {language === 'ar' ? chapter.name_arabic : chapter.name_simple}
                           </div>
-                          <div className={`text-2xl ${isCurrentChapter ? 'text-emerald-600 dark:text-emerald-300' : 'text-emerald-700 dark:text-emerald-300'}`}>
-                            {chapter.name_arabic}
+                          <div className="text-xs text-purple-600 dark:text-purple-400">
+                            {translations.surahMeanings[chapter.chapter_number - 1]}
                           </div>
                         </div>
-                      </button>
-                    );
-                  })}
+                        <div className="text-sm text-purple-600 dark:text-purple-400">
+                          {chapter.chapter_number}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
                 </div>
               )}
             </div>
-          </motion.div>
+          </div>
         </div>
       )}
     </div>

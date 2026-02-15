@@ -1,4 +1,4 @@
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Users, Check, Lock, LogIn, AlertCircle, CheckCircle2, Moon, Sun } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
@@ -31,6 +31,7 @@ interface GroupGoalDetailProps {
 export default function GroupGoalDetail({ isAuthenticated, onSignOut, onToggleDarkMode }: GroupGoalDetailProps) {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [isMember, setIsMember] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
@@ -50,6 +51,36 @@ export default function GroupGoalDetail({ isAuthenticated, onSignOut, onToggleDa
   
   // Determine if this is a khatmah or memorization group
   const isKhatmahGroup = id?.startsWith('khatmah-');
+  
+  // Get the source from location state OR sessionStorage
+  const locationFrom = (location.state as { from?: string })?.from;
+  const sessionFrom = sessionStorage.getItem('khatmah-nav-source');
+  const from = locationFrom || sessionFrom || undefined;
+  
+  // Don't clean up sessionStorage on mount - only when navigating back
+  // This ensures the value persists through re-renders
+  
+  // Determine back button text
+  const getBackButtonText = () => {
+    if (from === 'public-khatmahs') {
+      return language === 'ar' ? 'رجوع إلى الختمات العامة' : 'Back to Public Khatmahs';
+    } else if (from === 'private-khatmahs') {
+      return language === 'ar' ? 'رجوع إلى الختمات الخاصة' : 'Back to Private Khatmahs';
+    } else {
+      return translations.backToGroups;
+    }
+  };
+  
+  // Determine back button destination
+  const getBackButtonDestination = () => {
+    if (from === 'public-khatmahs') {
+      return '/reading';
+    } else if (from === 'private-khatmahs') {
+      return '/reading';
+    } else {
+      return `/groups?filter=${isKhatmahGroup ? 'reading' : 'memorization'}`;
+    }
+  };
   
   // Extract days from ID if khatmah
   const khatmahDays = isKhatmahGroup && id ? parseInt(id.split('-')[1]) : null;
@@ -193,10 +224,13 @@ export default function GroupGoalDetail({ isAuthenticated, onSignOut, onToggleDa
       {/* Header */}
       <header className="border-b border-emerald-100 dark:border-emerald-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <Link to={`/groups?filter=${isKhatmahGroup ? 'reading' : 'memorization'}`}>
+          <Link to={getBackButtonDestination()} onClick={() => {
+            // Clean up sessionStorage when navigating back
+            sessionStorage.removeItem('khatmah-nav-source');
+          }}>
             <Button variant="ghost" className="text-emerald-600 dark:text-emerald-400">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              {translations.backToGroups}
+              {getBackButtonText()}
             </Button>
           </Link>
           <div className="flex gap-2 items-center">
@@ -330,7 +364,7 @@ export default function GroupGoalDetail({ isAuthenticated, onSignOut, onToggleDa
                 
                 // Calculate Juz range for display
                 const startJuz = Math.ceil(milestone.startPage / 20);
-                const endJuz = Math.ceil(milestone.endPage / 20);
+                const endJuz = Math.min(Math.ceil(milestone.endPage / 20), 30); // Cap at Juz 30
                 const juzRange = startJuz !== endJuz ? `${startJuz}-${endJuz}` : `${startJuz}`;
                 
                 // Build translated title and description

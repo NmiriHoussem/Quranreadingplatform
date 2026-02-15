@@ -40,7 +40,18 @@ export interface UserData {
   lastRead: { surahNumber: number; ayahNumber: number; timestamp: string } | null;
   juzProgress: { [juzNumber: string]: { completed: boolean; timestamp: string } };
   completedSurahs: number[];
-  khatmahProgress: { [groupId: string]: ReadingProgress };
+  
+  // DEPRECATED: Old structure - keeping for backward compatibility
+  khatmahProgress?: { [groupId: string]: ReadingProgress };
+  
+  // NEW: Separate public and private progress
+  publicKhatmahProgress: { [groupId: string]: ReadingProgress };
+  privateKhatmahsUnifiedProgress: {
+    pagesRead: ReadingProgress;
+    khatmahIds: string[];
+    lastUpdated: string;
+  };
+  
   completedKhatmahs?: Array<{ groupId: string; completedAt: string }>; // New field for completed khatmahs
 }
 
@@ -65,7 +76,13 @@ const getDefaultData = (): UserData => ({
   lastRead: null,
   juzProgress: {},
   completedSurahs: [],
-  khatmahProgress: {}
+  khatmahProgress: {},
+  publicKhatmahProgress: {},
+  privateKhatmahsUnifiedProgress: {
+    pagesRead: {},
+    khatmahIds: [],
+    lastUpdated: new Date().toISOString()
+  }
 });
 
 // Get all user data
@@ -83,7 +100,13 @@ export const getUserData = (): UserData => {
       // Ensure arrays exist
       groups: parsed.groups || [],
       completedSurahs: parsed.completedSurahs || [],
-      khatmahProgress: parsed.khatmahProgress || {}
+      khatmahProgress: parsed.khatmahProgress || {},
+      publicKhatmahProgress: parsed.publicKhatmahProgress || {},
+      privateKhatmahsUnifiedProgress: parsed.privateKhatmahsUnifiedProgress || {
+        pagesRead: {},
+        khatmahIds: [],
+        lastUpdated: new Date().toISOString()
+      }
     };
   } catch (error) {
     console.error('Error reading localStorage:', error);
@@ -554,96 +577,54 @@ export const checkReadingMilestone = (): string | null => {
 
 // ===== KHATMAH-SPECIFIC PROGRESS FUNCTIONS =====
 
-// Mark a page as read in a specific khatmah
+// Mark a page as read in a specific khatmah (AUTO-DETECTS private vs public)
 export const markKhatmahPageAsRead = (groupId: string, pageNumber: number): void => {
-  const data = getUserData();
-  
-  if (!data.khatmahProgress[groupId]) {
-    data.khatmahProgress[groupId] = {};
+  // Check if this is a private khatmah
+  if (isPrivateKhatmah(groupId)) {
+    markPrivateKhatmahPageAsRead(groupId, pageNumber);
+  } else {
+    markPublicKhatmahPageAsRead(groupId, pageNumber);
   }
-  
-  // Mark the current page as read
-  data.khatmahProgress[groupId][pageNumber.toString()] = {
-    completed: true,
-    timestamp: new Date().toISOString()
-  };
-  
-  // In the context of Khatmah reading, if marking a page as read,
-  // all previous pages should also be marked as read (sequential reading)
-  // Mark all pages from 1 to (pageNumber - 1) as read if not already marked
-  for (let page = 1; page < pageNumber; page++) {
-    if (!data.khatmahProgress[groupId][page.toString()]?.completed) {
-      data.khatmahProgress[groupId][page.toString()] = {
-        completed: true,
-        timestamp: new Date().toISOString()
-      };
-    }
-  }
-  
-  saveUserData(data);
 };
 
-// Check if a page is read in a specific khatmah
+// Check if a page is read in a specific khatmah (AUTO-DETECTS private vs public)
 export const isKhatmahPageRead = (groupId: string, pageNumber: number): boolean => {
-  const data = getUserData();
-  return data.khatmahProgress[groupId]?.[pageNumber.toString()]?.completed || false;
+  // Check if this is a private khatmah
+  if (isPrivateKhatmah(groupId)) {
+    return isPrivateKhatmahPageRead(groupId, pageNumber);
+  } else {
+    return isPublicKhatmahPageRead(groupId, pageNumber);
+  }
 };
 
-// Get all read pages for a specific khatmah
+// Get all read pages for a specific khatmah (AUTO-DETECTS private vs public)
 export const getKhatmahReadPages = (groupId: string): number[] => {
-  const data = getUserData();
-  const khatmahData = data.khatmahProgress[groupId];
-  
-  if (!khatmahData) return [];
-  
-  return Object.keys(khatmahData)
-    .filter(key => khatmahData[key].completed)
-    .map(key => parseInt(key))
-    .sort((a, b) => a - b);
+  // Check if this is a private khatmah
+  if (isPrivateKhatmah(groupId)) {
+    return getPrivateKhatmahReadPages();
+  } else {
+    return getPublicKhatmahReadPages(groupId);
+  }
 };
 
-// Check if a range of pages is complete in a specific khatmah
+// Check if a range of pages is complete in a specific khatmah (AUTO-DETECTS private vs public)
 export const isKhatmahPagesRangeComplete = (groupId: string, startPage: number, endPage: number): boolean => {
-  const data = getUserData();
-  const khatmahData = data.khatmahProgress[groupId];
-  
-  if (!khatmahData) return false;
-  
-  for (let page = startPage; page <= endPage; page++) {
-    if (!khatmahData[page.toString()]?.completed) {
-      return false;
-    }
+  // Check if this is a private khatmah
+  if (isPrivateKhatmah(groupId)) {
+    return isPrivateKhatmahPagesRangeComplete(startPage, endPage);
+  } else {
+    return isPublicKhatmahPagesRangeComplete(groupId, startPage, endPage);
   }
-  return true;
 };
 
-// Calculate khatmah milestones based on khatmah-specific reading progress
+// Calculate khatmah milestones based on khatmah-specific reading progress (AUTO-DETECTS private vs public)
 export const calculateKhatmahMilestonesForGroup = (groupId: string, days: number) => {
-  const totalPages = 604;
-  const pagesPerDay = Math.ceil(totalPages / days);
-  const milestones = [];
-  
-  for (let day = 1; day <= days; day++) {
-    const startPage = (day - 1) * pagesPerDay + 1;
-    const endPage = Math.min(day * pagesPerDay, totalPages);
-    const isComplete = isKhatmahPagesRangeComplete(groupId, startPage, endPage);
-    
-    const startJuz = Math.ceil(startPage / 20);
-    const endJuz = Math.ceil(endPage / 20);
-    
-    milestones.push({
-      day,
-      title: `Day ${day}`,
-      description: `Pages ${startPage}-${endPage} (Juz ${startJuz}${startJuz !== endJuz ? `-${endJuz}` : ''})`,
-      pagesRange: `${startPage}-${endPage}`,
-      startPage,
-      endPage,
-      totalPages: endPage - startPage + 1,
-      completed: isComplete
-    });
+  // Check if this is a private khatmah
+  if (isPrivateKhatmah(groupId)) {
+    return calculatePrivateKhatmahMilestones(days);
+  } else {
+    return calculatePublicKhatmahMilestones(groupId, days);
   }
-  
-  return milestones;
 };
 
 // Get reading statistics for a specific khatmah
@@ -737,4 +718,381 @@ export const resetSurahMemorization = (surahNumber: number): void => {
 export const exportProgressData = (): string => {
   const data = getUserData();
   return JSON.stringify(data, null, 2);
+};
+
+// ===== PRIVATE KHATMAH UNIFIED PROGRESS FUNCTIONS =====
+
+// Store private khatmah IDs metadata
+const PRIVATE_KHATMAH_IDS_KEY = 'private_khatmah_ids';
+
+// Get all private khatmah IDs from localStorage metadata
+export const getPrivateKhatmahIds = (): string[] => {
+  try {
+    const stored = localStorage.getItem(PRIVATE_KHATMAH_IDS_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+};
+
+// Save private khatmah IDs to localStorage metadata
+const savePrivateKhatmahIds = (ids: string[]): void => {
+  localStorage.setItem(PRIVATE_KHATMAH_IDS_KEY, JSON.stringify(ids));
+};
+
+// Check if a khatmah is private
+export const isPrivateKhatmah = (groupId: string): boolean => {
+  const privateIds = getPrivateKhatmahIds();
+  return privateIds.includes(groupId);
+};
+
+// Initialize unified private progress (first private khatmah join)
+export const initializePrivateKhatmahProgress = (
+  startFromScratch: boolean,
+  copyFromPublicId?: string
+): void => {
+  const data = getUserData();
+  
+  if (startFromScratch) {
+    // Start with empty progress
+    data.privateKhatmahsUnifiedProgress = {
+      pagesRead: {},
+      khatmahIds: [],
+      lastUpdated: new Date().toISOString()
+    };
+  } else if (copyFromPublicId && data.publicKhatmahProgress[copyFromPublicId]) {
+    // Copy from public khatmah
+    data.privateKhatmahsUnifiedProgress = {
+      pagesRead: { ...data.publicKhatmahProgress[copyFromPublicId] },
+      khatmahIds: [],
+      lastUpdated: new Date().toISOString()
+    };
+    console.log(`✅ Copied progress from public khatmah ${copyFromPublicId} to private khatmahs`);
+  } else {
+    // Fallback: start from scratch
+    data.privateKhatmahsUnifiedProgress = {
+      pagesRead: {},
+      khatmahIds: [],
+      lastUpdated: new Date().toISOString()
+    };
+  }
+  
+  saveUserData(data);
+};
+
+// Join a private khatmah (adds to unified progress)
+export const joinPrivateKhatmah = (khatmahId: string): void => {
+  const data = getUserData();
+  const privateIds = getPrivateKhatmahIds();
+  
+  // Add to unified khatmah IDs
+  if (!data.privateKhatmahsUnifiedProgress.khatmahIds.includes(khatmahId)) {
+    data.privateKhatmahsUnifiedProgress.khatmahIds.push(khatmahId);
+    data.privateKhatmahsUnifiedProgress.lastUpdated = new Date().toISOString();
+  }
+  
+  // Add to metadata
+  if (!privateIds.includes(khatmahId)) {
+    privateIds.push(khatmahId);
+    savePrivateKhatmahIds(privateIds);
+  }
+  
+  // Add to groups if not already there
+  if (!data.groups.includes(khatmahId)) {
+    data.groups.push(khatmahId);
+  }
+  
+  saveUserData(data);
+  console.log(`✅ Joined private khatmah: ${khatmahId}`);
+};
+
+// Leave a private khatmah
+export const leavePrivateKhatmah = (khatmahId: string): void => {
+  const data = getUserData();
+  const privateIds = getPrivateKhatmahIds();
+  
+  // Remove from unified khatmah IDs
+  data.privateKhatmahsUnifiedProgress.khatmahIds = 
+    data.privateKhatmahsUnifiedProgress.khatmahIds.filter(id => id !== khatmahId);
+  data.privateKhatmahsUnifiedProgress.lastUpdated = new Date().toISOString();
+  
+  // Remove from metadata
+  const updatedPrivateIds = privateIds.filter(id => id !== khatmahId);
+  savePrivateKhatmahIds(updatedPrivateIds);
+  
+  // Remove from groups
+  data.groups = data.groups.filter(id => id !== khatmahId);
+  
+  saveUserData(data);
+  console.log(`✅ Left private khatmah: ${khatmahId}`);
+};
+
+// Mark a page as read in a private khatmah (updates unified progress)
+export const markPrivateKhatmahPageAsRead = (khatmahId: string, pageNumber: number): void => {
+  const data = getUserData();
+  
+  // Mark in unified private progress
+  data.privateKhatmahsUnifiedProgress.pagesRead[pageNumber.toString()] = {
+    completed: true,
+    timestamp: new Date().toISOString()
+  };
+  
+  // Mark all previous pages as read (sequential reading)
+  for (let page = 1; page < pageNumber; page++) {
+    if (!data.privateKhatmahsUnifiedProgress.pagesRead[page.toString()]?.completed) {
+      data.privateKhatmahsUnifiedProgress.pagesRead[page.toString()] = {
+        completed: true,
+        timestamp: new Date().toISOString()
+      };
+    }
+  }
+  
+  data.privateKhatmahsUnifiedProgress.lastUpdated = new Date().toISOString();
+  
+  saveUserData(data);
+  console.log(`✅ Marked page ${pageNumber} as read in private khatmah (synced across all private khatmahs)`);
+};
+
+// Mark a page as read in a public khatmah
+export const markPublicKhatmahPageAsRead = (groupId: string, pageNumber: number): void => {
+  const data = getUserData();
+  
+  if (!data.publicKhatmahProgress[groupId]) {
+    data.publicKhatmahProgress[groupId] = {};
+  }
+  
+  // Mark the current page as read
+  data.publicKhatmahProgress[groupId][pageNumber.toString()] = {
+    completed: true,
+    timestamp: new Date().toISOString()
+  };
+  
+  // Mark all previous pages as read (sequential reading)
+  for (let page = 1; page < pageNumber; page++) {
+    if (!data.publicKhatmahProgress[groupId][page.toString()]?.completed) {
+      data.publicKhatmahProgress[groupId][page.toString()] = {
+        completed: true,
+        timestamp: new Date().toISOString()
+      };
+    }
+  }
+  
+  saveUserData(data);
+  console.log(`✅ Marked page ${pageNumber} as read in public khatmah ${groupId}`);
+};
+
+// Check if a page is read in a private khatmah (uses unified progress)
+export const isPrivateKhatmahPageRead = (khatmahId: string, pageNumber: number): boolean => {
+  const data = getUserData();
+  return data.privateKhatmahsUnifiedProgress.pagesRead[pageNumber.toString()]?.completed || false;
+};
+
+// Check if a page is read in a public khatmah
+export const isPublicKhatmahPageRead = (groupId: string, pageNumber: number): boolean => {
+  const data = getUserData();
+  return data.publicKhatmahProgress[groupId]?.[pageNumber.toString()]?.completed || false;
+};
+
+// Get all read pages for private khatmahs (unified)
+export const getPrivateKhatmahReadPages = (): number[] => {
+  const data = getUserData();
+  const pagesRead = data.privateKhatmahsUnifiedProgress.pagesRead;
+  
+  return Object.keys(pagesRead)
+    .filter(key => pagesRead[key].completed)
+    .map(key => parseInt(key))
+    .sort((a, b) => a - b);
+};
+
+// Get all read pages for a public khatmah
+export const getPublicKhatmahReadPages = (groupId: string): number[] => {
+  const data = getUserData();
+  const khatmahData = data.publicKhatmahProgress[groupId];
+  
+  if (!khatmahData) return [];
+  
+  return Object.keys(khatmahData)
+    .filter(key => khatmahData[key].completed)
+    .map(key => parseInt(key))
+    .sort((a, b) => a - b);
+};
+
+// Get reading statistics for private khatmahs (unified)
+export const getPrivateKhatmahReadingStats = () => {
+  const readPages = getPrivateKhatmahReadPages();
+  const totalPages = 604;
+  const pagesRead = readPages.length;
+  const percentComplete = Math.round((pagesRead / totalPages) * 100);
+  
+  return {
+    pagesRead,
+    totalPages,
+    percentComplete,
+    lastReadPage: readPages[readPages.length - 1] || 1
+  };
+};
+
+// Get raw private khatmah progress data (for syncing to database)
+export const getPrivateKhatmahProgressData = () => {
+  const data = getUserData();
+  return {
+    pagesRead: data.privateKhatmahsUnifiedProgress.pagesRead,
+    percentComplete: getPrivateKhatmahReadingStats().percentComplete,
+    lastUpdated: data.privateKhatmahsUnifiedProgress.lastUpdated
+  };
+};
+
+// Get reading statistics for a public khatmah
+export const getPublicKhatmahReadingStats = (groupId: string) => {
+  const readPages = getPublicKhatmahReadPages(groupId);
+  const totalPages = 604;
+  const pagesRead = readPages.length;
+  const percentComplete = Math.round((pagesRead / totalPages) * 100);
+  
+  return {
+    pagesRead,
+    totalPages,
+    percentComplete,
+    lastReadPage: readPages[readPages.length - 1] || 1
+  };
+};
+
+// Check if a range of pages is complete in private khatmahs
+export const isPrivateKhatmahPagesRangeComplete = (startPage: number, endPage: number): boolean => {
+  const data = getUserData();
+  const pagesRead = data.privateKhatmahsUnifiedProgress.pagesRead;
+  
+  for (let page = startPage; page <= endPage; page++) {
+    if (!pagesRead[page.toString()]?.completed) {
+      return false;
+    }
+  }
+  return true;
+};
+
+// Check if a range of pages is complete in public khatmah
+export const isPublicKhatmahPagesRangeComplete = (groupId: string, startPage: number, endPage: number): boolean => {
+  const data = getUserData();
+  const khatmahData = data.publicKhatmahProgress[groupId];
+  
+  if (!khatmahData) return false;
+  
+  for (let page = startPage; page <= endPage; page++) {
+    if (!khatmahData[page.toString()]?.completed) {
+      return false;
+    }
+  }
+  return true;
+};
+
+// Calculate milestones for private khatmahs (unified progress)
+export const calculatePrivateKhatmahMilestones = (days: number) => {
+  const totalPages = 604;
+  const pagesPerDay = Math.floor(totalPages / days); // Use floor instead of ceil
+  const remainingPages = totalPages % days; // Pages to distribute
+  const milestones = [];
+  
+  let currentPage = 1;
+  
+  for (let day = 1; day <= days; day++) {
+    const startPage = currentPage;
+    // Give extra page to first 'remainingPages' days
+    const pagesToday = pagesPerDay + (day <= remainingPages ? 1 : 0);
+    const endPage = startPage + pagesToday - 1;
+    
+    const isComplete = isPrivateKhatmahPagesRangeComplete(startPage, endPage);
+    
+    const startJuz = Math.ceil(startPage / 20);
+    const endJuz = Math.min(Math.ceil(endPage / 20), 30); // Cap at Juz 30
+    
+    milestones.push({
+      day,
+      title: `Day ${day}`,
+      description: `Pages ${startPage}-${endPage} (Juz ${startJuz}${startJuz !== endJuz ? `-${endJuz}` : ''})`,
+      pagesRange: `${startPage}-${endPage}`,
+      startPage,
+      endPage,
+      totalPages: endPage - startPage + 1,
+      completed: isComplete
+    });
+    
+    currentPage = endPage + 1;
+  }
+  
+  return milestones;
+};
+
+// Calculate milestones for public khatmahs
+export const calculatePublicKhatmahMilestones = (groupId: string, days: number) => {
+  const totalPages = 604;
+  const pagesPerDay = Math.ceil(totalPages / days);
+  const milestones = [];
+  
+  for (let day = 1; day <= days; day++) {
+    const startPage = (day - 1) * pagesPerDay + 1;
+    const endPage = Math.min(day * pagesPerDay, totalPages);
+    const isComplete = isPublicKhatmahPagesRangeComplete(groupId, startPage, endPage);
+    
+    const startJuz = Math.ceil(startPage / 20);
+    const endJuz = Math.ceil(endPage / 20);
+    
+    milestones.push({
+      day,
+      title: `Day ${day}`,
+      description: `Pages ${startPage}-${endPage} (Juz ${startJuz}${startJuz !== endJuz ? `-${endJuz}` : ''})`,
+      pagesRange: `${startPage}-${endPage}`,
+      startPage,
+      endPage,
+      totalPages: endPage - startPage + 1,
+      completed: isComplete
+    });
+  }
+  
+  return milestones;
+};
+
+// Migrate old khatmahProgress to new structure (backward compatibility)
+export const migrateKhatmahProgressStructure = (): void => {
+  const data = getUserData();
+  
+  // If already migrated, skip
+  if (data.publicKhatmahProgress && Object.keys(data.publicKhatmahProgress).length > 0) {
+    console.log('✅ Already migrated to new structure');
+    return;
+  }
+  
+  // If old khatmahProgress exists, migrate it
+  if (data.khatmahProgress && Object.keys(data.khatmahProgress).length > 0) {
+    console.log('🔄 Migrating khatmahProgress to new structure...');
+    
+    // For now, treat all existing khatmahs as public
+    // Users will explicitly join private khatmahs through invitations
+    data.publicKhatmahProgress = { ...data.khatmahProgress };
+    
+    console.log(`✅ Migrated ${Object.keys(data.khatmahProgress).length} khatmah(s) to publicKhatmahProgress`);
+    
+    saveUserData(data);
+  }
+};
+
+// Restore private khatmah progress from database
+export const restorePrivateKhatmahProgressFromDB = (
+  progressData: {
+    pagesRead: { [key: string]: { completed: boolean; timestamp: string } };
+    percentComplete: number;
+    lastUpdated: string | null;
+  }
+): void => {
+  const data = getUserData();
+  
+  // Merge the database progress with local progress
+  data.privateKhatmahsUnifiedProgress.pagesRead = {
+    ...data.privateKhatmahsUnifiedProgress.pagesRead,
+    ...progressData.pagesRead
+  };
+  
+  data.privateKhatmahsUnifiedProgress.lastUpdated = progressData.lastUpdated || new Date().toISOString();
+  
+  saveUserData(data);
+  console.log('✅ Restored private khatmah progress from database');
 };

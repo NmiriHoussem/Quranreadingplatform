@@ -10,15 +10,19 @@ import GroupGoals from './components/GroupGoals';
 import GroupGoalDetail from './components/GroupGoalDetail';
 import QuranReader from './components/QuranReader';
 import KhatmahReader from './components/KhatmahReader';
+import PrivateKhatmahReader from './components/PrivateKhatmahReader';
+import PrivateKhatmahDetailPage from './components/PrivateKhatmahDetailPage';
 import Settings from './components/Settings';
 import HelpPage from './components/HelpPage';
 import AdminPanel from './components/AdminPanel';
 import DownloadQuran from './pages/DownloadQuran';
 import InstallPrompt from './components/InstallPrompt';
+import OfflineBanner from './components/OfflineBanner';
+import DebugInvitations from './components/DebugInvitations';
 import { useDarkMode } from './utils/useDarkMode';
 import { getStoredLanguage, getTranslations } from './utils/translations';
 import { initializeLogo } from './utils/logoStorage';
-import { setSyncTrigger } from './utils/localStorage';
+import { setSyncTrigger, migrateKhatmahProgressStructure } from './utils/localStorage';
 import { getCurrentSession, signOut as authSignOut } from '../services/authService';
 import { loadProgressFromServer, autoSyncProgress } from '../services/syncService';
 import { fetchSocialShareImageUrl, socialShareImageWidth, socialShareImageHeight } from './utils/socialShareImage';
@@ -130,6 +134,20 @@ function App() {
 
   const checkAuth = async () => {
     try {
+      // Check if we're online
+      const isOnline = navigator.onLine;
+      
+      if (!isOnline) {
+        console.log('App starting in offline mode');
+        // In offline mode, check localStorage for existing session
+        const storedSession = localStorage.getItem('quran_session');
+        if (storedSession) {
+          setIsAuthenticated(true);
+        }
+        setLoading(false);
+        return;
+      }
+      
       const session = await getCurrentSession();
       setIsAuthenticated(session.isAuthenticated);
       
@@ -139,6 +157,11 @@ function App() {
       }
     } catch (error) {
       console.error('Auth check error:', error);
+      // On error, try to use cached auth state
+      const storedSession = localStorage.getItem('quran_session');
+      if (storedSession) {
+        setIsAuthenticated(true);
+      }
     } finally {
       setLoading(false);
     }
@@ -199,7 +222,7 @@ function App() {
         {/* Shorter aliases for dashboards */}
         <Route 
           path="/reading" 
-          element={<Navigate to="/reading-dashboard" replace />} 
+          element={<ReadingDashboard isAuthenticated={isAuthenticated} onSignOut={handleSignOut} onToggleDarkMode={toggleDarkMode} />} 
         />
         <Route 
           path="/memorization" 
@@ -211,9 +234,20 @@ function App() {
           path="/reader" 
           element={<QuranReader isAuthenticated={isAuthenticated} onSignOut={handleSignOut} onToggleDarkMode={toggleDarkMode} />} 
         />
+        {/* PUBLIC Khatmah Reader */}
         <Route 
           path="/khatmah/:groupId" 
           element={<KhatmahReader isAuthenticated={isAuthenticated} onSignOut={handleSignOut} onToggleDarkMode={toggleDarkMode} />} 
+        />
+        {/* PRIVATE Khatmah Reader */}
+        <Route 
+          path="/private-khatmah/:groupId/reader" 
+          element={<PrivateKhatmahReader isAuthenticated={isAuthenticated} onSignOut={handleSignOut} onToggleDarkMode={toggleDarkMode} />} 
+        />
+        {/* PRIVATE Khatmah Detail Page (Members, Milestones, Progress) */}
+        <Route 
+          path="/private-khatmah/:groupId" 
+          element={<PrivateKhatmahDetailPage isAuthenticated={isAuthenticated} onSignOut={handleSignOut} onToggleDarkMode={toggleDarkMode} />} 
         />
         
         {/* Groups */}
@@ -245,10 +279,18 @@ function App() {
           path="/admin" 
           element={<AdminPanel isDarkMode={isDarkMode} />} 
         />
+        
+        {/* Debug Invitations */}
+        <Route 
+          path="/debug-invitations" 
+          element={<DebugInvitations />} 
+        />
       </Routes>
       
       {/* PWA Install Prompt - Global */}
       <InstallPrompt />
+      {/* Offline Banner - Global */}
+      <OfflineBanner />
     </Router>
   );
 }

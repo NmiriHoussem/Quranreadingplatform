@@ -382,7 +382,6 @@ export default function InstallPrompt({ onInstallSuccess }: InstallPromptProps) 
         <div className="px-6 pb-6 space-y-2">
           <Button
             onClick={handleInstall}
-            disabled={!deferredPrompt}
             className="w-full bg-violet-600 hover:bg-violet-700 dark:bg-violet-500 dark:hover:bg-violet-600 text-white h-12 text-base font-semibold"
           >
             <Download className="w-5 h-5 mr-2" />

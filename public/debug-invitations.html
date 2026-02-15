@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Private Khatmah Invitations</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #059669;
+            margin-bottom: 24px;
+        }
+        h2 {
+            color: #047857;
+            margin-top: 24px;
+            margin-bottom: 16px;
+        }
+        .btn {
+            background: #059669;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        .btn:hover {
+            background: #047857;
+        }
+        .output {
+            background: #f9fafb;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 16px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success {
+            color: #059669;
+            font-weight: bold;
+        }
+        .error {
+            color: #dc2626;
+            font-weight: bold;
+        }
+        .info {
+            background: #dbeafe;
+            border: 1px solid #3b82f6;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+        .warning {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+        .query-card {
+            background: #f3f4f6;
+            border-left: 4px solid #059669;
+            padding: 16px;
+            margin: 16px 0;
+            border-radius: 4px;
+        }
+        .query-card h3 {
+            margin-top: 0;
+            color: #047857;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug Private Khatmah Invitations</h1>
+    
+    <div class="info">
+        <strong>ℹ️ Instructions:</strong>
+        <ol>
+            <li>Make sure you're logged in to the app</li>
+            <li>Open browser console (F12) to see detailed logs</li>
+            <li>Click buttons below to test different scenarios</li>
+            <li>Results will appear both here and in the console</li>
+        </ol>
+    </div>
+
+    <div class="container">
+        <h2>1️⃣ Check Current User</h2>
+        <p>Verify who is currently logged in and their email address.</p>
+        <button class="btn" onclick="checkCurrentUser()">Check Current User</button>
+        <div id="user-output" class="output" style="display: none;"></div>
+    </div>
+
+    <div class="container">
+        <h2>2️⃣ Fetch Pending Invitations</h2>
+        <p>Try to fetch all pending invitations for the current user.</p>
+        <button class="btn" onclick="fetchInvitations()">Fetch Invitations</button>
+        <div id="invitations-output" class="output" style="display: none;"></div>
+    </div>
+
+    <div class="container">
+        <h2>3️⃣ Direct Supabase Query</h2>
+        <p>Query the database directly to see all invitations.</p>
+        <button class="btn" onclick="queryInvitationsDirectly()">Query Database</button>
+        <div id="direct-output" class="output" style="display: none;"></div>
+    </div>
+
+    <div class="container">
+        <h2>4️⃣ Check Private Khatmahs</h2>
+        <p>List all private khatmahs accessible to current user.</p>
+        <button class="btn" onclick="fetchPrivateKhatmahs()">Fetch Khatmahs</button>
+        <div id="khatmahs-output" class="output" style="display: none;"></div>
+    </div>
+
+    <div class="warning">
+        <strong>⚠️ Expected Behavior:</strong><br>
+        If user <code>houssem.addin@gmail.com</code> was invited to a khatmah called "company":
+        <ul>
+            <li>Step 1 should show email: <code>houssem.addin@gmail.com</code></li>
+            <li>Step 2 should return at least 1 pending invitation</li>
+            <li>Step 3 should show the raw database record</li>
+            <li>After accepting: Step 4 should show the khatmah in the list</li>
+        </ul>
+    </div>
+
+    <div class="container">
+        <h2>📝 SQL Queries to Run in Supabase</h2>
+        
+        <div class="query-card">
+            <h3>Check All Pending Invitations</h3>
+            <pre>SELECT 
+  i.id,
+  i.email as invitation_email,
+  i.status,
+  i.invited_at,
+  k.name as khatmah_name,
+  creator.email as creator_email
+FROM public.private_khatmah_invitations i
+JOIN public.private_khatmahs k ON i.khatmah_id = k.id
+JOIN auth.users creator ON k.created_by = creator.id
+WHERE i.status = 'pending'
+ORDER BY i.invited_at DESC;</pre>
+        </div>
+
+        <div class="query-card">
+            <h3>Find Specific User's Email</h3>
+            <pre>SELECT id, email, created_at
+FROM auth.users
+WHERE email ILIKE '%houssem%';</pre>
+        </div>
+
+        <div class="query-card">
+            <h3>Check Member Records</h3>
+            <pre>SELECT *
+FROM public.private_khatmah_members
+WHERE LOWER(email) = 'houssem.addin@gmail.com';</pre>
+        </div>
+    </div>
+
+    <script type="module">
+        import { supabase } from '/src/lib/supabase.js';
+        import { getCurrentSession } from '/src/services/authService.js';
+        import { getPendingInvitations, getPrivateKhatmahs } from '/src/services/privateKhatmahService.js';
+
+        window.supabase = supabase;
+        window.getCurrentSession = getCurrentSession;
+        window.getPendingInvitations = getPendingInvitations;
+        window.getPrivateKhatmahs = getPrivateKhatmahs;
+
+        window.checkCurrentUser = async function() {
+            const output = document.getElementById('user-output');
+            output.style.display = 'block';
+            output.textContent = '⏳ Checking user session...\n\n';
+
+            try {
+                const session = await getCurrentSession();
+                const { data: { user }, error } = await supabase.auth.getUser();
+                
+                const result = {
+                    isAuthenticated: session.isAuthenticated,
+                    userId: session.user?.id || user?.id,
+                    userEmail: user?.email,
+                    sessionData: session
+                };
+
+                output.textContent += `✅ Success!\n\n${JSON.stringify(result, null, 2)}`;
+                console.log('👤 Current User:', result);
+            } catch (error) {
+                output.textContent += `❌ Error: ${error.message}\n\n${JSON.stringify(error, null, 2)}`;
+                console.error('Error checking user:', error);
+            }
+        };
+
+        window.fetchInvitations = async function() {
+            const output = document.getElementById('invitations-output');
+            output.style.display = 'block';
+            output.textContent = '⏳ Fetching invitations...\n\n';
+
+            try {
+                const result = await getPendingInvitations();
+                
+                if (result.error) {
+                    output.textContent += `❌ Error: ${result.error}\n\n`;
+                } else if (result.invitations.length === 0) {
+                    output.textContent += `⚠️  No pending invitations found.\n\n`;
+                } else {
+                    output.textContent += `✅ Found ${result.invitations.length} invitation(s)!\n\n`;
+                }
+                
+                output.textContent += JSON.stringify(result, null, 2);
+                console.log('📧 Invitations:', result);
+            } catch (error) {
+                output.textContent += `❌ Exception: ${error.message}\n\n${JSON.stringify(error, null, 2)}`;
+                console.error('Error fetching invitations:', error);
+            }
+        };
+
+        window.queryInvitationsDirectly = async function() {
+            const output = document.getElementById('direct-output');
+            output.style.display = 'block';
+            output.textContent = '⏳ Querying database directly...\n\n';
+
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                const userEmail = user?.email;
+
+                output.textContent += `User Email: ${userEmail}\n\n`;
+
+                // Query invitations
+                const { data: invitations, error: invError } = await supabase
+                    .from('private_khatmah_invitations')
+                    .select('*')
+                    .eq('email', userEmail?.toLowerCase())
+                    .eq('status', 'pending');
+
+                if (invError) {
+                    output.textContent += `❌ Error: ${invError.message}\n`;
+                    output.textContent += `Code: ${invError.code}\n\n`;
+                } else {
+                    output.textContent += `✅ Query successful!\n`;
+                    output.textContent += `Found: ${invitations?.length || 0} record(s)\n\n`;
+                }
+
+                output.textContent += JSON.stringify({ invitations, error: invError }, null, 2);
+                console.log('🔍 Direct Query Result:', { invitations, error: invError });
+            } catch (error) {
+                output.textContent += `❌ Exception: ${error.message}\n\n${JSON.stringify(error, null, 2)}`;
+                console.error('Error in direct query:', error);
+            }
+        };
+
+        window.fetchPrivateKhatmahs = async function() {
+            const output = document.getElementById('khatmahs-output');
+            output.style.display = 'block';
+            output.textContent = '⏳ Fetching private khatmahs...\n\n';
+
+            try {
+                const result = await getPrivateKhatmahs();
+                
+                if (result.error) {
+                    output.textContent += `❌ Error: ${result.error}\n\n`;
+                } else if (result.khatmahs.length === 0) {
+                    output.textContent += `⚠️  No private khatmahs found.\n\n`;
+                } else {
+                    output.textContent += `✅ Found ${result.khatmahs.length} khatmah(s)!\n\n`;
+                }
+                
+                output.textContent += JSON.stringify(result, null, 2);
+                console.log('🔐 Private Khatmahs:', result);
+            } catch (error) {
+                output.textContent += `❌ Exception: ${error.message}\n\n${JSON.stringify(error, null, 2)}`;
+                console.error('Error fetching khatmahs:', error);
+            }
+        };
+
+        console.log('🔧 Debug page loaded. Use buttons above or call functions directly:');
+        console.log('  - checkCurrentUser()');
+        console.log('  - fetchInvitations()');
+        console.log('  - queryInvitationsDirectly()');
+        console.log('  - fetchPrivateKhatmahs()');
+    </script>
+</body>
+</html>

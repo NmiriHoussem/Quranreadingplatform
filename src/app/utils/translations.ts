@@ -75,6 +75,16 @@ export interface Translations {
   memorized: string;
   joined: string;
   
+  // Reading Dashboard - Tabs
+  publicKhatmahs: string;
+  privateKhatmahs: string;
+  createPrivateKhatmah: string;
+  noPrivateKhatmahsYet: string;
+  noPrivateKhatmahsDesc: string;
+  inviteMembers: string;
+  trackTogether: string;
+  encourageEachOther: string;
+  
   // Circle Types
   khatmah: string;
   memorization: string;
@@ -390,6 +400,16 @@ export const translations: Record<Language, Translations> = {
     members: 'Members',
     memorized: 'Memorized',
     joined: 'Joined',
+    
+    // Reading Dashboard - Tabs
+    publicKhatmahs: 'Public Khatmahs',
+    privateKhatmahs: 'Private Khatmahs',
+    createPrivateKhatmah: 'Create Private Khatmah',
+    noPrivateKhatmahsYet: 'No Private Khatmahs Yet',
+    noPrivateKhatmahsDesc: 'Create a private Khatmah to track your progress with friends and family.',
+    inviteMembers: 'Invite Members',
+    trackTogether: 'Track Progress Together',
+    encourageEachOther: 'Encourage Each Other',
     
     // Circle Types
     khatmah: 'Khatmah',
@@ -730,6 +750,16 @@ export const translations: Record<Language, Translations> = {
     memorized: 'محفوظ',
     joined: 'انضم',
     
+    // Reading Dashboard - Tabs
+    publicKhatmahs: 'الختمات العامة',
+    privateKhatmahs: 'الختمات الخاصة',
+    createPrivateKhatmah: 'إنشاء ختمة خاصة',
+    noPrivateKhatmahsYet: 'لا ختمات خاصة بعد',
+    noPrivateKhatmahsDesc: 'إنشاء ختمة خاصة لتتبع تقدمك مع أصدقائك والعائلة.',
+    inviteMembers: 'دعوة الأعضاء',
+    trackTogether: 'تتبع التقدم معًا',
+    encourageEachOther: 'تشجيع بعضكم البعض',
+    
     // Circle Types
     khatmah: 'ختمة',
     memorization: 'حفظ',
@@ -760,7 +790,7 @@ export const translations: Record<Language, Translations> = {
     lastMemorized: 'آخر ما حفظته',
     ayah: 'آية',
     markEntireSurahMemorized: 'وضع علامة على سورة كاملة كمحفوظة',
-    surahCompleted: 'السورة مكتم��ة',
+    surahCompleted: 'السورة مكتمة',
     progressUpdatesAuto: 'تحديثات التقدم تلقائية',
     aboutThisGroup: 'عن هذه المجموعة',
     joinGroupDesc: 'انضم إلى مجموعة لتتبع تقدمك ومشاركة الأهداف مع الآخرين.',
