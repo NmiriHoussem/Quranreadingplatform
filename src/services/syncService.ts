@@ -5,6 +5,13 @@ import { refreshSession } from './authService';
 const supabaseUrl = `https://${projectId}.supabase.co`;
 const serverUrl = `${supabaseUrl}/functions/v1/make-server-bf07b5b1`;
 
+// Type definitions
+interface SyncResult {
+  success: boolean;
+  error: string | null;
+  data?: UserData;
+}
+
 // Get access token from localStorage
 function getAccessToken(): string | null {
   const token = localStorage.getItem('auth_token'); // Changed from 'quran_access_token' to 'auth_token'
@@ -24,17 +31,27 @@ export async function testAuth(): Promise<void> {
   // FIRST: Test if the public endpoint is reachable (with anon key)
   console.log('🔓 Step 1: Testing public endpoint (with anon key)...');
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+    
     const publicResponse = await fetch(`${serverUrl}/test-public`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${publicAnonKey}` // Use anon key, not user token!
-      }
+      },
+      signal: controller.signal
     });
+    
+    clearTimeout(timeoutId);
     const publicData = await publicResponse.json();
     console.log('  - ✅ Public endpoint response:', publicData);
     console.log('  - Server is reachable!');
   } catch (error) {
-    console.error('  - ❌ Public endpoint failed:', error);
+    if (error.name === 'AbortError') {
+      console.error('  - ❌ Public endpoint timed out - server may be unavailable');
+    } else {
+      console.error('  - ❌ Public endpoint failed:', error);
+    }
     console.error('  - Server is NOT reachable - deployment issue!');
     return;
   }
@@ -47,14 +64,19 @@ export async function testAuth(): Promise<void> {
   // SECOND: Test authenticated endpoint (anon key + user token in custom header)
   console.log('🔐 Step 2: Testing authenticated endpoint...');
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+    
     const response = await fetch(`${serverUrl}/test-auth`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${publicAnonKey}`, // Use anon key for gateway
         'X-User-Token': accessToken // Pass user token in custom header
-      }
+      },
+      signal: controller.signal
     });
     
+    clearTimeout(timeoutId);
     const data = await response.json();
     console.log('  - Test response:', data);
     
@@ -65,7 +87,11 @@ export async function testAuth(): Promise<void> {
       console.error('  - ❌ JWT authentication failed:', data.error);
     }
   } catch (error) {
-    console.error('  -  Test exception:', error);
+    if (error.name === 'AbortError') {
+      console.error('  - ❌ Auth test timed out');
+    } else {
+      console.error('  -  Test exception:', error);
+    }
   }
 }
 
@@ -98,28 +124,45 @@ export async function saveProgressToServer(): Promise<{ success: boolean; error:
     
     console.log('  - Making POST request to:', `${serverUrl}/progress/save`);
     
-    const response = await fetch(`${serverUrl}/progress/save`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${publicAnonKey}`, // Use anon key for gateway
-        'X-User-Token': accessToken // Pass user token in custom header
-      },
-      body: JSON.stringify(userData)
-    });
-
-    console.log('  - Response status:', response.status, response.statusText);
+    // Add timeout to fetch request
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
     
-    const data = await response.json();
-    console.log('  - Response data:', data);
+    try {
+      const response = await fetch(`${serverUrl}/progress/save`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${publicAnonKey}`, // Use anon key for gateway
+          'X-User-Token': accessToken // Pass user token in custom header
+        },
+        body: JSON.stringify(userData),
+        signal: controller.signal
+      });
 
-    if (!response.ok) {
-      console.error('❌ [SYNC] Failed to save progress:', data.error);
-      return { success: false, error: data.error || 'Failed to save progress' };
+      clearTimeout(timeoutId);
+
+      console.log('  - Response status:', response.status, response.statusText);
+      
+      const data = await response.json();
+      console.log('  - Response data:', data);
+
+      if (!response.ok) {
+        console.error('❌ [SYNC] Failed to save progress:', data.error);
+        return { success: false, error: data.error || 'Failed to save progress' };
+      }
+
+      console.log('✅ [SYNC] Progress saved to server successfully');
+      return { success: true, error: null };
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      
+      if (fetchError.name === 'AbortError') {
+        console.error('❌ [SYNC] Save request timed out after 10 seconds');
+        return { success: false, error: 'Request timed out - server may be unavailable' };
+      }
+      throw fetchError;
     }
-
-    console.log('✅ [SYNC] Progress saved to server successfully');
-    return { success: true, error: null };
   } catch (error) {
     console.error('❌ [SYNC] Save progress exception:', error);
     return { success: false, error: 'Failed to save progress to server' };
@@ -127,7 +170,7 @@ export async function saveProgressToServer(): Promise<{ success: boolean; error:
 }
 
 // Load user progress from server
-export async function loadProgressFromServer(): Promise<{ success: boolean; error: string | null; data?: UserData }> {
+export async function loadProgressFromServer(): Promise<SyncResult> {
   try {
     const accessToken = getAccessToken();
     console.log('📥 [SYNC] Loading progress from server...');
@@ -140,52 +183,69 @@ export async function loadProgressFromServer(): Promise<{ success: boolean; erro
 
     console.log('  - Making GET request to:', `${serverUrl}/progress`);
     
-    const response = await fetch(`${serverUrl}/progress`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${publicAnonKey}`, // Use anon key for gateway
-        'X-User-Token': accessToken // Pass user token in custom header
-      }
-    });
-
-    console.log('  - Response status:', response.status, response.statusText);
-    console.log('  - Response headers:', Object.fromEntries(response.headers.entries()));
+    // Add timeout to fetch request
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
     
-    // Try to get response text first to see what we're receiving
-    const responseText = await response.text();
-    console.log('  - Raw response text:', responseText);
-    
-    let result;
     try {
-      result = JSON.parse(responseText);
-    } catch (parseError) {
-      console.error('  - ❌ JSON parse error:', parseError);
-      console.error('  - Response was:', responseText);
-      return { success: false, error: 'Invalid response from server' };
-    }
-
-    if (!response.ok) {
-      console.error('❌ [SYNC] Failed to load progress - HTTP', response.status);
-      console.error('  - Error details:', result);
-      return { success: false, error: result.error || `HTTP ${response.status}: ${response.statusText}` };
-    }
-
-    if (result.progress) {
-      // Merge server data with local data (server takes precedence)
-      const localData = getUserData();
-      const mergedData = mergeProgressData(localData, result.progress);
-      saveUserData(mergedData);
-      
-      console.log('✅ [SYNC] Progress loaded from server successfully');
-      console.log('  - Merged data:', {
-        pagesRead: Object.keys(mergedData.readingProgress || {}).length,
-        groups: mergedData.groups.length
+      const response = await fetch(`${serverUrl}/progress`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${publicAnonKey}`, // Use anon key for gateway
+          'X-User-Token': accessToken // Pass user token in custom header
+        },
+        signal: controller.signal
       });
-      return { success: true, error: null, data: mergedData };
-    }
 
-    console.log('ℹ️  [SYNC] No progress data on server');
-    return { success: true, error: null, data: undefined };
+      clearTimeout(timeoutId);
+
+      console.log('  - Response status:', response.status, response.statusText);
+      console.log('  - Response headers:', Object.fromEntries(response.headers.entries()));
+      
+      // Try to get response text first to see what we're receiving
+      const responseText = await response.text();
+      console.log('  - Raw response text:', responseText);
+      
+      let result;
+      try {
+        result = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('  - ❌ JSON parse error:', parseError);
+        console.error('  - Response was:', responseText);
+        return { success: false, error: 'Invalid response from server' };
+      }
+
+      if (!response.ok) {
+        console.error('❌ [SYNC] Failed to load progress - HTTP', response.status);
+        console.error('  - Error details:', result);
+        return { success: false, error: result.error || `HTTP ${response.status}: ${response.statusText}` };
+      }
+
+      if (result.progress) {
+        // Merge server data with local data (server takes precedence)
+        const localData = getUserData();
+        const mergedData = mergeProgressData(localData, result.progress);
+        saveUserData(mergedData);
+        
+        console.log('✅ [SYNC] Progress loaded from server successfully');
+        console.log('  - Merged data:', {
+          pagesRead: Object.keys(mergedData.readingProgress || {}).length,
+          groups: mergedData.groups.length
+        });
+        return { success: true, error: null, data: mergedData };
+      }
+
+      console.log('ℹ️  [SYNC] No progress data on server');
+      return { success: true, error: null, data: undefined };
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      
+      if (fetchError.name === 'AbortError') {
+        console.error('❌ [SYNC] Request timed out after 10 seconds');
+        return { success: false, error: 'Request timed out - server may be unavailable' };
+      }
+      throw fetchError;
+    }
   } catch (error) {
     console.error('❌ [SYNC] Load progress exception:', error);
     console.error('  - Error type:', error?.constructor?.name);

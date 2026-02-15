@@ -196,6 +196,13 @@ export default function ReadingDashboard({ isAuthenticated, onSignOut, onToggleD
       const cachedData = getCachedData<PrivateKhatmah[]>(CACHE_KEYS.PRIVATE_KHATMAHS);
       if (cachedData && cachedData.length > 0) {
         console.log('⚡ Loading from cache immediately');
+        
+        // Register all cached khatmahs in localStorage metadata
+        cachedData.forEach(khatmah => {
+          joinPrivateKhatmah(khatmah.id);
+          console.log('📝 Registered cached khatmah in metadata:', khatmah.id);
+        });
+        
         setPrivateKhatmahs(cachedData);
         setIsLoadingPrivateKhatmahs(false);
       }
@@ -213,10 +220,10 @@ export default function ReadingDashboard({ isAuthenticated, onSignOut, onToggleD
           
           // Register all khatmahs in localStorage metadata
           khatmahs.forEach(khatmah => {
-            if (!isMemberOfGroup(khatmah.id)) {
-              joinPrivateKhatmah(khatmah.id);
-              console.log('📝 Registered private khatmah in metadata:', khatmah.id);
-            }
+            // Always call joinPrivateKhatmah to ensure it's registered in metadata
+            // The function itself handles duplicate checks
+            joinPrivateKhatmah(khatmah.id);
+            console.log('📝 Registered private khatmah in metadata:', khatmah.id);
           });
           
           // Load progress from database for the first khatmah (unified progress applies to all)
