@@ -12,6 +12,21 @@ Additionally:
 - `main.tsx` had PWA service worker imports **commented out** (for Figma Make compatibility)
 - But Vercel needs the PWA service worker to be **active**
 
+## Build Error Encountered & Fixed 🔧
+
+After switching to PWA config, Vercel build failed with:
+```
+Error: 'When using networkTimeoutSeconds, you must set the handler to 'NetworkFirst'.'
+```
+
+**Root cause**: Workbox doesn't allow `networkTimeoutSeconds` option with `CacheFirst` strategy - only with `NetworkFirst`.
+
+**Solution**: Removed `networkTimeoutSeconds` from:
+- Quran API cache (CacheFirst strategy)
+- Tanzil API cache (CacheFirst strategy)
+
+These APIs don't need network timeouts since they're using CacheFirst (offline-first) for static Quran data that rarely changes.
+
 ## Changes Made
 
 ### 1. Updated `/vercel.json`
@@ -34,11 +49,19 @@ const updateSW = registerSW({
 });
 ```
 
+### 3. Fixed `/vite.config.pwa.ts`
+Removed `networkTimeoutSeconds` from CacheFirst strategies:
+- ✅ Quran API: CacheFirst (no timeout - offline-first)
+- ✅ Tanzil API: CacheFirst (no timeout - offline-first)
+- ✅ GitHub Images: CacheFirst (no timeout - offline-first)
+- ✅ Supabase: NetworkFirst with 5s timeout (correct - needs fresh data)
+
 ## Next Steps
 
 1. **Push these changes to GitHub** (same as before)
 2. **Vercel will auto-deploy** with the PWA config
-3. **Your tabs will appear!** 🎉
+3. **Build will succeed!** ✅
+4. **Your tabs will appear!** 🎉
 
 ## Why This Happened
 
@@ -48,10 +71,12 @@ You had set up two configurations:
 
 But Vercel wasn't told to use the PWA config, so it was using the simple one - just like Figma Make!
 
+The networkTimeoutSeconds issue was a misconfiguration in the Workbox cache strategies that only showed up when building with the PWA plugin.
+
 ## Verification
 
 After deploying, you should see:
 - ✅ Public/Private tabs in the Reading Dashboard
 - ✅ Service worker registered in browser console
 - ✅ PWA install prompt (if not already installed)
-- ✅ Full offline functionality
+- ✅ Full offline functionality with correct cache strategies
