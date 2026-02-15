@@ -58,6 +58,13 @@ export default function ReadingDashboard({ isAuthenticated, onSignOut, onToggleD
   const language = getStoredLanguage();
   const t = getTranslations(language);
   
+  // Debug logging
+  console.log('🔧 ReadingDashboard render:', {
+    language,
+    translations: { publicKhatmahs: t.publicKhatmahs, privateKhatmahs: t.privateKhatmahs },
+    isAuthenticated
+  });
+  
   // Initialize activeTab from URL parameter or default to 'public'
   const [activeTab, setActiveTab] = useState<'public' | 'private'>(() => {
     const tabParam = searchParams.get('tab');
