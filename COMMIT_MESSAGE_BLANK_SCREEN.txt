@@ -1,0 +1,40 @@
+Fix: Production blank screen - Add SPA rewrites and immediate SW activation
+
+## Critical Fixes
+
+1. **vercel.json**: Added catch-all SPA rewrite rule to serve index.html for all routes
+   - Fixes 404s when directly navigating to routes like /home, /auth
+
+2. **vite.config.pwa.ts**: Added skipWaiting and clientsClaim to service worker
+   - Forces immediate service worker activation
+   - Prevents old cached versions from blocking new deployments
+
+3. **index.html**: Added 10-second timeout detection
+   - Shows "Refresh" button if React fails to load
+   - Links to /status.html diagnostic page
+
+4. **main.tsx**: Added comprehensive error handling
+   - Catches React initialization failures
+   - Displays user-friendly error messages
+
+5. **status.html**: Created diagnostic page
+   - Tests Vercel file serving
+   - Tests Supabase connection
+   - Shows environment info
+   - Allows users to clear cache and service workers
+
+## Testing Required
+
+Users must clear service worker cache after deployment:
+- Quick: Press Ctrl+Shift+R (Cmd+Shift+R on Mac)
+- Thorough: Visit /status.html and click "Clear Cache & Reload"
+
+## Files Changed
+
+- /vercel.json
+- /vite.config.pwa.ts
+- /index.html
+- /src/main.tsx
+- /public/status.html (new)
+- /BLANK_SCREEN_FIX.md (new)
+- /DEPLOY_BLANK_SCREEN_FIX.md (new)

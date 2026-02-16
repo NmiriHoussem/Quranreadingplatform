@@ -49,7 +49,7 @@
   <body>
     <div id="root">
       <!-- Loading screen that shows while app initializes -->
-      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); font-family: system-ui, -apple-system, sans-serif;">
+      <div id="initial-loader" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); font-family: system-ui, -apple-system, sans-serif;">
         <div style="text-align: center;">
           <!-- Logo placeholder -->
           <div style="width: 80px; height: 80px; margin: 0 auto 24px; background: white; border-radius: 20px; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
@@ -65,6 +65,13 @@
           
           <!-- Loading spinner -->
           <div style="width: 40px; height: 40px; margin: 0 auto; border: 4px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: white; animation: spin 1s linear infinite;"></div>
+          
+          <!-- Timeout message (shown after 10 seconds) -->
+          <div id="timeout-message" style="display: none; margin-top: 32px; padding: 20px; background: rgba(255,255,255,0.1); border-radius: 8px; max-width: 400px;">
+            <p style="color: white; margin: 0 0 16px 0;">Taking longer than expected...</p>
+            <button onclick="window.location.reload()" style="background: white; color: #667eea; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; margin-right: 8px;">Refresh Page</button>
+            <a href="/status.html" style="color: white; text-decoration: underline;">Check Status</a>
+          </div>
         </div>
       </div>
       
@@ -73,6 +80,34 @@
           to { transform: rotate(360deg); }
         }
       </style>
+      
+      <script>
+        // Show timeout message after 10 seconds if app hasn't loaded
+        setTimeout(() => {
+          const loader = document.getElementById('initial-loader');
+          const timeoutMsg = document.getElementById('timeout-message');
+          if (loader && timeoutMsg && loader.style.display !== 'none') {
+            timeoutMsg.style.display = 'block';
+            console.error('App load timeout - React may have failed to initialize');
+          }
+        }, 10000);
+        
+        // Remove loader when React mounts
+        window.addEventListener('DOMContentLoaded', () => {
+          // React will replace the content, but this ensures cleanup
+          setTimeout(() => {
+            const loader = document.getElementById('initial-loader');
+            if (loader && loader.parentElement) {
+              // Only remove if React successfully mounted (check for React root)
+              const hasReactRoot = document.querySelector('[data-reactroot], [data-reactid]') || 
+                                  document.querySelector('#root > :not(#initial-loader)');
+              if (hasReactRoot) {
+                loader.remove();
+              }
+            }
+          }, 100);
+        });
+      </script>
     </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
