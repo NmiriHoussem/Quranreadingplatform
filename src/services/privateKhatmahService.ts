@@ -163,6 +163,8 @@ export async function getPrivateKhatmahs(): Promise<{
       return { khatmahs: [], error: 'User not authenticated' };
     }
 
+    console.log('🔍 getPrivateKhatmahs - Fetching for user:', user.id);
+
     // Get khatmahs where user is the creator OR a member in parallel
     const [createdResult, memberResult] = await Promise.all([
       supabase
@@ -180,6 +182,9 @@ export async function getPrivateKhatmahs(): Promise<{
 
     const { data: createdKhatmahs, error: createdError } = createdResult;
     const { data: memberKhatmahIds, error: memberError } = memberResult;
+
+    console.log('🔍 getPrivateKhatmahs - Created khatmahs:', createdKhatmahs?.length || 0);
+    console.log('🔍 getPrivateKhatmahs - Member khatmah IDs:', memberKhatmahIds?.length || 0, memberKhatmahIds);
 
     if (createdError) {
       console.error('Error fetching created private khatmahs:', createdError);
@@ -200,6 +205,8 @@ export async function getPrivateKhatmahs(): Promise<{
         .in('id', khatmahIds)
         .eq('is_active', true);
 
+      console.log('🔍 getPrivateKhatmahs - Member khatmah details:', memberKhatmahsData?.length || 0);
+
       if (memberKhatmahsError) {
         console.error('Error fetching member khatmah details:', memberKhatmahsError);
       } else {
@@ -217,6 +224,8 @@ export async function getPrivateKhatmahs(): Promise<{
     memberKhatmahs.forEach(k => allKhatmahsMap.set(k.id, k));
 
     const allKhatmahs = Array.from(allKhatmahsMap.values());
+
+    console.log('🔍 getPrivateKhatmahs - Total khatmahs:', allKhatmahs.length);
 
     if (allKhatmahs.length === 0) {
       return { khatmahs: [], error: null };
