@@ -28,7 +28,7 @@ CREATE POLICY "Users can update their membership" ON public.private_khatmah_memb
     -- User is claiming a pending invitation sent to their email
     (
       user_id IS NULL 
-      AND LOWER(TRIM(email)) = LOWER(TRIM((SELECT email FROM auth.users WHERE id = auth.uid())))
+      AND LOWER(TRIM(email)) = LOWER(TRIM(auth.email()))
     )
   );
 

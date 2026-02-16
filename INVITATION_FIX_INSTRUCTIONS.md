@@ -19,9 +19,6 @@ Run the following SQL migration in your Supabase SQL Editor:
 -- =====================================================
 -- FIX: Allow users to accept invitations
 -- =====================================================
--- This fixes the RLS policy violation when users try to
--- accept invitations to private khatmahs.
--- =====================================================
 
 -- Drop the old policy
 DROP POLICY IF EXISTS "Users can update their membership" ON public.private_khatmah_members;
@@ -36,7 +33,7 @@ CREATE POLICY "Users can update their membership" ON public.private_khatmah_memb
     -- User is claiming a pending invitation sent to their email
     (
       user_id IS NULL 
-      AND LOWER(TRIM(email)) = LOWER(TRIM((SELECT email FROM auth.users WHERE id = auth.uid())))
+      AND LOWER(TRIM(email)) = LOWER(TRIM(auth.email()))
     )
   );
 
@@ -60,7 +57,7 @@ The updated policy now allows two scenarios:
 1. **Active members** can update their own records (user_id matches)
 2. **Invited users** can "claim" pending invitations where their email matches (even if user_id is null)
 
-This allows the invitation acceptance flow to work properly while maintaining security.
+This uses `auth.email()` which is a built-in Supabase function that safely returns the current authenticated user's email without needing to query the auth.users table.
 
 ## Files Updated
 
