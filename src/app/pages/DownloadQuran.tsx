@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { ArrowLeft, HardDrive, Download, BookOpen, Type } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '../components/ui/button';

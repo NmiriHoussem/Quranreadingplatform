@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router';
 import { Users, TrendingUp, Clock, BookOpen, Calendar, ChevronRight, Loader2, Plus, Moon, Sun, Mail, UserPlus, Check, X, ArrowLeft, Book, Globe, Lock, Target, Trash2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
@@ -14,6 +14,7 @@ import CreatePrivateKhatmahModal from './CreatePrivateKhatmahModal';
 import InvitationMigrationModal from './InvitationMigrationModal';
 import SuccessModal from './SuccessModal';
 import ConfirmationModal from './ConfirmationModal';
+import { AuthRequiredModal } from './AuthRequiredModal';
 import Logo from './Logo';
 import { getCachedData, setCachedData, CACHE_KEYS, areDataEqual, invalidateCache, isCacheStale } from '../../services/cacheService';
 import { 
@@ -80,6 +81,7 @@ export default function ReadingDashboard({ isAuthenticated, onSignOut, onToggleD
   }, [searchParams]);
   
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [privateKhatmahs, setPrivateKhatmahs] = useState<(PrivateKhatmah & { members?: any[] })[]>([]);
   const [isLoadingPrivateKhatmahs, setIsLoadingPrivateKhatmahs] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -409,7 +411,8 @@ export default function ReadingDashboard({ isAuthenticated, onSignOut, onToggleD
     try {
       const { user } = await getCurrentSession();
       if (!user) {
-        alert(language === 'ar' ? 'يجب عليك تسجيل الدخول لإنشاء ختمة خاصة' : 'You must be logged in to create a private khatmah');
+        setIsCreateModalOpen(false);
+        setIsAuthModalOpen(true);
         return;
       }
 
@@ -995,8 +998,7 @@ export default function ReadingDashboard({ isAuthenticated, onSignOut, onToggleD
               </h2>
               <Button className="bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600" onClick={() => {
                 if (!isAuthenticated) {
-                  alert(language === 'ar' ? 'يجب عليك تسجيل الدخول أولاً لإنشاء ختمة خاصة' : 'You must be logged in to create a private khatmah');
-                  navigate('/auth/signup');
+                  setIsAuthModalOpen(true);
                   return;
                 }
                 setIsCreateModalOpen(true);
@@ -1415,6 +1417,17 @@ export default function ReadingDashboard({ isAuthenticated, onSignOut, onToggleD
           isDanger={true}
         />
       )}
+
+      {/* Auth Required Modal */}
+      <AuthRequiredModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onSignup={() => {
+          setIsAuthModalOpen(false);
+          navigate('/auth');
+        }}
+        language={language}
+      />
     </div>
   );
 }

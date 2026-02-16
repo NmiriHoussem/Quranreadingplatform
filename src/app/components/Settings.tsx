@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router';
 import { ArrowLeft, Moon, Sun, LogIn, AlertTriangle, Download, Trash2, Globe } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from './ui/button';

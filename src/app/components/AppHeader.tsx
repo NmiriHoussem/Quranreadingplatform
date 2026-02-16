@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { Book, Users, Moon, Sun, Globe } from 'lucide-react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';

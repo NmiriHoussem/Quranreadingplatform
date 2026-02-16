@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router';
 import { ArrowLeft, ChevronLeft, ChevronRight, Menu, Loader2, Check, Users, Moon, Sun, BookOpen, Type } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';

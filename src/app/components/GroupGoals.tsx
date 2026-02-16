@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useSearchParams, useNavigate } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router';
 import { Book, Home, Plus, Search, Users, Target, Calendar, AlertCircle, LogIn, CheckCircle2, ArrowLeft, Check } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';

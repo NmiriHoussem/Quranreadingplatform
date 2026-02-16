@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { User, Settings, HelpCircle, LogOut, LogIn, CheckCircle2, Globe, BookOpen, Type, Download, Shield, Smartphone } from 'lucide-react';
 import { Button } from './ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from './ui/sheet';

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router';
 import { Book, ChevronLeft, ChevronRight, Home, Menu, BookOpen, Brain, Loader2, Play, Pause, RotateCcw, X, Moon, Sun, ArrowLeft, AudioLines, Check, Plus, Minus, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';

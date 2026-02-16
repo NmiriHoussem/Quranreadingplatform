@@ -203,6 +203,12 @@ function App() {
           element={<Auth onAuthSuccess={handleAuth} />} 
         />
         
+        {/* Legacy /auth/signup route - redirect to /auth */}
+        <Route 
+          path="/auth/signup" 
+          element={<Navigate to="/auth" replace />} 
+        />
+        
         {/* Legacy /dashboard route - redirect to /home */}
         <Route 
           path="/dashboard" 
@@ -284,6 +290,12 @@ function App() {
         <Route 
           path="/debug-invitations" 
           element={<DebugInvitations />} 
+        />
+        
+        {/* Catch-all route - redirect unmatched routes to home */}
+        <Route 
+          path="*" 
+          element={<Navigate to="/" replace />} 
         />
       </Routes>
       

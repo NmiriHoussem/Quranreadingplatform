@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { Book, Brain, ChevronRight, Users, Target, Moon, Sun, Globe, Smartphone } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';

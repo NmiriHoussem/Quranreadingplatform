@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, Link } from 'react-router';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
 import { Progress } from './ui/progress';

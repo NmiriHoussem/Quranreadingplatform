@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router';
 import { useEffect, useState } from 'react';
 import { Book, Target, Users, TrendingUp, Languages, Download } from 'lucide-react';
 import { Button } from './ui/button';

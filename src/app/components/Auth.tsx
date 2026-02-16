@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { signIn, signUp } from '../../services/authService';
