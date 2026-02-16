@@ -544,23 +544,21 @@ export async function acceptPrivateKhatmahInvitation(
     const { data: { user: authUser } } = await supabase.auth.getUser();
     const fullName = authUser?.user_metadata?.name || authUser?.email?.split('@')[0] || 'User';
 
-    // Insert member record (changed from update to insert)
+    // Update the existing member record (don't use upsert, use direct update)
+    // This updates the pending invitation row to add user_id and change status to active
     const { error: memberError } = await supabase
       .from('private_khatmah_members')
-      .upsert({ 
-        khatmah_id: invitation.khatmah_id,
+      .update({ 
         user_id: user.id,
-        email: invitation.email,
         full_name: fullName,
         status: 'active',
         joined_at: new Date().toISOString(),
-      }, {
-        onConflict: 'khatmah_id,email',
-        ignoreDuplicates: false
-      });
+      })
+      .eq('khatmah_id', invitation.khatmah_id)
+      .eq('email', invitation.email);
 
     if (memberError) {
-      console.error('Error creating member record:', memberError);
+      console.error('Error updating member record:', memberError);
       return { success: false, error: memberError.message };
     }
 
