@@ -1,5 +1,5 @@
-import { Link } from 'react-router';
-import { Book, ArrowLeft, Heart, Users, Target, BookOpen } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { ArrowLeft, Moon, Sun, Globe } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import ProfileMenu from './ProfileMenu';
@@ -27,7 +27,7 @@ export default function HelpPage({ isAuthenticated, onSignOut }: HelpPageProps) 
 
       <div className="container mx-auto px-4 py-8 max-w-3xl">
         <div className="flex items-center gap-3 mb-8">
-          <Book className="w-10 h-10 text-emerald-600" />
+          <Moon className="w-10 h-10 text-emerald-600" />
           <h1 className="text-3xl text-emerald-900">Help & About</h1>
         </div>
 
@@ -47,7 +47,7 @@ export default function HelpPage({ isAuthenticated, onSignOut }: HelpPageProps) 
           <h2 className="text-xl text-emerald-900 mb-4">Features</h2>
           <div className="space-y-4">
             <div className="flex gap-3">
-              <BookOpen className="w-5 h-5 text-emerald-600 mt-1 flex-shrink-0" />
+              <Sun className="w-5 h-5 text-emerald-600 mt-1 flex-shrink-0" />
               <div>
                 <h3 className="text-emerald-900 mb-1">Quran Reader</h3>
                 <p className="text-sm text-emerald-600">
@@ -56,7 +56,7 @@ export default function HelpPage({ isAuthenticated, onSignOut }: HelpPageProps) 
               </div>
             </div>
             <div className="flex gap-3">
-              <Target className="w-5 h-5 text-emerald-600 mt-1 flex-shrink-0" />
+              <Globe className="w-5 h-5 text-emerald-600 mt-1 flex-shrink-0" />
               <div>
                 <h3 className="text-emerald-900 mb-1">Progress Tracking</h3>
                 <p className="text-sm text-emerald-600">

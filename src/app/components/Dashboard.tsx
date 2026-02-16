@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router-dom';
 import { Book, Flame, Target, Users, Settings as SettingsIcon, CheckCircle2, CloudOff, Cloud, Moon, Sun, Globe } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';

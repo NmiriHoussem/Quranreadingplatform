@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link, useSearchParams } from 'react-router';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { Users, TrendingUp, Clock, BookOpen, Calendar, ChevronRight, Loader2, Plus, Moon, Sun, Mail, UserPlus, Check, X, ArrowLeft, Book, Globe, Lock, Target, Trash2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';

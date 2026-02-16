@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Upload, Save, Eye, X, Image as ImageIcon } from 'lucide-react';
 import { getStoredUser } from '../../services/authService';
 import { updateLogo, getLogo } from '../utils/logoStorage';

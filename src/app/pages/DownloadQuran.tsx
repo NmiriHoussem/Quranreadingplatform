@@ -1,5 +1,5 @@
-import { Link } from 'react-router';
-import { ArrowLeft, HardDrive, Download, BookOpen, Type } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { ArrowLeft, Download, CheckCircle, AlertCircle, Loader2, HardDrive, BookOpen } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
@@ -78,7 +78,7 @@ export default function DownloadQuran({ isAuthenticated, onSignOut }: DownloadQu
               }`}
             >
               <div className="flex items-center gap-3 mb-2">
-                <Type className={`w-6 h-6 ${
+                <CheckCircle className={`w-6 h-6 ${
                   downloadMode === 'text' 
                     ? 'text-emerald-700 dark:text-emerald-300' 
                     : 'text-emerald-600 dark:text-emerald-400'

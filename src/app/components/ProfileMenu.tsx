@@ -1,5 +1,6 @@
-import { Link } from 'react-router';
-import { User, Settings, HelpCircle, LogOut, LogIn, CheckCircle2, Globe, BookOpen, Type, Download, Shield, Smartphone } from 'lucide-react';
+import { Link } from 'react-router-dom';
+// Icons from lucide-react
+import { User, Settings, LogOut, BookOpen, Brain, Home, LogIn, CheckCircle2, Type, Download, Smartphone, HelpCircle, Globe, Shield } from 'lucide-react';
 import { Button } from './ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from './ui/sheet';
 import { Separator } from './ui/separator';
