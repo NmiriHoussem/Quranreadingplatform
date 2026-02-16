@@ -299,15 +299,32 @@ export default function ReadingDashboard({ isAuthenticated, onSignOut, onToggleD
       // Find the invitation to get the khatmah ID
       const invitation = pendingInvitations.find(inv => inv.id === invitationId);
       
+      console.log('🔍 handleAcceptInvitation - Starting:', {
+        invitationId,
+        invitation,
+        khatmahId: invitation?.khatmah_id
+      });
+      
       const { success, error } = await acceptPrivateKhatmahInvitation(invitationId);
+      
+      console.log('🔍 handleAcceptInvitation - Accept result:', { success, error });
+      
       if (success) {
+        // Reload khatmahs from database FIRST
+        console.log('🔍 handleAcceptInvitation - Invalidating cache and reloading...');
+        invalidateCache(CACHE_KEYS.PRIVATE_KHATMAHS);
+        await loadPrivateKhatmahs();
+        
         // Join the private khatmah in localStorage
         if (invitation?.khatmah_id) {
           // Check if this is the first private khatmah - show migration modal
           const existingPrivateIds = getPrivateKhatmahIds();
           
+          console.log('🔍 handleAcceptInvitation - Existing private IDs:', existingPrivateIds);
+          
           if (existingPrivateIds.length === 0) {
             // First private khatmah - show migration modal
+            console.log('🔍 handleAcceptInvitation - First private khatmah, showing migration modal');
             setMigrationModal({
               isOpen: true,
               invitationId: invitationId,
@@ -318,15 +335,14 @@ export default function ReadingDashboard({ isAuthenticated, onSignOut, onToggleD
             return;
           } else {
             // Not the first private khatmah - just join
+            console.log('🔍 handleAcceptInvitation - Not first khatmah, joining directly');
             joinPrivateKhatmah(invitation.khatmah_id);
             console.log('✅ Joined private khatmah:', invitation.khatmah_id);
           }
         }
         
-        // Reload invitations and khatmahs
-        invalidateCache(CACHE_KEYS.PRIVATE_KHATMAHS);
+        // Reload invitations
         await loadPendingInvitations();
-        await loadPrivateKhatmahs();
         setSuccessModal({
           isOpen: true,
           title: language === 'ar' ? 'تم قبول الدعوة بنجاح!' : 'Invitation accepted successfully!',
@@ -334,6 +350,7 @@ export default function ReadingDashboard({ isAuthenticated, onSignOut, onToggleD
           buttonText: language === 'ar' ? 'حسناً' : 'OK'
         });
       } else {
+        console.error('❌ handleAcceptInvitation - Failed:', error);
         alert(language === 'ar' ? `خطأ: ${error}` : `Error: ${error}`);
       }
     } catch (err) {
@@ -1024,7 +1041,7 @@ export default function ReadingDashboard({ isAuthenticated, onSignOut, onToggleD
               <div className="space-y-4">
                 {privateKhatmahs.map((khatmah) => {
                   const memberCount = khatmah.members?.filter(m => m.status === 'active').length || 0;
-                  const totalMembers = (khatmah.members?.length || 0) + 1; // +1 for creator
+                  const totalMembers = memberCount; // Creator is already included in members
                   
                   // Get reading stats for this specific private khatmah
                   const privateStats = getPrivateKhatmahReadingStats();

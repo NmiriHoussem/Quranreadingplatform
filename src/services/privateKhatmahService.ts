@@ -536,43 +536,33 @@ export async function acceptPrivateKhatmahInvitation(
       return { success: false, error: 'User not authenticated' };
     }
 
-    // Update invitation status
-    const { data: invitation, error: invitationError } = await supabase
-      .from('private_khatmah_invitations')
-      .update({ status: 'accepted' })
-      .eq('id', invitationId)
-      .select()
-      .single();
+    console.log('🔍 Accepting invitation:', invitationId);
 
-    if (invitationError || !invitation) {
-      console.error('Error accepting invitation:', invitationError);
-      return { success: false, error: invitationError?.message || 'Invitation not found' };
+    // Use the secure database function to handle acceptance
+    // This bypasses RLS issues with email matching
+    const { data, error } = await supabase.rpc('accept_private_khatmah_invitation', {
+      invitation_id_param: invitationId
+    });
+
+    console.log('🔍 Database function result:', { data, error });
+
+    if (error) {
+      console.error('❌ Error calling accept function:', error);
+      return { success: false, error: error.message };
     }
 
-    // Get user's full name from auth metadata
-    const { data: { user: authUser } } = await supabase.auth.getUser();
-    const fullName = authUser?.user_metadata?.name || authUser?.email?.split('@')[0] || 'User';
-
-    // Update the existing member record (don't use upsert, use direct update)
-    // This updates the pending invitation row to add user_id and change status to active
-    const { error: memberError } = await supabase
-      .from('private_khatmah_members')
-      .update({ 
-        user_id: user.id,
-        full_name: fullName,
-        status: 'active',
-        joined_at: new Date().toISOString(),
-      })
-      .eq('khatmah_id', invitation.khatmah_id)
-      .eq('email', invitation.email);
-
-    if (memberError) {
-      console.error('Error updating member record:', memberError);
-      return { success: false, error: memberError.message };
+    // The function returns a JSON object with success/error
+    if (data && typeof data === 'object') {
+      if (data.success) {
+        console.log('✅ Invitation accepted successfully!');
+        return { success: true, error: null };
+      } else {
+        console.error('❌ Function returned error:', data.error);
+        return { success: false, error: data.error || 'Failed to accept invitation' };
+      }
     }
 
-    console.log('✅ Accepted invitation and set full name:', fullName);
-    return { success: true, error: null };
+    return { success: false, error: 'Unexpected response from database' };
   } catch (error) {
     console.error('Error in acceptPrivateKhatmahInvitation:', error);
     return { success: false, error: 'Failed to accept invitation' };
