@@ -9,9 +9,6 @@ import { getTranslations, getStoredLanguage, setStoredLanguage, type Language } 
 import Logo from './Logo';
 import { useState, useEffect } from 'react';
 import { getHijriDate, getSpecialIslamicDay } from '../utils/hijriDate';
-import svgPaths from '../../imports/Home-2-1/svg-uiflsxax1z';
-import quranIcon from 'figma:asset/f02869cfbe46430135b14fe76279cc8d0b5705d6.png';
-import islamicPattern from 'figma:asset/35bccd6d8e1797d5fda79c94a6c589602f21a00e.png';
 
 interface HomePageProps {
   isAuthenticated: boolean;
@@ -127,11 +124,9 @@ export default function HomePage({ isAuthenticated, onSignOut, onToggleDarkMode 
       {/* Header with Islamic arch design */}
       <div className="relative overflow-visible bg-[#0A5550] dark:bg-[#084440]">
         {/* Islamic geometric pattern background */}
-        <div className="absolute inset-0 opacity-30" style={{
-          backgroundImage: `url(${islamicPattern})`,
-          backgroundRepeat: 'repeat',
-          backgroundSize: '200px auto',
-          backgroundPosition: 'center'
+        <div className="absolute inset-0 opacity-10" style={{
+          backgroundImage: `repeating-linear-gradient(45deg, #D4A574 0px, #D4A574 1px, transparent 1px, transparent 20px), repeating-linear-gradient(-45deg, #D4A574 0px, #D4A574 1px, transparent 1px, transparent 20px)`,
+          backgroundSize: '20px 20px'
         }} />
 
         {/* Golden arch dome at top center */}
@@ -183,7 +178,24 @@ export default function HomePage({ isAuthenticated, onSignOut, onToggleDarkMode 
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-5 text-center">
             {/* Quran icon */}
             <div className="flex justify-center mb-3">
-              <img src={quranIcon} alt="القرآن الكريم" className="w-20 h-20 object-contain" />
+              <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                {/* Book spine */}
+                <rect x="10" y="8" width="8" height="64" rx="2" fill="#D4A574" />
+                {/* Book cover */}
+                <rect x="18" y="8" width="52" height="64" rx="3" fill="#0A5550" />
+                {/* Cover border */}
+                <rect x="22" y="12" width="44" height="56" rx="2" fill="none" stroke="#D4A574" strokeWidth="1.5" />
+                {/* Inner border */}
+                <rect x="25" y="15" width="38" height="50" rx="1" fill="none" stroke="#D4A574" strokeWidth="0.75" opacity="0.6" />
+                {/* Arabic decoration: بسم */}
+                <text x="44" y="38" textAnchor="middle" fontFamily="serif" fontSize="11" fill="#D4A574">بِسْمِ</text>
+                <text x="44" y="51" textAnchor="middle" fontFamily="serif" fontSize="9" fill="#D4A574" opacity="0.8">اللهِ</text>
+                {/* Top corner ornaments */}
+                <circle cx="28" cy="18" r="2" fill="#D4A574" opacity="0.7" />
+                <circle cx="60" cy="18" r="2" fill="#D4A574" opacity="0.7" />
+                <circle cx="28" cy="62" r="2" fill="#D4A574" opacity="0.7" />
+                <circle cx="60" cy="62" r="2" fill="#D4A574" opacity="0.7" />
+              </svg>
             </div>
 
             {/* Title */}
