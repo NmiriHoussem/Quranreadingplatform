@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Brain, Target, CheckCircle2, BookOpen, ChevronRight, Moon, Sun, Globe } from 'lucide-react';
+import { Brain, Target, CheckCircle2, BookOpen, ChevronRight, Moon, Sun, Globe, ArrowLeft, Users, Plus } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Progress } from './ui/progress';

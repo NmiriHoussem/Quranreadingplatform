@@ -9,6 +9,9 @@ import { getTranslations, getStoredLanguage, setStoredLanguage, type Language } 
 import Logo from './Logo';
 import { useState, useEffect } from 'react';
 import { getHijriDate, getSpecialIslamicDay } from '../utils/hijriDate';
+import svgPaths from '../../imports/Home-2-1/svg-uiflsxax1z';
+import quranIcon from 'figma:asset/f02869cfbe46430135b14fe76279cc8d0b5705d6.png';
+import islamicPattern from 'figma:asset/35bccd6d8e1797d5fda79c94a6c589602f21a00e.png';
 
 interface HomePageProps {
   isAuthenticated: boolean;
@@ -120,241 +123,148 @@ export default function HomePage({ isAuthenticated, onSignOut, onToggleDarkMode 
   const specialDay = getSpecialIslamicDay(language);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-50 to-white dark:from-emerald-950 dark:to-emerald-900">
-      {/* Header */}
-      <header className="border-b border-emerald-100 dark:border-emerald-800 bg-white/80 dark:bg-emerald-950/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <Logo className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
-            <span className="text-2xl text-emerald-900 dark:text-emerald-100">{t.appName}</span>
-          </div>
-          <div className="flex gap-2 items-center">
-            {/* Install Button - Show on tablets when app not installed */}
-            {showInstallButton && isTablet && (
-              <Button 
-                variant="outline"
-                className="border-emerald-600 dark:border-emerald-500 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900 gap-2"
-                onClick={handleInstallClick}
-              >
-                <Smartphone className="w-4 h-4" />
-                <span className="text-sm font-medium">
-                  {language === 'ar' ? 'تثبيت التطبيق' : 'Install App'}
-                </span>
-              </Button>
-            )}
-            
-            {/* Language Toggle */}
-            <Button 
-              variant="outline" 
-              size="icon"
-              className="border-emerald-600 dark:border-emerald-500 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900"
-              onClick={toggleLanguage}
-              title={language === 'en' ? 'العربية' : 'English'}
-            >
-              <Globe className="w-4 h-4" />
-            </Button>
-            
-            {onToggleDarkMode && (
-              <Button 
-                variant="outline" 
-                size="icon"
-                className="border-emerald-600 dark:border-emerald-500 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900"
-                onClick={onToggleDarkMode}
-              >
-                {document.documentElement.classList.contains('dark') ? (
-                  <Sun className="w-4 h-4" />
-                ) : (
-                  <Moon className="w-4 h-4" />
-                )}
-              </Button>
-            )}
-            
-            <ProfileMenu isAuthenticated={isAuthenticated} onSignOut={onSignOut} />
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-[#F5F5F0] dark:bg-slate-900">
+      {/* Header with Islamic arch design */}
+      <div className="relative overflow-visible bg-[#0A5550] dark:bg-[#084440]">
+        {/* Islamic geometric pattern background */}
+        <div className="absolute inset-0 opacity-30" style={{
+          backgroundImage: `url(${islamicPattern})`,
+          backgroundRepeat: 'repeat',
+          backgroundSize: '200px auto',
+          backgroundPosition: 'center'
+        }} />
 
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        {/* Welcome Message */}
-        <div className="text-center mb-12">
-          {/* Hijri Date */}
-          <div className="mb-5">
-            <p className="text-sm md:text-base text-emerald-600 dark:text-emerald-400 flex items-center justify-center gap-2">
-              <span className="text-lg">🌙</span>
-              <span>{hijriDate.formattedDate}</span>
-            </p>
-            {/* Special Day Indicator */}
-            {specialDay && (
-              <p className="text-xs md:text-sm text-emerald-700 dark:text-emerald-300 mt-1 font-medium">
-                ✨ {specialDay}
-              </p>
-            )}
+        {/* Golden arch dome at top center */}
+        <div className="absolute -top-0 left-1/2 -translate-x-1/2 z-10">
+          <svg width="120" height="80" viewBox="0 0 120 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+            {/* Outer arch */}
+            <path d="M60 10 Q30 10 15 35 Q10 45 10 55 L10 80 L110 80 L110 55 Q110 45 105 35 Q90 10 60 10 Z" fill="#D4A574" />
+            {/* Inner arch */}
+            <path d="M60 15 Q35 15 22 37 Q18 45 18 53 L18 80 L102 80 L102 53 Q102 45 98 37 Q85 15 60 15 Z" fill="#0A5550" />
+            {/* Decorative dot */}
+            <circle cx="60" cy="40" r="8" fill="#D4A574" stroke="#0A5550" strokeWidth="2" />
+          </svg>
+        </div>
+
+        {/* Settings icon - top right */}
+        <div className="absolute top-3 right-3 z-20">
+          <button
+            onClick={toggleLanguage}
+            className="w-8 h-8 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+          >
+            <Globe className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Header content */}
+        <div className="relative px-6 pt-20 pb-10 text-center">
+          {/* Hijri date with moon */}
+          <div className="flex items-center justify-center gap-2 mb-3">
+            <span className="text-xl">🌙</span>
+            <span className="text-white text-sm">
+              {hijriDate.formattedDate}
+            </span>
           </div>
-          
+
           {/* Greeting */}
-          <h1 className="text-4xl md:text-5xl text-emerald-900 dark:text-emerald-100 mb-3">
-            {language === 'ar' ? 'السلام عليكم' : 'As-salāmu ʿalaykum'}
+          <h1 className="text-white text-2xl" style={{ fontFamily: 'var(--font-arabic, system-ui)', fontWeight: 500 }}>
+            السلام عليكم
           </h1>
-          <p className="text-emerald-700 dark:text-emerald-300">
-            {language === 'ar' ? 'اختر رحلتك مع القرآن' : 'Choose your journey with the Quran'}
-          </p>
+          {specialDay && (
+            <p className="text-white/70 text-xs mt-1">{specialDay}</p>
+          )}
         </div>
+      </div>
 
-        {/* Two Main Cards */}
-        <div className="grid md:grid-cols-2 gap-6">
-          {/* Reading Card */}
-          <Link to="/reading-dashboard" className="block group">
-            <Card className="p-8 border-2 border-emerald-100 dark:border-emerald-800 hover:border-emerald-400 dark:hover:border-emerald-600 transition-all duration-300 hover:shadow-xl dark:bg-emerald-950/50 h-full">
-              <div className="flex flex-col h-full">
-                {/* Icon */}
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 dark:from-emerald-600 dark:to-emerald-700 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
-                  <Book className="w-8 h-8 text-white" />
-                </div>
-
-                {/* Title */}
-                <h2 className="text-2xl md:text-3xl text-emerald-900 dark:text-emerald-100 mb-3">
-                  {language === 'ar' ? 'حلقات قراءة القرآن' : 'Reading (Khatmah)'}
-                </h2>
-
-                {/* Description */}
-                <p className="text-emerald-700 dark:text-emerald-300 mb-6 flex-grow">
-                  {language === 'ar' 
-                    ? 'اختم القرآن مع الآخرين في رحلة جماعية' 
-                    : 'Complete the Quran together in a collective journey'}
-                </p>
-
-                {/* Stats */}
-                {khatmahCount > 0 ? (
-                  <div className="space-y-3 mb-6">
-                    {/* Current Khatmah Name */}
-                    {currentKhatmahTitle && (
-                      <div className="text-emerald-900 dark:text-emerald-100 font-medium mb-2">
-                        {currentKhatmahTitle}
-                      </div>
-                    )}
-                    
-                    {/* Current Khatmah Progress */}
-                    {currentKhatmahStats && (
-                      <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
-                        <Book className="w-4 h-4" />
-                        <span>
-                          {currentKhatmahStats.pagesRead}/{currentKhatmahStats.totalPages} {language === 'ar' ? 'صفحة' : 'pages'}
-                        </span>
-                      </div>
-                    )}
-                    
-                    {/* Days Completed - always show if there's a current khatmah */}
-                    {currentKhatmah && (
-                      <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
-                        <Target className="w-4 h-4" />
-                        <span>
-                          {completedDays}/{currentKhatmahDays} {language === 'ar' ? 'أيام مكتملة' : 'days completed'}
-                        </span>
-                      </div>
-                    )}
-                    
-                    {/* Progress Bar */}
-                    {currentKhatmahStats && (
-                      <div className="w-full bg-emerald-100 dark:bg-emerald-900 rounded-full h-2 mt-2">
-                        <div 
-                          className="bg-emerald-600 dark:bg-emerald-500 h-2 rounded-full transition-all duration-500"
-                          style={{ width: `${currentKhatmahStats.percentComplete}%` }}
-                        />
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="text-sm text-emerald-600 dark:text-emerald-400 mb-6">
-                    {language === 'ar' ? 'لم تنضم إلى أي ختمة بعد' : 'No active khatmahs yet'}
-                  </div>
-                )}
-
-                {/* CTA */}
-                <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 group-hover:gap-3 transition-all">
-                  <span>{language === 'ar' ? 'افتح لوحة القراءة' : 'Open Reading Dashboard'}</span>
-                  <ChevronRight className="w-5 h-5" />
-                </div>
-              </div>
-            </Card>
-          </Link>
-
-          {/* Memorization Card */}
-          <Link to="/memorization-dashboard" className="block group">
-            <Card className="p-8 border-2 border-purple-100 dark:border-purple-800 hover:border-purple-400 dark:hover:border-purple-600 transition-all duration-300 hover:shadow-xl dark:bg-purple-950/30 h-full">
-              <div className="flex flex-col h-full">
-                {/* Icon */}
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600 dark:from-purple-600 dark:to-purple-700 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
-                  <Brain className="w-8 h-8 text-white" />
-                </div>
-
-                {/* Title */}
-                <h2 className="text-2xl md:text-3xl text-purple-900 dark:text-purple-100 mb-3">
-                  {language === 'ar' ? 'حلقات حفظ القرآن' : 'Memorization'}
-                </h2>
-
-                {/* Description */}
-                <p className="text-purple-700 dark:text-purple-300 mb-6 flex-grow">
-                  {language === 'ar' 
-                    ? 'تتبع رحلة حفظك للقرآن الكريم' 
-                    : 'Track your Quran memorization journey'}
-                </p>
-
-                {/* Stats */}
-                {memorizationCount > 0 ? (
-                  <div className="space-y-3 mb-6">
-                    {/* Memorization Progress Text */}
-                    <div className="text-purple-900 dark:text-purple-100 font-medium">
-                      {language === 'ar' 
-                        ? `تم حفظ ${surahsWithProgress} سورة | ${totalMemorized} آية` 
-                        : `Memorized ${surahsWithProgress} surahs | ${totalMemorized} ayahs`}
-                    </div>
-                    
-                    {/* Progress compared to all Quran */}
-                    <div className="text-sm text-purple-600 dark:text-purple-400">
-                      {totalMemorized}/6236 {language === 'ar' ? 'آيات القرآن' : 'ayahs of Quran'} ({Math.round((totalMemorized / 6236) * 100)}%)
-                    </div>
-                    
-                    {/* Progress Bar */}
-                    <div className="w-full bg-purple-100 dark:bg-purple-900 rounded-full h-2">
-                      <div 
-                        className="bg-purple-600 dark:bg-purple-500 h-2 rounded-full transition-all duration-500"
-                        style={{ width: `${Math.round((totalMemorized / 6236) * 100)}%` }}
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-sm text-purple-600 dark:text-purple-400 mb-6">
-                    {language === 'ar' ? 'لم تنضم إلى أي حلقة حفظ بعد' : 'No memorization circles yet'}
-                  </div>
-                )}
-
-                {/* CTA */}
-                <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 group-hover:gap-3 transition-all">
-                  <span>{language === 'ar' ? 'افتح لوحة الحفظ' : 'Open Memorization Dashboard'}</span>
-                  <ChevronRight className="w-5 h-5" />
-                </div>
-              </div>
-            </Card>
-          </Link>
-        </div>
-
-        {/* Quick Start Guide (for new users) */}
-        {khatmahCount === 0 && memorizationCount === 0 && (
-          <div className="mt-12 text-center">
-            <p className="text-emerald-700 dark:text-emerald-300 mb-4">
-              {language === 'ar' 
-                ? '👆 اختر واحدة من الأعلى للبدء في رحلتك مع القرآن' 
-                : '👆 Choose one above to start your Quran journey'}
-            </p>
-            <div className="inline-block p-4 bg-emerald-50 dark:bg-emerald-900/30 rounded-lg border border-emerald-200 dark:border-emerald-800">
-              <p className="text-sm text-emerald-600 dark:text-emerald-400">
-                {language === 'ar' 
-                  ? '💡 نصيحة: يمكنك الانضمام إلى ختمة واحدة ومجموعات حفظ متعددة' 
-                  : '💡 Tip: You can join one khatmah and multiple memorization groups'}
-              </p>
+      {/* Main content */}
+      <div className="px-4 pb-20 max-w-sm mx-auto">
+        {/* Quran card */}
+        <div className="-mt-4 mb-3">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-5 text-center">
+            {/* Quran icon */}
+            <div className="flex justify-center mb-3">
+              <img src={quranIcon} alt="القرآن الكريم" className="w-20 h-20 object-contain" />
             </div>
+
+            {/* Title */}
+            <h2 className="text-slate-900 dark:text-slate-100 text-xl mb-1" style={{ fontFamily: 'var(--font-arabic, system-ui)', fontWeight: 600 }}>
+              القرآن الكريم
+            </h2>
+
+            {/* Subtitle */}
+            <p className="text-slate-500 dark:text-slate-400 text-sm" style={{ fontFamily: 'var(--font-arabic, system-ui)' }}>
+              اختم ختمة مع القرآن
+            </p>
           </div>
-        )}
+        </div>
+
+        {/* Action buttons */}
+        <div className="space-y-2">
+          {/* حلقاتي */}
+          <Link to="/reading-dashboard">
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-3.5 flex items-center justify-between hover:shadow-md transition-shadow border border-slate-100 dark:border-slate-700">
+              <div className="flex items-center gap-2.5">
+                <ChevronRight className="w-4 h-4 text-slate-400 rotate-180" />
+                <span className="text-slate-800 dark:text-slate-100 text-base" style={{ fontFamily: 'var(--font-arabic, system-ui)' }}>
+                  حلقاتي
+                </span>
+              </div>
+              {khatmahCount > 0 && (
+                <span className="bg-[#FFF3E0] text-[#F59E0B] text-xs px-2.5 py-0.5 rounded-full" style={{ fontFamily: 'var(--font-arabic, system-ui)' }}>
+                  جديد
+                </span>
+              )}
+            </div>
+          </Link>
+
+          {/* حلقات */}
+          <Link to="/groups">
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-3.5 flex items-center justify-between hover:shadow-md transition-shadow border border-slate-100 dark:border-slate-700">
+              <div className="flex items-center gap-2.5">
+                <ChevronRight className="w-4 h-4 text-slate-400 rotate-180" />
+                <span className="text-slate-800 dark:text-slate-100 text-base" style={{ fontFamily: 'var(--font-arabic, system-ui)' }}>
+                  حلقات
+                </span>
+              </div>
+              <Users className="w-4 h-4 text-slate-400" />
+            </div>
+          </Link>
+
+          {/* حفظ القرآن */}
+          <Link to="/memorization-dashboard">
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-3.5 flex items-center justify-between hover:shadow-md transition-shadow border border-slate-100 dark:border-slate-700">
+              <div className="flex items-center gap-2.5">
+                <ChevronRight className="w-4 h-4 text-slate-400 rotate-180" />
+                <span className="text-slate-800 dark:text-slate-100 text-base" style={{ fontFamily: 'var(--font-arabic, system-ui)' }}>
+                  حفظ القرآن
+                </span>
+              </div>
+            </div>
+          </Link>
+        </div>
+      </div>
+
+      {/* Bottom navigation */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 z-40 safe-area-inset-bottom">
+        <div className="flex justify-around items-center px-8 py-2.5">
+          {/* حلقات المتحدثين */}
+          <Link to="/groups" className="flex flex-col items-center gap-0.5 py-1.5 min-w-[80px]">
+            <Users className="w-5 h-5 text-[#D4A574]" />
+            <span className="text-[10px] text-[#D4A574]" style={{ fontFamily: 'var(--font-arabic, system-ui)' }}>
+              حلقات المتحدثين
+            </span>
+          </Link>
+
+          {/* الصفحة الرئيسية */}
+          <div className="flex flex-col items-center gap-0.5 py-1.5 min-w-[80px]">
+            <div className="w-5 h-5 flex items-center justify-center">
+              <div className="w-2 h-2 rounded-full bg-emerald-600 dark:bg-emerald-500" />
+            </div>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400" style={{ fontFamily: 'var(--font-arabic, system-ui)' }}>
+              الصفحة الرئيسية
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   );
