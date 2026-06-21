@@ -218,7 +218,7 @@ export default function HomePage({ isAuthenticated, onSignOut, onToggleDarkMode 
               <div className="flex items-center gap-2.5">
                 <ChevronRight className="w-4 h-4 text-slate-400 rotate-180" />
                 <span className="text-slate-800 dark:text-slate-100 text-base" style={{ fontFamily: 'var(--font-arabic, system-ui)' }}>
-                  حلقاتي
+                  ختماتي الخاصة
                 </span>
               </div>
               {khatmahCount > 0 && (
@@ -235,7 +235,7 @@ export default function HomePage({ isAuthenticated, onSignOut, onToggleDarkMode 
               <div className="flex items-center gap-2.5">
                 <ChevronRight className="w-4 h-4 text-slate-400 rotate-180" />
                 <span className="text-slate-800 dark:text-slate-100 text-base" style={{ fontFamily: 'var(--font-arabic, system-ui)' }}>
-                  حلقات
+                  ختمات جماعية
                 </span>
               </div>
               <Users className="w-4 h-4 text-slate-400" />
